@@ -43,7 +43,8 @@ export class ExcelImporter {
         let cduIdCounter = 1;
         
         jsonData.forEach(row => {
-            const versionNum = String(row['Versión'] || row['Version'] || '').replace('.', '');
+            // Limpiar el número de versión (remover puntos y espacios)
+            const versionNum = String(row['Versión'] || row['Version'] || '').replace(/\./g, '').trim();
             if (!versionNum) return;
             
             const nombreCDU = row['Nombre CDU'] || row['CDU'] || '';
@@ -78,7 +79,7 @@ export class ExcelImporter {
             ...version
         }));
         
-        // Ordenar por número de versión
+        // Ordenar por número de versión (convertir a número para ordenar correctamente)
         versiones.sort((a, b) => {
             const numA = parseInt(a.numero) || 0;
             const numB = parseInt(b.numero) || 0;
@@ -121,7 +122,7 @@ export class ExcelImporter {
     }
 
     static normalizarEstado(estado) {
-        const estadoLower = String(estado).toLowerCase();
+        const estadoLower = String(estado).toLowerCase().trim();
         
         // Mapear estados antiguos a nuevos
         const mapeoEstados = {
@@ -131,8 +132,13 @@ export class ExcelImporter {
             'bloqueado': 'Pendiente de Certificacion',
             'en desarrollo': 'En Desarrollo',
             'pendiente de certificacion': 'Pendiente de Certificacion',
+            'pendiente de certificación': 'Pendiente de Certificacion',
             'certificado ok': 'Certificado OK',
-            'en produccion': 'En Produccion'
+            'certificado': 'Certificado OK',
+            'en produccion': 'En Produccion',
+            'en producción': 'En Produccion',
+            'produccion': 'En Produccion',
+            'producción': 'En Produccion'
         };
         
         return mapeoEstados[estadoLower] || 'En Desarrollo';

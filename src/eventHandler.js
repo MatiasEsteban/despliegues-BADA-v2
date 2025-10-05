@@ -12,10 +12,13 @@ export class EventHandlers {
     setupEventListeners() {
         this.setupThemeToggle();
         this.setupAgregarButton();
-        this.setupNuevaVersionButton();
+        this.setupNuevaVersionLimpiaButton();
+        this.setupDuplicarVersionButton();
         this.setupCargarButton();
         this.setupDescargarButton();
         this.setupTablaEvents();
+        
+        console.log('✅ Event listeners configurados correctamente');
     }
 
     setupThemeToggle() {
@@ -51,17 +54,63 @@ export class EventHandlers {
     }
 
     setupAgregarButton() {
-        document.getElementById('btn-agregar').addEventListener('click', () => {
+        const btn = document.getElementById('btn-agregar');
+        if (!btn) {
+            console.error('❌ No se encontró el botón btn-agregar');
+            return;
+        }
+        
+        btn.addEventListener('click', () => {
+            console.log('🔘 Click en Nuevo CDU');
             this.dataStore.addCduToLatestVersion();
             this.renderer.fullRender();
         });
+        
+        console.log('✅ Botón "Nuevo CDU" configurado');
     }
 
-    setupNuevaVersionButton() {
-        document.getElementById('btn-nueva-version').addEventListener('click', () => {
-            this.dataStore.addNewVersion();
+    setupNuevaVersionLimpiaButton() {
+        const btn = document.getElementById('btn-nueva-version-limpia');
+        if (!btn) {
+            console.error('❌ No se encontró el botón btn-nueva-version-limpia');
+            return;
+        }
+        
+        btn.addEventListener('click', () => {
+            console.log('🔘 Click en Nueva Versión Limpia');
+            const version = this.dataStore.addNewEmptyVersion();
+            alert(`Versión ${version.numero} creada. Ahora puedes agregar CDUs con el botón "Nuevo CDU".`);
             this.renderer.fullRender();
         });
+        
+        console.log('✅ Botón "Nueva Versión Limpia" configurado');
+    }
+
+    setupDuplicarVersionButton() {
+        const btn = document.getElementById('btn-duplicar-version');
+        if (!btn) {
+            console.error('❌ No se encontró el botón btn-duplicar-version');
+            return;
+        }
+        
+        btn.addEventListener('click', () => {
+            console.log('🔘 Click en Duplicar Última Versión');
+            const versiones = this.dataStore.getAll();
+            
+            if (versiones.length === 0) {
+                alert('No hay versiones para duplicar. Crea una nueva versión primero.');
+                return;
+            }
+            
+            // Duplicar la última versión
+            const ultimaVersion = versiones[versiones.length - 1];
+            const nuevaVersion = this.dataStore.duplicateVersion(ultimaVersion.id);
+            
+            alert(`Versión ${nuevaVersion.numero} creada como copia de la versión ${ultimaVersion.numero} con ${nuevaVersion.cdus.length} CDUs.`);
+            this.renderer.fullRender();
+        });
+        
+        console.log('✅ Botón "Duplicar Última Versión" configurado');
     }
 
     setupCargarButton() {

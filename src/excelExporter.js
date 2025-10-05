@@ -1,25 +1,37 @@
-// excelExporter.js - Exportación de datos a Excel
+// excelExporter.js - Exportación de datos con versiones agrupadas
 
 export class ExcelExporter {
-    static exportar(registros) {
-        const datosExcel = registros.map(r => ({
-            'Fecha Despliegue': r.fechaDespliegue,
-            'Hora': r.horaDespliegue,
-            'Versión': r.version,
-            'Nombre CDU': r.nombreCDU,
-            'Descripción CDU': r.descripcionCDU,
-            'Estado': r.estado,
-            'Responsable': r.responsable,
-            'Observaciones/Cambios': r.observaciones
-        }));
+    static exportar(versiones) {
+        // Aplanar la estructura para el Excel
+        const datosExcel = [];
+        
+        versiones.forEach(version => {
+            if (!version.cdus || version.cdus.length === 0) {
+                return;
+            }
+            
+            version.cdus.forEach(cdu => {
+                datosExcel.push({
+                    'Fecha Despliegue': version.fechaDespliegue || '',
+                    'Hora': version.horaDespliegue || '',
+                    'Versión': version.numero || '',
+                    'Nombre CDU': cdu.nombreCDU || '',
+                    'Descripción CDU': cdu.descripcionCDU || '',
+                    'Estado': cdu.estado || '',
+                    'Responsable': cdu.responsable || '',
+                    'Observaciones/Cambios': cdu.observaciones || ''
+                });
+            });
+        });
 
-        const resumen = this.generarResumen(registros);
+        const resumen = this.generarResumen(versiones);
         const wb = XLSX.utils.book_new();
         
         // Hoja de resumen
         const wsResumen = XLSX.utils.aoa_to_sheet(resumen);
         wsResumen['!cols'] = [
             { wch: 25 },
+            { wch: 15 },
             { wch: 15 },
             { wch: 15 },
             { wch: 15 },
@@ -46,31 +58,42 @@ export class ExcelExporter {
         XLSX.writeFile(wb, `Despliegues_BADA_${fecha}.xlsx`);
     }
 
-    static generarResumen(registros) {
+    static generarResumen(versiones) {
         const resumen = [
             ['DOCUMENTACIÓN DE DESPLIEGUES EN PRODUCCIÓN'],
             ['Herramienta: BADA'],
             ['Fecha Generación:', new Date().toLocaleDateString('es-ES')],
             [],
             ['Resumen por Versión'],
-            ['Versión', 'Total CDUs', 'En Desarrollo', 'Pendiente Cert.', 'Certificado OK', 'En Producción']
+            ['Versión', 'Fecha', 'Hora', 'Total CDUs', 'En Desarrollo', 'Pendiente Cert.', 'Certificado OK', 'En Producción']
         ];
 
-        const versionesUnicas = [...new Set(registros.map(r => r.version))].sort();
+        let totalGeneral = 0;
+        let desarrolloGeneral = 0;
+        let pendienteGeneral = 0;
+        let certificadoGeneral = 0;
+        let produccionGeneral = 0;
         
-        versionesUnicas.forEach(version => {
-            const cdusVersion = registros.filter(r => r.version === version);
-            const desarrollo = cdusVersion.filter(r => r.estado === 'En Desarrollo').length;
-            const pendiente = cdusVersion.filter(r => r.estado === 'Pendiente de Certificacion').length;
-            const certificado = cdusVersion.filter(r => r.estado === 'Certificado OK').length;
-            const produccion = cdusVersion.filter(r => r.estado === 'En Produccion').length;
+        versiones.forEach(version => {
+            const desarrollo = version.cdus.filter(c => c.estado === 'En Desarrollo').length;
+            const pendiente = version.cdus.filter(c => c.estado === 'Pendiente de Certificacion').length;
+            const certificado = version.cdus.filter(c => c.estado === 'Certificado OK').length;
+            const produccion = version.cdus.filter(c => c.estado === 'En Produccion').length;
+            
+            totalGeneral += version.cdus.length;
+            desarrolloGeneral += desarrollo;
+            pendienteGeneral += pendiente;
+            certificadoGeneral += certificado;
+            produccionGeneral += produccion;
             
             resumen.push([
-                version, 
-                cdusVersion.length, 
-                desarrollo, 
-                pendiente, 
-                certificado, 
+                version.numero,
+                version.fechaDespliegue,
+                version.horaDespliegue,
+                version.cdus.length,
+                desarrollo,
+                pendiente,
+                certificado,
                 produccion
             ]);
         });
@@ -78,11 +101,12 @@ export class ExcelExporter {
         // Agregar totales generales
         resumen.push([]);
         resumen.push(['TOTALES GENERALES']);
-        resumen.push(['Total CDUs:', registros.length]);
-        resumen.push(['En Desarrollo:', registros.filter(r => r.estado === 'En Desarrollo').length]);
-        resumen.push(['Pendiente Certificación:', registros.filter(r => r.estado === 'Pendiente de Certificacion').length]);
-        resumen.push(['Certificado OK:', registros.filter(r => r.estado === 'Certificado OK').length]);
-        resumen.push(['En Producción:', registros.filter(r => r.estado === 'En Produccion').length]);
+        resumen.push(['Total Versiones:', versiones.length]);
+        resumen.push(['Total CDUs:', totalGeneral]);
+        resumen.push(['En Desarrollo:', desarrolloGeneral]);
+        resumen.push(['Pendiente Certificación:', pendienteGeneral]);
+        resumen.push(['Certificado OK:', certificadoGeneral]);
+        resumen.push(['En Producción:', produccionGeneral]);
 
         return resumen;
     }

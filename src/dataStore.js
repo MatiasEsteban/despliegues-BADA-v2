@@ -3,32 +3,7 @@
 export class DataStore {
     constructor() {
         // Estructura: versiones con sus CDUs
-        this.versiones = [
-            {
-                id: 1,
-                numero: '8',
-                fechaDespliegue: '2025-10-06',
-                horaDespliegue: '09:00',
-                cdus: [
-                    {
-                        id: 1,
-                        nombreCDU: 'PORTA',
-                        descripcionCDU: 'Portabilidad de líneas',
-                        estado: 'En Produccion',
-                        responsable: 'Juan Pérez',
-                        observaciones: 'Se actualizó el flujo de validación de números'
-                    },
-                    {
-                        id: 2,
-                        nombreCDU: 'PREPAGO',
-                        descripcionCDU: 'Gestión de recargas prepago',
-                        estado: 'Certificado OK',
-                        responsable: 'María García',
-                        observaciones: 'Corrección de bug en el cálculo de saldo'
-                    }
-                ]
-            }
-        ];
+        this.versiones = [];
         this.nextVersionId = 2;
         this.nextCduId = 3;
         this.observers = [];
@@ -43,7 +18,8 @@ export class DataStore {
     }
 
     getAll() {
-        return JSON.parse(JSON.stringify(this.versiones)); // Deep copy
+        // Devolver referencia directa para lectura
+        return this.versiones;
     }
 
     // Obtener el último número de versión
@@ -57,8 +33,8 @@ export class DataStore {
         return numeros.length > 0 ? Math.max(...numeros) : 0;
     }
 
-    // Crear nueva versión con el número incrementado
-    addNewVersion() {
+    // Crear nueva versión vacía (sin CDUs)
+    addNewEmptyVersion() {
         const latestNumber = this.getLatestVersionNumber();
         const newNumber = String(latestNumber + 1);
         
@@ -67,16 +43,38 @@ export class DataStore {
             numero: newNumber,
             fechaDespliegue: new Date().toISOString().split('T')[0],
             horaDespliegue: '',
-            cdus: [
-                {
-                    id: this.nextCduId++,
-                    nombreCDU: '',
-                    descripcionCDU: '',
-                    estado: 'En Desarrollo',
-                    responsable: '',
-                    observaciones: ''
-                }
-            ]
+            cdus: []
+        };
+        
+        this.versiones.push(nuevaVersion);
+        this.notify();
+        return nuevaVersion;
+    }
+
+    // Duplicar versión: crear nueva versión copiando los CDUs de otra
+    duplicateVersion(versionId) {
+        const versionToCopy = this.versiones.find(v => v.id === versionId);
+        if (!versionToCopy) return null;
+        
+        const latestNumber = this.getLatestVersionNumber();
+        const newNumber = String(latestNumber + 1);
+        
+        // Copiar CDUs manteniendo descripción y estado
+        const cdusCopy = versionToCopy.cdus.map(cdu => ({
+            id: this.nextCduId++,
+            nombreCDU: cdu.nombreCDU,
+            descripcionCDU: cdu.descripcionCDU,
+            estado: cdu.estado,
+            responsable: cdu.responsable,
+            observaciones: cdu.observaciones
+        }));
+        
+        const nuevaVersion = {
+            id: this.nextVersionId++,
+            numero: newNumber,
+            fechaDespliegue: new Date().toISOString().split('T')[0],
+            horaDespliegue: '',
+            cdus: cdusCopy
         };
         
         this.versiones.push(nuevaVersion);
@@ -87,8 +85,8 @@ export class DataStore {
     // Agregar CDU a la última versión
     addCduToLatestVersion() {
         if (this.versiones.length === 0) {
-            // Si no hay versiones, crear la versión 1
-            return this.addNewVersion();
+            // Si no hay versiones, crear una versión vacía primero
+            this.addNewEmptyVersion();
         }
         
         const ultimaVersion = this.versiones[this.versiones.length - 1];

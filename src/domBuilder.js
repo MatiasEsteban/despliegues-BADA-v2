@@ -5,6 +5,49 @@ export class DOMBuilder {
         const filas = [];
         const numCdus = version.cdus.length;
         
+        // Si no hay CDUs, crear una fila placeholder
+        if (numCdus === 0) {
+            const tr = document.createElement('tr');
+            tr.dataset.versionId = version.id;
+            tr.className = 'fila-version-vacia primera-fila-version';
+            
+            // Fecha
+            const tdFecha = document.createElement('td');
+            tdFecha.className = 'celda-version';
+            const inputFecha = this.crearInput('date', 'campo-fecha-version', version.fechaDespliegue, 'fechaDespliegue');
+            inputFecha.dataset.versionId = version.id;
+            tdFecha.appendChild(inputFecha);
+            tr.appendChild(tdFecha);
+            
+            // Hora
+            const tdHora = document.createElement('td');
+            tdHora.className = 'celda-version';
+            const inputHora = this.crearInput('time', 'campo-hora-version', version.horaDespliegue, 'horaDespliegue');
+            inputHora.dataset.versionId = version.id;
+            tdHora.appendChild(inputHora);
+            tr.appendChild(tdHora);
+            
+            // Versión
+            const tdVersion = document.createElement('td');
+            tdVersion.className = 'celda-version';
+            const inputVersion = this.crearInput('text', 'campo-version', version.numero, 'numero');
+            inputVersion.dataset.versionId = version.id;
+            tdVersion.appendChild(inputVersion);
+            tr.appendChild(tdVersion);
+            
+            // Mensaje de versión vacía (colspan para ocupar el resto)
+            const tdMensaje = document.createElement('td');
+            tdMensaje.colSpan = 6;
+            tdMensaje.style.textAlign = 'center';
+            tdMensaje.style.fontStyle = 'italic';
+            tdMensaje.style.color = 'var(--text-secondary)';
+            tdMensaje.textContent = 'Versión sin CDUs - Haz clic en "Nuevo CDU" para agregar';
+            tr.appendChild(tdMensaje);
+            
+            filas.push(tr);
+            return filas;
+        }
+        
         version.cdus.forEach((cdu, index) => {
             const tr = document.createElement('tr');
             tr.dataset.versionId = version.id;
@@ -50,11 +93,12 @@ export class DOMBuilder {
             tdCDU.appendChild(inputCDU);
             tr.appendChild(tdCDU);
             
-            // Descripción
+            // Descripción (cambiado a textarea para expandir)
             const tdDescripcion = document.createElement('td');
-            const inputDescripcion = this.crearInput('text', 'campo-descripcion', cdu.descripcionCDU, 'descripcionCDU', 'Descripción del CDU');
-            inputDescripcion.dataset.cduId = cdu.id;
-            tdDescripcion.appendChild(inputDescripcion);
+            const textareaDescripcion = this.crearTextarea(cdu.descripcionCDU, 'descripcionCDU', 'Descripción del CDU');
+            textareaDescripcion.className = 'campo-descripcion';
+            textareaDescripcion.dataset.cduId = cdu.id;
+            tdDescripcion.appendChild(textareaDescripcion);
             tr.appendChild(tdDescripcion);
             
             // Estado
@@ -76,7 +120,7 @@ export class DOMBuilder {
             
             // Observaciones
             const tdObservaciones = document.createElement('td');
-            const textareaObs = this.crearTextarea(cdu.observaciones);
+            const textareaObs = this.crearTextarea(cdu.observaciones, 'observaciones', 'Cambios realizados...');
             textareaObs.dataset.cduId = cdu.id;
             tdObservaciones.appendChild(textareaObs);
             tr.appendChild(tdObservaciones);
@@ -122,11 +166,11 @@ export class DOMBuilder {
         return select;
     }
 
-    static crearTextarea(valor) {
+    static crearTextarea(valor, campo = 'observaciones', placeholder = 'Cambios realizados...') {
         const textarea = document.createElement('textarea');
-        textarea.className = 'campo-observaciones';
-        textarea.setAttribute('data-campo', 'observaciones');
-        textarea.placeholder = 'Cambios realizados...';
+        textarea.className = campo === 'observaciones' ? 'campo-observaciones' : 'campo-descripcion';
+        textarea.setAttribute('data-campo', campo);
+        textarea.placeholder = placeholder;
         textarea.value = valor || '';
         return textarea;
     }
