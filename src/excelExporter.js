@@ -19,7 +19,8 @@ export class ExcelExporter {
         // Hoja de resumen
         const wsResumen = XLSX.utils.aoa_to_sheet(resumen);
         wsResumen['!cols'] = [
-            { wch: 20 },
+            { wch: 25 },
+            { wch: 15 },
             { wch: 15 },
             { wch: 15 },
             { wch: 15 }
@@ -34,7 +35,7 @@ export class ExcelExporter {
             { wch: 10 },
             { wch: 20 },
             { wch: 30 },
-            { wch: 12 },
+            { wch: 25 },
             { wch: 20 },
             { wch: 50 }
         ];
@@ -52,17 +53,36 @@ export class ExcelExporter {
             ['Fecha Generación:', new Date().toLocaleDateString('es-ES')],
             [],
             ['Resumen por Versión'],
-            ['Versión', 'Total CDUs', 'Listos', 'Pendientes']
+            ['Versión', 'Total CDUs', 'En Desarrollo', 'Pendiente Cert.', 'Certificado OK', 'En Producción']
         ];
 
-        const versionesUnicas = [...new Set(registros.map(r => r.version))];
+        const versionesUnicas = [...new Set(registros.map(r => r.version))].sort();
         
         versionesUnicas.forEach(version => {
             const cdusVersion = registros.filter(r => r.version === version);
-            const listos = cdusVersion.filter(r => r.estado === 'Listo').length;
-            const pendientes = cdusVersion.filter(r => r.estado === 'Pendiente').length;
-            resumen.push([version, cdusVersion.length, listos, pendientes]);
+            const desarrollo = cdusVersion.filter(r => r.estado === 'En Desarrollo').length;
+            const pendiente = cdusVersion.filter(r => r.estado === 'Pendiente de Certificacion').length;
+            const certificado = cdusVersion.filter(r => r.estado === 'Certificado OK').length;
+            const produccion = cdusVersion.filter(r => r.estado === 'En Produccion').length;
+            
+            resumen.push([
+                version, 
+                cdusVersion.length, 
+                desarrollo, 
+                pendiente, 
+                certificado, 
+                produccion
+            ]);
         });
+
+        // Agregar totales generales
+        resumen.push([]);
+        resumen.push(['TOTALES GENERALES']);
+        resumen.push(['Total CDUs:', registros.length]);
+        resumen.push(['En Desarrollo:', registros.filter(r => r.estado === 'En Desarrollo').length]);
+        resumen.push(['Pendiente Certificación:', registros.filter(r => r.estado === 'Pendiente de Certificacion').length]);
+        resumen.push(['Certificado OK:', registros.filter(r => r.estado === 'Certificado OK').length]);
+        resumen.push(['En Producción:', registros.filter(r => r.estado === 'En Produccion').length]);
 
         return resumen;
     }

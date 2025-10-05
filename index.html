@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -25,14 +24,33 @@
                         <p>Herramienta: BADA</p>
                     </div>
                 </div>
-                <button id="btn-descargar" class="btn btn-success">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    Descargar Excel
-                </button>
+                
+                <div class="header-actions">
+                    <button id="btn-theme-toggle" class="theme-toggle" title="Cambiar tema">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
+                    
+                    <input type="file" id="file-input" accept=".xlsx,.xls" />
+                    <button id="btn-cargar" class="btn btn-info">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Cargar Excel
+                    </button>
+                    
+                    <button id="btn-descargar" class="btn btn-success">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Descargar Excel
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -58,12 +76,19 @@
             </table>
             
             <div class="table-footer">
+                <button id="btn-nueva-version" class="btn btn-secondary">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    Nueva Versión
+                </button>
                 <button id="btn-agregar" class="btn btn-primary">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
-                    Agregar CDU
+                    Nuevo CDU
                 </button>
             </div>
         </div>
@@ -75,16 +100,20 @@
                 <div class="stat-value stat-primary" id="stat-total">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Listos</div>
-                <div class="stat-value stat-success" id="stat-listos">0</div>
+                <div class="stat-label">En Desarrollo</div>
+                <div class="stat-value stat-warning" id="stat-desarrollo">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">En Proceso</div>
-                <div class="stat-value stat-warning" id="stat-proceso">0</div>
+                <div class="stat-label">Pendiente Certificación</div>
+                <div class="stat-value stat-danger" id="stat-pendiente">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Pendientes</div>
-                <div class="stat-value stat-danger" id="stat-pendientes">0</div>
+                <div class="stat-label">Certificado OK</div>
+                <div class="stat-value stat-info" id="stat-certificado">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">En Producción</div>
+                <div class="stat-value stat-success" id="stat-produccion">0</div>
             </div>
         </div>
     </div>

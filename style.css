@@ -1,15 +1,43 @@
-
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+:root {
+    --bg-gradient-start: #667eea;
+    --bg-gradient-end: #764ba2;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f7fafc;
+    --text-primary: #1a202c;
+    --text-secondary: #718096;
+    --border-color: #e2e8f0;
+    --input-border: #cbd5e0;
+    --accent-color: #667eea;
+    --accent-hover: #5568d3;
+    --shadow: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+    --bg-gradient-start: #1a1a2e;
+    --bg-gradient-end: #16213e;
+    --bg-primary: #0f1419;
+    --bg-secondary: #1a1f2e;
+    --text-primary: #e2e8f0;
+    --text-secondary: #a0aec0;
+    --border-color: #2d3748;
+    --input-border: #4a5568;
+    --accent-color: #667eea;
+    --accent-hover: #7c8bf5;
+    --shadow: rgba(0, 0, 0, 0.3);
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
     min-height: 100vh;
     padding: 2rem;
+    transition: background 0.3s ease;
 }
 
 .container {
@@ -18,9 +46,9 @@ body {
 }
 
 .header {
-    background: white;
+    background: var(--bg-primary);
     border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px var(--shadow);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
 }
@@ -39,10 +67,17 @@ body {
     gap: 1rem;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
 .icon-large {
     width: 2.5rem;
     height: 2.5rem;
-    color: #667eea;
+    color: var(--accent-color);
 }
 
 .icon {
@@ -52,13 +87,29 @@ body {
 
 h1 {
     font-size: 1.75rem;
-    color: #1a202c;
+    color: var(--text-primary);
     margin-bottom: 0.25rem;
 }
 
 .header-info p {
-    color: #718096;
+    color: var(--text-secondary);
     font-size: 0.95rem;
+}
+
+/* Toggle de modo oscuro */
+.theme-toggle {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-primary);
+}
+
+.theme-toggle:hover {
+    background: var(--border-color);
+    transform: translateY(-1px);
 }
 
 .btn {
@@ -76,7 +127,7 @@ h1 {
 
 .btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 8px var(--shadow);
 }
 
 .btn-success {
@@ -89,12 +140,30 @@ h1 {
 }
 
 .btn-primary {
-    background: #667eea;
+    background: var(--accent-color);
     color: white;
 }
 
 .btn-primary:hover {
-    background: #5568d3;
+    background: var(--accent-hover);
+}
+
+.btn-secondary {
+    background: #805ad5;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #6b46c1;
+}
+
+.btn-info {
+    background: #4299e1;
+    color: white;
+}
+
+.btn-info:hover {
+    background: #3182ce;
 }
 
 .btn-danger {
@@ -108,10 +177,19 @@ h1 {
     background: #fff5f5;
 }
 
+[data-theme="dark"] .btn-danger:hover {
+    background: #2d3748;
+}
+
+/* Input de archivo oculto */
+#file-input {
+    display: none;
+}
+
 .table-container {
-    background: white;
+    background: var(--bg-primary);
     border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px var(--shadow);
     overflow: hidden;
 }
 
@@ -121,7 +199,7 @@ h1 {
 }
 
 .tabla-despliegues thead {
-    background: #667eea;
+    background: var(--accent-color);
     color: white;
 }
 
@@ -133,12 +211,35 @@ h1 {
 }
 
 .tabla-despliegues tbody tr {
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border-color);
     transition: background 0.2s;
 }
 
 .tabla-despliegues tbody tr:hover {
-    background: #f7fafc;
+    background: var(--bg-secondary);
+}
+
+/* Estilo para versiones agrupadas */
+.tabla-despliegues .primera-fila-version {
+    border-top: 3px solid var(--accent-color);
+}
+
+.tabla-despliegues .celda-version {
+    background: var(--bg-secondary);
+    font-weight: 600;
+    border-right: 2px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.tabla-despliegues .fila-cdu:last-child {
+    border-bottom: 3px solid var(--accent-color);
+}
+
+.campo-fecha-version,
+.campo-hora-version,
+.campo-version {
+    font-weight: 600;
+    background: transparent !important;
 }
 
 .tabla-despliegues td {
@@ -150,17 +251,19 @@ h1 {
 .tabla-despliegues textarea {
     width: 100%;
     padding: 0.5rem;
-    border: 1px solid #cbd5e0;
+    border: 1px solid var(--input-border);
     border-radius: 6px;
     font-size: 0.875rem;
     font-family: inherit;
+    background: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 .tabla-despliegues input:focus,
 .tabla-despliegues select:focus,
 .tabla-despliegues textarea:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: var(--accent-color);
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -171,8 +274,11 @@ h1 {
 
 .table-footer {
     padding: 1rem;
-    background: #f7fafc;
-    border-top: 1px solid #e2e8f0;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .stats-grid {
@@ -183,15 +289,15 @@ h1 {
 }
 
 .stat-card {
-    background: white;
+    background: var(--bg-primary);
     border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px var(--shadow);
     padding: 1.5rem;
 }
 
 .stat-label {
     font-size: 0.875rem;
-    color: #718096;
+    color: var(--text-secondary);
     margin-bottom: 0.5rem;
 }
 
@@ -204,6 +310,7 @@ h1 {
 .stat-success { color: #48bb78; }
 .stat-warning { color: #ed8936; }
 .stat-danger { color: #f56565; }
+.stat-info { color: #4299e1; }
 
 @media (max-width: 768px) {
     body {
@@ -215,6 +322,10 @@ h1 {
         align-items: stretch;
     }
     
+    .header-actions {
+        justify-content: center;
+    }
+    
     .tabla-despliegues {
         font-size: 0.75rem;
     }
@@ -222,5 +333,9 @@ h1 {
     .tabla-despliegues th,
     .tabla-despliegues td {
         padding: 0.5rem;
+    }
+    
+    .table-footer {
+        flex-direction: column;
     }
 }

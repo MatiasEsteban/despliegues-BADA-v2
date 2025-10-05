@@ -1,68 +1,104 @@
-// domBuilder.js - Construcción de elementos del DOM
+// domBuilder.js - Construcción de elementos del DOM con versiones agrupadas
 
 export class DOMBuilder {
-    static crearFilaTabla(registro) {
-        const tr = document.createElement('tr');
-        tr.dataset.id = registro.id;
+    static crearFilasVersion(version) {
+        const filas = [];
+        const numCdus = version.cdus.length;
         
-        // Fecha
-        const tdFecha = document.createElement('td');
-        const inputFecha = this.crearInput('date', 'campo-fecha', registro.fechaDespliegue, 'fechaDespliegue');
-        tdFecha.appendChild(inputFecha);
+        version.cdus.forEach((cdu, index) => {
+            const tr = document.createElement('tr');
+            tr.dataset.versionId = version.id;
+            tr.dataset.cduId = cdu.id;
+            tr.className = 'fila-cdu';
+            
+            // Primera fila de la versión: mostrar fecha, hora y versión con rowspan
+            if (index === 0) {
+                tr.classList.add('primera-fila-version');
+                
+                // Fecha (compartida por toda la versión)
+                const tdFecha = document.createElement('td');
+                tdFecha.rowSpan = numCdus;
+                tdFecha.className = 'celda-version';
+                const inputFecha = this.crearInput('date', 'campo-fecha-version', version.fechaDespliegue, 'fechaDespliegue');
+                inputFecha.dataset.versionId = version.id;
+                tdFecha.appendChild(inputFecha);
+                tr.appendChild(tdFecha);
+                
+                // Hora (compartida por toda la versión)
+                const tdHora = document.createElement('td');
+                tdHora.rowSpan = numCdus;
+                tdHora.className = 'celda-version';
+                const inputHora = this.crearInput('time', 'campo-hora-version', version.horaDespliegue, 'horaDespliegue');
+                inputHora.dataset.versionId = version.id;
+                tdHora.appendChild(inputHora);
+                tr.appendChild(tdHora);
+                
+                // Versión (compartida)
+                const tdVersion = document.createElement('td');
+                tdVersion.rowSpan = numCdus;
+                tdVersion.className = 'celda-version';
+                const inputVersion = this.crearInput('text', 'campo-version', version.numero, 'numero');
+                inputVersion.dataset.versionId = version.id;
+                tdVersion.appendChild(inputVersion);
+                tr.appendChild(tdVersion);
+            }
+            
+            // CDU (específico de cada fila)
+            const tdCDU = document.createElement('td');
+            const inputCDU = this.crearInput('text', 'campo-cdu', cdu.nombreCDU, 'nombreCDU', 'Nombre CDU');
+            inputCDU.dataset.cduId = cdu.id;
+            tdCDU.appendChild(inputCDU);
+            tr.appendChild(tdCDU);
+            
+            // Descripción
+            const tdDescripcion = document.createElement('td');
+            const inputDescripcion = this.crearInput('text', 'campo-descripcion', cdu.descripcionCDU, 'descripcionCDU', 'Descripción del CDU');
+            inputDescripcion.dataset.cduId = cdu.id;
+            tdDescripcion.appendChild(inputDescripcion);
+            tr.appendChild(tdDescripcion);
+            
+            // Estado
+            const tdEstado = document.createElement('td');
+            const selectEstado = this.crearSelect(
+                ['En Desarrollo', 'Pendiente de Certificacion', 'Certificado OK', 'En Produccion'], 
+                cdu.estado
+            );
+            selectEstado.dataset.cduId = cdu.id;
+            tdEstado.appendChild(selectEstado);
+            tr.appendChild(tdEstado);
+            
+            // Responsable
+            const tdResponsable = document.createElement('td');
+            const inputResponsable = this.crearInput('text', 'campo-responsable', cdu.responsable, 'responsable', 'Nombre');
+            inputResponsable.dataset.cduId = cdu.id;
+            tdResponsable.appendChild(inputResponsable);
+            tr.appendChild(tdResponsable);
+            
+            // Observaciones
+            const tdObservaciones = document.createElement('td');
+            const textareaObs = this.crearTextarea(cdu.observaciones);
+            textareaObs.dataset.cduId = cdu.id;
+            tdObservaciones.appendChild(textareaObs);
+            tr.appendChild(tdObservaciones);
+            
+            // Acciones
+            const tdAcciones = document.createElement('td');
+            tdAcciones.style.textAlign = 'center';
+            const btnEliminar = this.crearBotonEliminar(cdu.id, index === 0 && numCdus === 1 ? version.id : null);
+            tdAcciones.appendChild(btnEliminar);
+            tr.appendChild(tdAcciones);
+            
+            filas.push(tr);
+        });
         
-        // Hora
-        const tdHora = document.createElement('td');
-        const inputHora = this.crearInput('time', 'campo-hora', registro.horaDespliegue, 'horaDespliegue');
-        tdHora.appendChild(inputHora);
-        
-        // Versión
-        const tdVersion = document.createElement('td');
-        const inputVersion = this.crearInput('text', 'campo-version', registro.version, 'version', '8.0');
-        tdVersion.appendChild(inputVersion);
-        
-        // CDU
-        const tdCDU = document.createElement('td');
-        const inputCDU = this.crearInput('text', 'campo-cdu', registro.nombreCDU, 'nombreCDU', 'Nuevo CDU');
-        tdCDU.appendChild(inputCDU);
-        
-        // Descripción
-        const tdDescripcion = document.createElement('td');
-        const inputDescripcion = this.crearInput('text', 'campo-descripcion', registro.descripcionCDU, 'descripcionCDU', 'Descripción del CDU');
-        tdDescripcion.appendChild(inputDescripcion);
-        
-        // Estado
-        const tdEstado = document.createElement('td');
-        const selectEstado = this.crearSelect(['Pendiente', 'Listo', 'En Proceso', 'Bloqueado'], registro.estado);
-        tdEstado.appendChild(selectEstado);
-        
-        // Responsable
-        const tdResponsable = document.createElement('td');
-        const inputResponsable = this.crearInput('text', 'campo-responsable', registro.responsable, 'responsable', 'Nombre');
-        tdResponsable.appendChild(inputResponsable);
-        
-        // Observaciones
-        const tdObservaciones = document.createElement('td');
-        const textareaObs = this.crearTextarea(registro.observaciones);
-        tdObservaciones.appendChild(textareaObs);
-        
-        // Acciones
-        const tdAcciones = document.createElement('td');
-        tdAcciones.style.textAlign = 'center';
-        const btnEliminar = this.crearBotonEliminar(registro.id);
-        tdAcciones.appendChild(btnEliminar);
-        
-        // Agregar todas las celdas a la fila
-        [tdFecha, tdHora, tdVersion, tdCDU, tdDescripcion, tdEstado, tdResponsable, tdObservaciones, tdAcciones]
-            .forEach(td => tr.appendChild(td));
-        
-        return tr;
+        return filas;
     }
 
     static crearInput(type, className, value, campo, placeholder = '') {
         const input = document.createElement('input');
         input.type = type;
         input.className = className;
-        input.value = value;
+        input.value = value || '';
         input.setAttribute('data-campo', campo);
         if (placeholder) input.placeholder = placeholder;
         return input;
@@ -91,14 +127,20 @@ export class DOMBuilder {
         textarea.className = 'campo-observaciones';
         textarea.setAttribute('data-campo', 'observaciones');
         textarea.placeholder = 'Cambios realizados...';
-        textarea.value = valor;
+        textarea.value = valor || '';
         return textarea;
     }
 
-    static crearBotonEliminar(id) {
+    static crearBotonEliminar(cduId, versionId = null) {
         const button = document.createElement('button');
         button.className = 'btn btn-danger btn-eliminar';
-        button.setAttribute('data-id', id);
+        button.setAttribute('data-cdu-id', cduId);
+        if (versionId !== null) {
+            button.setAttribute('data-version-id', versionId);
+            button.title = 'Eliminar versión completa';
+        } else {
+            button.title = 'Eliminar CDU';
+        }
         button.innerHTML = `
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="3 6 5 6 21 6"></polyline>
@@ -110,8 +152,9 @@ export class DOMBuilder {
 
     static actualizarEstadisticas(stats) {
         document.getElementById('stat-total').textContent = stats.total;
-        document.getElementById('stat-listos').textContent = stats.listos;
-        document.getElementById('stat-proceso').textContent = stats.proceso;
-        document.getElementById('stat-pendientes').textContent = stats.pendientes;
+        document.getElementById('stat-desarrollo').textContent = stats.desarrollo;
+        document.getElementById('stat-pendiente').textContent = stats.pendiente;
+        document.getElementById('stat-certificado').textContent = stats.certificado;
+        document.getElementById('stat-produccion').textContent = stats.produccion;
     }
 }
