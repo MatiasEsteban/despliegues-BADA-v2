@@ -118,11 +118,10 @@ export class DOMBuilder {
             tdResponsable.appendChild(inputResponsable);
             tr.appendChild(tdResponsable);
             
-            // Observaciones
+            // Observaciones (nuevo sistema de lista)
             const tdObservaciones = document.createElement('td');
-            const textareaObs = this.crearTextarea(cdu.observaciones, 'observaciones', 'Cambios realizados...');
-            textareaObs.dataset.cduId = cdu.id;
-            tdObservaciones.appendChild(textareaObs);
+            const containerObservaciones = this.crearObservacionesContainer(cdu);
+            tdObservaciones.appendChild(containerObservaciones);
             tr.appendChild(tdObservaciones);
             
             // Acciones
@@ -136,6 +135,115 @@ export class DOMBuilder {
         });
         
         return filas;
+    }
+
+    static crearObservacionesContainer(cdu) {
+        const container = document.createElement('div');
+        container.className = 'observaciones-container';
+        container.dataset.cduId = cdu.id;
+        
+        const observaciones = Array.isArray(cdu.observaciones) ? cdu.observaciones : [];
+        
+        if (observaciones.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'observaciones-empty';
+            empty.textContent = 'Sin observaciones';
+            container.appendChild(empty);
+        } else {
+            observaciones.forEach((obs, index) => {
+                // Manejar tanto formato antiguo (string) como nuevo (objeto)
+                const obsData = typeof obs === 'string' ? { texto: obs, timestamp: null } : obs;
+                const item = this.crearObservacionItem(cdu.id, obsData, index);
+                container.appendChild(item);
+            });
+        }
+        
+        // Botón para agregar observación
+        const btnAgregar = document.createElement('button');
+        btnAgregar.className = 'btn-observacion btn-add';
+        btnAgregar.type = 'button';
+        btnAgregar.dataset.cduId = cdu.id;
+        btnAgregar.dataset.action = 'add-observacion';
+        btnAgregar.innerHTML = '+';
+        btnAgregar.title = 'Agregar observación';
+        container.appendChild(btnAgregar);
+        
+        return container;
+    }
+
+    static crearObservacionItem(cduId, obsData, index) {
+        const item = document.createElement('div');
+        item.className = 'observacion-item';
+        item.dataset.index = index;
+        
+        const inputRow = document.createElement('div');
+        inputRow.className = 'observacion-input-row';
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = obsData.texto || '';
+        input.placeholder = 'Observación...';
+        input.dataset.cduId = cduId;
+        input.dataset.obsIndex = index;
+        input.dataset.campo = 'observacion';
+        
+        const btnRemove = document.createElement('button');
+        btnRemove.className = 'btn-observacion btn-remove';
+        btnRemove.type = 'button';
+        btnRemove.innerHTML = '×';
+        btnRemove.title = 'Eliminar observación';
+        btnRemove.dataset.cduId = cduId;
+        btnRemove.dataset.obsIndex = index;
+        btnRemove.dataset.action = 'remove-observacion';
+        
+        inputRow.appendChild(input);
+        inputRow.appendChild(btnRemove);
+        item.appendChild(inputRow);
+        
+        // Agregar timestamp si existe
+        if (obsData.timestamp) {
+            const timestampDiv = document.createElement('div');
+            timestampDiv.className = 'observacion-timestamp';
+            
+            const icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>`;
+            
+            const formattedDate = this.formatTimestamp(obsData.timestamp);
+            const modifiedText = obsData.lastModified ? ` (editado: ${this.formatTimestamp(obsData.lastModified)})` : '';
+            
+            timestampDiv.innerHTML = `${icon} ${formattedDate}${modifiedText}`;
+            item.appendChild(timestampDiv);
+        }
+        
+        return item;
+    }
+
+    static formatTimestamp(isoString) {
+        if (!isoString) return '';
+        
+        const date = new Date(isoString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        // Formato relativo para tiempos recientes
+        if (diffMins < 1) return 'Hace un momento';
+        if (diffMins < 60) return `Hace ${diffMins} min`;
+        if (diffHours < 24) return `Hace ${diffHours}h`;
+        if (diffDays < 7) return `Hace ${diffDays}d`;
+        
+        // Formato absoluto para fechas más antiguas
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
     }
 
     static crearInput(type, className, value, campo, placeholder = '') {

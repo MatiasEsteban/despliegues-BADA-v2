@@ -2,6 +2,7 @@
 
 import { ExcelExporter } from './excelExporter.js';
 import { ExcelImporter } from './excelImporter.js';
+import { Modal } from './modal.js';
 
 export class EventHandlers {
     constructor(dataStore, renderer) {
@@ -11,14 +12,37 @@ export class EventHandlers {
 
     setupEventListeners() {
         this.setupThemeToggle();
+        this.setupSearchToggle();
         this.setupAgregarButton();
         this.setupNuevaVersionLimpiaButton();
         this.setupDuplicarVersionButton();
         this.setupCargarButton();
         this.setupDescargarButton();
         this.setupTablaEvents();
+        this.setupFilterEvents();
         
         console.log('✅ Event listeners configurados correctamente');
+    }
+
+    setupSearchToggle() {
+        const btnToggle = document.getElementById('btn-toggle-search');
+        const filtersSection = document.querySelector('.filters-section');
+        
+        btnToggle.addEventListener('click', () => {
+            const isCollapsed = filtersSection.classList.contains('filters-collapsed');
+            
+            if (isCollapsed) {
+                // Expandir
+                filtersSection.classList.remove('filters-collapsed');
+                btnToggle.classList.add('active');
+            } else {
+                // Colapsar
+                filtersSection.classList.add('filters-collapsed');
+                btnToggle.classList.remove('active');
+            }
+        });
+        
+        console.log('✅ Toggle de búsqueda configurado');
     }
 
     setupThemeToggle() {
@@ -76,10 +100,13 @@ export class EventHandlers {
             return;
         }
         
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             console.log('🔘 Click en Nueva Versión Limpia');
             const version = this.dataStore.addNewEmptyVersion();
-            alert(`Versión ${version.numero} creada. Ahora puedes agregar CDUs con el botón "Nuevo CDU".`);
+            await Modal.success(
+                `Versión ${version.numero} creada. Ahora puedes agregar CDUs con el botón "Nuevo CDU".`,
+                'Versión Creada'
+            );
             this.renderer.fullRender();
         });
         
@@ -93,12 +120,15 @@ export class EventHandlers {
             return;
         }
         
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             console.log('🔘 Click en Duplicar Última Versión');
             const versiones = this.dataStore.getAll();
             
             if (versiones.length === 0) {
-                alert('No hay versiones para duplicar. Crea una nueva versión primero.');
+                await Modal.warning(
+                    'No hay versiones para duplicar. Crea una nueva versión primero.',
+                    'Sin Versiones'
+                );
                 return;
             }
             
@@ -106,7 +136,10 @@ export class EventHandlers {
             const ultimaVersion = versiones[versiones.length - 1];
             const nuevaVersion = this.dataStore.duplicateVersion(ultimaVersion.id);
             
-            alert(`Versión ${nuevaVersion.numero} creada como copia de la versión ${ultimaVersion.numero} con ${nuevaVersion.cdus.length} CDUs.`);
+            await Modal.success(
+                `Versión ${nuevaVersion.numero} creada como copia de la versión ${ultimaVersion.numero} con ${nuevaVersion.cdus.length} CDUs.`,
+                'Versión Duplicada'
+            );
             this.renderer.fullRender();
         });
         
@@ -129,24 +162,25 @@ export class EventHandlers {
                 const versiones = await ExcelImporter.importar(file);
                 
                 if (versiones.length === 0) {
-                    alert('No se encontraron datos válidos en el archivo');
+                    await Modal.error('No se encontraron datos válidos en el archivo', 'Error de Importación');
                     return;
                 }
 
                 let totalCdus = 0;
                 versiones.forEach(v => totalCdus += v.cdus.length);
 
-                const confirmacion = confirm(
-                    `Se encontraron ${versiones.length} versiones con ${totalCdus} CDUs.\n¿Desea reemplazar los datos actuales?`
+                const confirmacion = await Modal.confirm(
+                    `Se encontraron ${versiones.length} versiones con ${totalCdus} CDUs.\n¿Desea reemplazar los datos actuales?`,
+                    'Confirmar Importación'
                 );
 
                 if (confirmacion) {
                     this.dataStore.replaceAll(versiones);
                     this.renderer.fullRender();
-                    alert('Datos cargados exitosamente');
+                    await Modal.success('Datos cargados exitosamente', 'Importación Exitosa');
                 }
             } catch (error) {
-                alert('Error al cargar el archivo: ' + error.message);
+                await Modal.error('Error al cargar el archivo: ' + error.message, 'Error');
                 console.error(error);
             } finally {
                 fileInput.value = '';
@@ -170,37 +204,127 @@ export class EventHandlers {
             
             const valor = e.target.value;
             
-            // Verificar si es un campo de versión o de CDU
+            // Verificar si es un campo de versión, CDU u observación
             if (e.target.dataset.versionId) {
                 const versionId = parseInt(e.target.dataset.versionId);
                 this.dataStore.updateVersion(versionId, campo, valor);
+            } else if (campo === 'observacion') {
+                const cduId = parseInt(e.target.dataset.cduId);
+                const obsIndex = parseInt(e.target.dataset.obsIndex);
+                this.dataStore.updateObservacion(cduId, obsIndex, valor);
             } else if (e.target.dataset.cduId) {
                 const cduId = parseInt(e.target.dataset.cduId);
                 this.dataStore.updateCdu(cduId, campo, valor);
             }
         });
 
-        // Evento para eliminar versiones o CDUs
-        tbody.addEventListener('click', (e) => {
+        // Evento para eliminar versiones o CDUs, y gestionar observaciones
+        tbody.addEventListener('click', async (e) => {
+            // Eliminar CDU o versión
             const btnEliminar = e.target.closest('.btn-eliminar');
-            if (!btnEliminar) return;
+            if (btnEliminar) {
+                const versionId = btnEliminar.dataset.versionId;
+                const cduId = btnEliminar.dataset.cduId;
+                
+                if (versionId) {
+                    // Eliminar versión completa
+                    const confirmacion = await Modal.confirm(
+                        '¿Está seguro de eliminar esta versión completa con todos sus CDUs?',
+                        'Confirmar Eliminación'
+                    );
+                    if (confirmacion) {
+                        this.dataStore.deleteVersion(parseInt(versionId));
+                        this.renderer.fullRender();
+                    }
+                } else if (cduId) {
+                    // Eliminar solo el CDU
+                    const confirmacion = await Modal.confirm(
+                        '¿Está seguro de eliminar este CDU?',
+                        'Confirmar Eliminación'
+                    );
+                    if (confirmacion) {
+                        this.dataStore.deleteCdu(parseInt(cduId));
+                        this.renderer.fullRender();
+                    }
+                }
+                return;
+            }
             
-            const versionId = btnEliminar.dataset.versionId;
-            const cduId = btnEliminar.dataset.cduId;
+            // Agregar observación
+            const btnAdd = e.target.closest('[data-action="add-observacion"]');
+            if (btnAdd) {
+                const cduId = parseInt(btnAdd.dataset.cduId);
+                this.dataStore.addObservacion(cduId, '');
+                this.renderer.fullRender();
+                
+                // Enfocar el nuevo campo
+                setTimeout(() => {
+                    const container = document.querySelector(`[data-cdu-id="${cduId}"].observaciones-container`);
+                    if (container) {
+                        const inputs = container.querySelectorAll('input[data-campo="observacion"]');
+                        const lastInput = inputs[inputs.length - 1];
+                        if (lastInput) lastInput.focus();
+                    }
+                }, 100);
+                return;
+            }
             
-            if (versionId) {
-                // Eliminar versión completa
-                if (confirm('¿Está seguro de eliminar esta versión completa con todos sus CDUs?')) {
-                    this.dataStore.deleteVersion(parseInt(versionId));
+            // Eliminar observación
+            const btnRemove = e.target.closest('[data-action="remove-observacion"]');
+            if (btnRemove) {
+                const cduId = parseInt(btnRemove.dataset.cduId);
+                const obsIndex = parseInt(btnRemove.dataset.obsIndex);
+                
+                const confirmacion = await Modal.confirm(
+                    '¿Eliminar esta observación?',
+                    'Confirmar'
+                );
+                if (confirmacion) {
+                    this.dataStore.deleteObservacion(cduId, obsIndex);
                     this.renderer.fullRender();
                 }
-            } else if (cduId) {
-                // Eliminar solo el CDU
-                if (confirm('¿Está seguro de eliminar este CDU?')) {
-                    this.dataStore.deleteCdu(parseInt(cduId));
-                    this.renderer.fullRender();
-                }
+                return;
             }
         });
+    }
+
+    setupFilterEvents() {
+        // Búsqueda general
+        const filterSearch = document.getElementById('filter-search');
+        filterSearch.addEventListener('input', (e) => {
+            this.renderer.setFilters({ search: e.target.value });
+        });
+
+        // Filtro de estado
+        const filterEstado = document.getElementById('filter-estado');
+        filterEstado.addEventListener('change', (e) => {
+            this.renderer.setFilters({ estado: e.target.value });
+        });
+
+        // Filtro de responsable
+        const filterResponsable = document.getElementById('filter-responsable');
+        filterResponsable.addEventListener('input', (e) => {
+            this.renderer.setFilters({ responsable: e.target.value });
+        });
+
+        // Filtro de fecha desde
+        const filterFechaDesde = document.getElementById('filter-fecha-desde');
+        filterFechaDesde.addEventListener('change', (e) => {
+            this.renderer.setFilters({ fechaDesde: e.target.value });
+        });
+
+        // Filtro de fecha hasta
+        const filterFechaHasta = document.getElementById('filter-fecha-hasta');
+        filterFechaHasta.addEventListener('change', (e) => {
+            this.renderer.setFilters({ fechaHasta: e.target.value });
+        });
+
+        // Botón de limpiar filtros
+        const btnClearFilters = document.getElementById('btn-clear-filters');
+        btnClearFilters.addEventListener('click', () => {
+            this.renderer.clearFilters();
+        });
+
+        console.log('✅ Event listeners de filtros configurados');
     }
 }

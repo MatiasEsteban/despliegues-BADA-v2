@@ -11,6 +11,31 @@ export class ExcelExporter {
             }
             
             version.cdus.forEach(cdu => {
+                // Convertir array de observaciones a texto con saltos de línea
+                let observacionesTexto = '';
+                if (Array.isArray(cdu.observaciones)) {
+                    observacionesTexto = cdu.observaciones
+                        .map(obs => {
+                            if (typeof obs === 'string') {
+                                return obs;
+                            } else if (obs.texto) {
+                                // Incluir timestamp si existe
+                                if (obs.timestamp) {
+                                    const fecha = new Date(obs.timestamp);
+                                    const fechaStr = fecha.toLocaleDateString('es-ES');
+                                    const horaStr = fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                                    return `[${fechaStr} ${horaStr}] ${obs.texto}`;
+                                }
+                                return obs.texto;
+                            }
+                            return '';
+                        })
+                        .filter(obs => obs.trim())
+                        .join('\n');
+                } else if (cdu.observaciones) {
+                    observacionesTexto = cdu.observaciones;
+                }
+                
                 datosExcel.push({
                     'Fecha Despliegue': version.fechaDespliegue || '',
                     'Hora': version.horaDespliegue || '',
@@ -19,7 +44,7 @@ export class ExcelExporter {
                     'Descripción CDU': cdu.descripcionCDU || '',
                     'Estado': cdu.estado || '',
                     'Responsable': cdu.responsable || '',
-                    'Observaciones/Cambios': cdu.observaciones || ''
+                    'Observaciones/Cambios': observacionesTexto
                 });
             });
         });

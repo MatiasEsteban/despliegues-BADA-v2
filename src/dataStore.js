@@ -66,7 +66,7 @@ export class DataStore {
             descripcionCDU: cdu.descripcionCDU,
             estado: cdu.estado,
             responsable: cdu.responsable,
-            observaciones: cdu.observaciones
+            observaciones: [...(cdu.observaciones || [])]
         }));
         
         const nuevaVersion = {
@@ -97,7 +97,7 @@ export class DataStore {
             descripcionCDU: '',
             estado: 'En Desarrollo',
             responsable: '',
-            observaciones: ''
+            observaciones: []
         };
         
         ultimaVersion.cdus.push(nuevoCdu);
@@ -120,6 +120,50 @@ export class DataStore {
             const cdu = version.cdus.find(c => c.id === cduId);
             if (cdu) {
                 cdu[campo] = valor;
+                this.notify();
+                return;
+            }
+        }
+    }
+
+    // Agregar observación a un CDU
+    addObservacion(cduId, texto = '') {
+        for (const version of this.versiones) {
+            const cdu = version.cdus.find(c => c.id === cduId);
+            if (cdu) {
+                if (!Array.isArray(cdu.observaciones)) {
+                    cdu.observaciones = [];
+                }
+                cdu.observaciones.push({
+                    texto: texto,
+                    timestamp: new Date().toISOString()
+                });
+                this.notify();
+                return;
+            }
+        }
+    }
+
+    // Actualizar observación específica
+    updateObservacion(cduId, index, texto) {
+        for (const version of this.versiones) {
+            const cdu = version.cdus.find(c => c.id === cduId);
+            if (cdu && Array.isArray(cdu.observaciones) && index < cdu.observaciones.length) {
+                // Mantener el timestamp original, solo actualizar el texto
+                cdu.observaciones[index].texto = texto;
+                cdu.observaciones[index].lastModified = new Date().toISOString();
+                this.notify();
+                return;
+            }
+        }
+    }
+
+    // Eliminar observación específica
+    deleteObservacion(cduId, index) {
+        for (const version of this.versiones) {
+            const cdu = version.cdus.find(c => c.id === cduId);
+            if (cdu && Array.isArray(cdu.observaciones) && index < cdu.observaciones.length) {
+                cdu.observaciones.splice(index, 1);
                 this.notify();
                 return;
             }

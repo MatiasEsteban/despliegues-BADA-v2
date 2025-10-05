@@ -60,6 +60,10 @@ export class ExcelImporter {
                 });
             }
             
+            // Procesar observaciones
+            const observacionesText = row['Observaciones/Cambios'] || row['Observaciones'] || row['Cambios'] || '';
+            const observaciones = this.parsearObservaciones(observacionesText);
+            
             // Agregar el CDU a la versión
             const version = versionesMap.get(versionNum);
             version.cdus.push({
@@ -68,7 +72,7 @@ export class ExcelImporter {
                 descripcionCDU: row['Descripción CDU'] || row['Descripcion CDU'] || row['Descripción'] || '',
                 estado: this.normalizarEstado(row['Estado'] || 'En Desarrollo'),
                 responsable: row['Responsable'] || '',
-                observaciones: row['Observaciones/Cambios'] || row['Observaciones'] || row['Cambios'] || ''
+                observaciones: observaciones
             });
         });
         
@@ -87,6 +91,36 @@ export class ExcelImporter {
         });
         
         return versiones;
+    }
+
+    static parsearObservaciones(texto) {
+        if (!texto || texto.trim() === '') return [];
+        
+        // Intentar dividir por varios separadores comunes
+        const separadores = ['\n', '•', '-', '*', '|', ';'];
+        
+        let items = [];
+        for (const sep of separadores) {
+            if (texto.includes(sep)) {
+                items = texto
+                    .split(sep)
+                    .map(obs => obs.trim())
+                    .filter(obs => obs.length > 0);
+                break;
+            }
+        }
+        
+        // Si no hay separadores, devolver como un solo item
+        if (items.length === 0) {
+            items = [texto.trim()];
+        }
+        
+        // Convertir a formato con timestamps
+        return items.map(texto => ({
+            texto: texto,
+            timestamp: new Date().toISOString(),
+            imported: true
+        }));
     }
 
     static formatearFecha(fecha) {
