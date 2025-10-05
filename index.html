@@ -1,13 +1,96 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>package.json</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Despliegues - BADA</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-info">
+                    <svg class="icon-large" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <div>
+                        <h1>Control de Despliegues en Producción</h1>
+                        <p>Herramienta: BADA</p>
+                    </div>
+                </div>
+                <button id="btn-descargar" class="btn btn-success">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Descargar Excel
+                </button>
+            </div>
+        </header>
+
+        <!-- Tabla de Despliegues -->
+        <div class="table-container">
+            <table class="tabla-despliegues">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Versión</th>
+                        <th>CDU</th>
+                        <th>Descripción</th>
+                        <th>Estado</th>
+                        <th>Responsable</th>
+                        <th>Observaciones</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-body">
+                    <!-- Las filas se generan dinámicamente con JavaScript -->
+                </tbody>
+            </table>
+            
+            <div class="table-footer">
+                <button id="btn-agregar" class="btn btn-primary">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Agregar CDU
+                </button>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total CDUs</div>
+                <div class="stat-value stat-primary" id="stat-total">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Listos</div>
+                <div class="stat-value stat-success" id="stat-listos">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">En Proceso</div>
+                <div class="stat-value stat-warning" id="stat-proceso">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Pendientes</div>
+                <div class="stat-value stat-danger" id="stat-pendientes">0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts externos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script type="module" src="main.js"></script>
+</body>
 </html>
