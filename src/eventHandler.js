@@ -235,7 +235,7 @@ export class EventHandlers {
             }
         });
 
-        // Evento para eliminar versiones o CDUs, y gestionar observaciones
+        // Evento para eliminar versiones o CDUs, gestionar observaciones y expandir/colapsar CDUs
         tbody.addEventListener('click', async (e) => {
             // Eliminar CDU o versión
             const btnEliminar = e.target.closest('.btn-eliminar');
@@ -264,6 +264,14 @@ export class EventHandlers {
                         this.renderer.fullRender();
                     }
                 }
+                return;
+            }
+            
+            // Expandir/colapsar CDUs de una versión
+            const btnExpandCdus = e.target.closest('[data-action="expand-cdus"], [data-action="collapse-cdus"]');
+            if (btnExpandCdus) {
+                const versionId = parseInt(btnExpandCdus.dataset.versionId);
+                this.renderer.toggleVersionCdus(versionId);
                 return;
             }
             

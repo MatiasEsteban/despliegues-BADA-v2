@@ -8,6 +8,7 @@ export class Renderer {
         this.tbody = document.getElementById('tabla-body');
         this.isInitialRender = true;
         this.showingOldVersions = false;
+        this.expandedVersions = new Set(); // Mantener track de versiones expandidas
         this.filters = {
             search: '',
             estado: '',
@@ -122,7 +123,8 @@ export class Renderer {
         
         // Agregar filas por versión
         versionesToRender.forEach(version => {
-            const filas = DOMBuilder.crearFilasVersion(version);
+            const isExpanded = this.expandedVersions.has(version.id);
+            const filas = DOMBuilder.crearFilasVersion(version, isExpanded);
             filas.forEach(fila => this.tbody.appendChild(fila));
         });
         
@@ -238,16 +240,28 @@ export class Renderer {
         
         // Renderizar versiones anteriores
         oldVersions.forEach(version => {
-            const filas = DOMBuilder.crearFilasVersion(version);
+            const isExpanded = this.expandedVersions.has(version.id);
+            const filas = DOMBuilder.crearFilasVersion(version, isExpanded);
             filas.forEach(fila => this.tbody.appendChild(fila));
         });
         
         // Renderizar últimas 2 versiones
         const recentVersions = filteredVersions.slice(-2);
         recentVersions.forEach(version => {
-            const filas = DOMBuilder.crearFilasVersion(version);
+            const isExpanded = this.expandedVersions.has(version.id);
+            const filas = DOMBuilder.crearFilasVersion(version, isExpanded);
             filas.forEach(fila => this.tbody.appendChild(fila));
         });
+    }
+
+    // Expandir o colapsar CDUs de una versión específica
+    toggleVersionCdus(versionId) {
+        if (this.expandedVersions.has(versionId)) {
+            this.expandedVersions.delete(versionId);
+        } else {
+            this.expandedVersions.add(versionId);
+        }
+        this.fullRender();
     }
 
     // Actualizar filtros

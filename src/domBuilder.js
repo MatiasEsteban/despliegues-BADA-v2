@@ -1,7 +1,7 @@
 // domBuilder.js - Construcción de elementos del DOM con versiones agrupadas
 
 export class DOMBuilder {
-    static crearFilasVersion(version) {
+    static crearFilasVersion(version, isExpanded = false) {
         const filas = [];
         const numCdus = version.cdus.length;
         
@@ -48,8 +48,16 @@ export class DOMBuilder {
             return filas;
         }
         
-        // Renderizar todos los CDUs con scroll
-        version.cdus.forEach((cdu, index) => {
+        // Determinar qué CDUs mostrar
+        const hasMoreThanTwo = numCdus > 2;
+        const cdusToShow = (isExpanded || !hasMoreThanTwo) 
+            ? version.cdus 
+            : version.cdus.slice(-2); // Mostrar solo los últimos 2
+        
+        const numCdusToShow = cdusToShow.length;
+        
+        // Renderizar los CDUs visibles
+        cdusToShow.forEach((cdu, index) => {
             const tr = document.createElement('tr');
             tr.dataset.versionId = version.id;
             tr.dataset.cduId = cdu.id;
@@ -59,18 +67,18 @@ export class DOMBuilder {
             if (index === 0) {
                 tr.classList.add('primera-fila-version');
                 
-                // Fecha (compartida por toda la versión)
+                // Fecha (compartida por toda la versión visible)
                 const tdFecha = document.createElement('td');
-                tdFecha.rowSpan = numCdus;
+                tdFecha.rowSpan = numCdusToShow;
                 tdFecha.className = 'celda-version';
                 const inputFecha = this.crearInput('date', 'campo-fecha-version', version.fechaDespliegue, 'fechaDespliegue');
                 inputFecha.dataset.versionId = version.id;
                 tdFecha.appendChild(inputFecha);
                 tr.appendChild(tdFecha);
                 
-                // Hora (compartida por toda la versión)
+                // Hora (compartida por toda la versión visible)
                 const tdHora = document.createElement('td');
-                tdHora.rowSpan = numCdus;
+                tdHora.rowSpan = numCdusToShow;
                 tdHora.className = 'celda-version';
                 const inputHora = this.crearInput('time', 'campo-hora-version', version.horaDespliegue, 'horaDespliegue');
                 inputHora.dataset.versionId = version.id;
@@ -79,7 +87,7 @@ export class DOMBuilder {
                 
                 // Versión (compartida)
                 const tdVersion = document.createElement('td');
-                tdVersion.rowSpan = numCdus;
+                tdVersion.rowSpan = numCdusToShow;
                 tdVersion.className = 'celda-version';
                 const inputVersion = this.crearInput('text', 'campo-version', version.numero, 'numero');
                 inputVersion.dataset.versionId = version.id;
@@ -94,7 +102,7 @@ export class DOMBuilder {
             tdCDU.appendChild(inputCDU);
             tr.appendChild(tdCDU);
             
-            // Descripción (cambiado a textarea para expandir)
+            // Descripción (textarea que ocupa todo el alto)
             const tdDescripcion = document.createElement('td');
             const textareaDescripcion = this.crearTextarea(cdu.descripcionCDU, 'descripcionCDU', 'Descripción del CDU');
             textareaDescripcion.className = 'campo-descripcion';
@@ -119,7 +127,7 @@ export class DOMBuilder {
             tdResponsable.appendChild(inputResponsable);
             tr.appendChild(tdResponsable);
             
-            // Observaciones (nuevo sistema de lista)
+            // Observaciones (nuevo sistema con timestamp fuera)
             const tdObservaciones = document.createElement('td');
             const containerObservaciones = this.crearObservacionesContainer(cdu);
             tdObservaciones.appendChild(containerObservaciones);
@@ -134,6 +142,62 @@ export class DOMBuilder {
             
             filas.push(tr);
         });
+        
+        // Si hay más de 2 CDUs y no está expandido, agregar botón para expandir
+        if (hasMoreThanTwo && !isExpanded) {
+            const trExpand = document.createElement('tr');
+            trExpand.className = 'expand-cdus-row';
+            trExpand.dataset.versionId = version.id;
+            
+            const tdExpand = document.createElement('td');
+            tdExpand.colSpan = 9;
+            tdExpand.className = 'expand-cdus-cell';
+            
+            const btnExpand = document.createElement('button');
+            btnExpand.className = 'btn-expand-cdus';
+            btnExpand.dataset.versionId = version.id;
+            btnExpand.dataset.action = 'expand-cdus';
+            btnExpand.innerHTML = `
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+                <span>Mostrar ${numCdus - 2} CDUs anteriores</span>
+            `;
+            
+            tdExpand.appendChild(btnExpand);
+            trExpand.appendChild(tdExpand);
+            
+            // Insertar al FINAL (después de los CDUs visibles)
+            filas.push(trExpand);
+        }
+        
+        // Si está expandido y hay más de 2 CDUs, agregar botón para colapsar
+        if (hasMoreThanTwo && isExpanded) {
+            const trCollapse = document.createElement('tr');
+            trCollapse.className = 'expand-cdus-row';
+            trCollapse.dataset.versionId = version.id;
+            
+            const tdCollapse = document.createElement('td');
+            tdCollapse.colSpan = 9;
+            tdCollapse.className = 'expand-cdus-cell';
+            
+            const btnCollapse = document.createElement('button');
+            btnCollapse.className = 'btn-expand-cdus expanded';
+            btnCollapse.dataset.versionId = version.id;
+            btnCollapse.dataset.action = 'collapse-cdus';
+            btnCollapse.innerHTML = `
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="18 15 12 9 6 15"></polyline>
+                </svg>
+                <span>Ocultar CDUs anteriores</span>
+            `;
+            
+            tdCollapse.appendChild(btnCollapse);
+            trCollapse.appendChild(tdCollapse);
+            
+            // Insertar al FINAL también
+            filas.push(trCollapse);
+        }
         
         return filas;
     }
@@ -180,6 +244,10 @@ export class DOMBuilder {
         const inputRow = document.createElement('div');
         inputRow.className = 'observacion-input-row';
         
+        // Wrapper para input y timestamp
+        const inputWrapper = document.createElement('div');
+        inputWrapper.className = 'observacion-input-wrapper';
+        
         const input = document.createElement('input');
         input.type = 'text';
         input.value = obsData.texto || '';
@@ -187,6 +255,28 @@ export class DOMBuilder {
         input.dataset.cduId = cduId;
         input.dataset.obsIndex = index;
         input.dataset.campo = 'observacion';
+        
+        inputWrapper.appendChild(input);
+        
+        // Agregar timestamp FUERA del input si existe
+        if (obsData.timestamp || obsData.lastModified) {
+            const timestampDiv = document.createElement('div');
+            timestampDiv.className = 'observacion-timestamp';
+            
+            const icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>`;
+            
+            // Mostrar la fecha más reciente (última modificación o creación)
+            const dateToShow = obsData.lastModified || obsData.timestamp;
+            const formattedDate = this.formatTimestamp(dateToShow);
+            
+            timestampDiv.innerHTML = `${icon} ${formattedDate}`;
+            inputWrapper.appendChild(timestampDiv);
+        }
+        
+        inputRow.appendChild(inputWrapper);
         
         const btnRemove = document.createElement('button');
         btnRemove.className = 'btn-observacion btn-remove';
@@ -197,26 +287,8 @@ export class DOMBuilder {
         btnRemove.dataset.obsIndex = index;
         btnRemove.dataset.action = 'remove-observacion';
         
-        inputRow.appendChild(input);
         inputRow.appendChild(btnRemove);
         item.appendChild(inputRow);
-        
-        // Agregar timestamp si existe
-        if (obsData.timestamp) {
-            const timestampDiv = document.createElement('div');
-            timestampDiv.className = 'observacion-timestamp';
-            
-            const icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>`;
-            
-            const formattedDate = this.formatTimestamp(obsData.timestamp);
-            const modifiedText = obsData.lastModified ? ` (editado: ${this.formatTimestamp(obsData.lastModified)})` : '';
-            
-            timestampDiv.innerHTML = `${icon} ${formattedDate}${modifiedText}`;
-            item.appendChild(timestampDiv);
-        }
         
         return item;
     }
