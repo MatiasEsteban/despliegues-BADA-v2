@@ -11,27 +11,13 @@ export class ExcelExporter {
             }
             
             version.cdus.forEach(cdu => {
-                // Convertir array de observaciones a texto con saltos de línea
+                // Convertir array de observaciones a texto separado por ||
                 let observacionesTexto = '';
                 if (Array.isArray(cdu.observaciones)) {
                     observacionesTexto = cdu.observaciones
-                        .map(obs => {
-                            if (typeof obs === 'string') {
-                                return obs;
-                            } else if (obs.texto) {
-                                // Incluir timestamp si existe
-                                if (obs.timestamp) {
-                                    const fecha = new Date(obs.timestamp);
-                                    const fechaStr = fecha.toLocaleDateString('es-ES');
-                                    const horaStr = fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                                    return `[${fechaStr} ${horaStr}] ${obs.texto}`;
-                                }
-                                return obs.texto;
-                            }
-                            return '';
-                        })
+                        .map(obs => typeof obs === 'string' ? obs : (obs.texto || ''))
                         .filter(obs => obs.trim())
-                        .join('\n');
+                        .join(' || ');
                 } else if (cdu.observaciones) {
                     observacionesTexto = cdu.observaciones;
                 }

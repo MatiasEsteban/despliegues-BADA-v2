@@ -96,8 +96,8 @@ export class ExcelImporter {
     static parsearObservaciones(texto) {
         if (!texto || texto.trim() === '') return [];
         
-        // Intentar dividir por varios separadores comunes
-        const separadores = ['\n', '•', '-', '*', '|', ';'];
+        // Intentar dividir por varios separadores comunes, priorizando ||
+        const separadores = ['||', '\n', '•', '-', '*', '|', ';'];
         
         let items = [];
         for (const sep of separadores) {
@@ -115,12 +115,7 @@ export class ExcelImporter {
             items = [texto.trim()];
         }
         
-        // Convertir a formato con timestamps
-        return items.map(texto => ({
-            texto: texto,
-            timestamp: new Date().toISOString(),
-            imported: true
-        }));
+        return items;
     }
 
     static formatearFecha(fecha) {

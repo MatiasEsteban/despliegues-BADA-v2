@@ -127,7 +127,7 @@ export class DOMBuilder {
             tdResponsable.appendChild(inputResponsable);
             tr.appendChild(tdResponsable);
             
-            // Observaciones (nuevo sistema con timestamp fuera)
+            // Observaciones (nuevo sistema sin timestamp)
             const tdObservaciones = document.createElement('td');
             const containerObservaciones = this.crearObservacionesContainer(cdu);
             tdObservaciones.appendChild(containerObservaciones);
@@ -216,9 +216,9 @@ export class DOMBuilder {
             container.appendChild(empty);
         } else {
             observaciones.forEach((obs, index) => {
-                // Manejar tanto formato antiguo (string) como nuevo (objeto)
-                const obsData = typeof obs === 'string' ? { texto: obs, timestamp: null } : obs;
-                const item = this.crearObservacionItem(cdu.id, obsData, index);
+                // Convertir a string si es objeto
+                const obsTexto = typeof obs === 'string' ? obs : (obs.texto || '');
+                const item = this.crearObservacionItem(cdu.id, obsTexto, index);
                 container.appendChild(item);
             });
         }
@@ -236,7 +236,7 @@ export class DOMBuilder {
         return container;
     }
 
-    static crearObservacionItem(cduId, obsData, index) {
+    static crearObservacionItem(cduId, texto, index) {
         const item = document.createElement('div');
         item.className = 'observacion-item';
         item.dataset.index = index;
@@ -244,39 +244,15 @@ export class DOMBuilder {
         const inputRow = document.createElement('div');
         inputRow.className = 'observacion-input-row';
         
-        // Wrapper para input y timestamp
-        const inputWrapper = document.createElement('div');
-        inputWrapper.className = 'observacion-input-wrapper';
-        
         const input = document.createElement('input');
         input.type = 'text';
-        input.value = obsData.texto || '';
+        input.value = texto || '';
         input.placeholder = 'Observación...';
         input.dataset.cduId = cduId;
         input.dataset.obsIndex = index;
         input.dataset.campo = 'observacion';
         
-        inputWrapper.appendChild(input);
-        
-        // Agregar timestamp FUERA del input si existe
-        if (obsData.timestamp || obsData.lastModified) {
-            const timestampDiv = document.createElement('div');
-            timestampDiv.className = 'observacion-timestamp';
-            
-            const icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>`;
-            
-            // Mostrar la fecha más reciente (última modificación o creación)
-            const dateToShow = obsData.lastModified || obsData.timestamp;
-            const formattedDate = this.formatTimestamp(dateToShow);
-            
-            timestampDiv.innerHTML = `${icon} ${formattedDate}`;
-            inputWrapper.appendChild(timestampDiv);
-        }
-        
-        inputRow.appendChild(inputWrapper);
+        inputRow.appendChild(input);
         
         const btnRemove = document.createElement('button');
         btnRemove.className = 'btn-observacion btn-remove';
@@ -291,32 +267,6 @@ export class DOMBuilder {
         item.appendChild(inputRow);
         
         return item;
-    }
-
-    static formatTimestamp(isoString) {
-        if (!isoString) return '';
-        
-        const date = new Date(isoString);
-        const now = new Date();
-        const diffMs = now - date;
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMs / 3600000);
-        const diffDays = Math.floor(diffMs / 86400000);
-        
-        // Formato relativo para tiempos recientes
-        if (diffMins < 1) return 'Hace un momento';
-        if (diffMins < 60) return `Hace ${diffMins} min`;
-        if (diffHours < 24) return `Hace ${diffHours}h`;
-        if (diffDays < 7) return `Hace ${diffDays}d`;
-        
-        // Formato absoluto para fechas más antiguas
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        
-        return `${day}/${month}/${year} ${hours}:${minutes}`;
     }
 
     static crearInput(type, className, value, campo, placeholder = '') {

@@ -316,5 +316,13 @@ export class Renderer {
     fullRender() {
         this.renderTable(this.showingOldVersions);
         this.updateStats();
+        
+        // Auto-ajustar altura de textareas después del render
+        setTimeout(() => {
+            this.tbody.querySelectorAll('.campo-descripcion').forEach(textarea => {
+                textarea.style.height = 'auto';
+                textarea.style.height = textarea.scrollHeight + 'px';
+            });
+        }, 50);
     }
 }

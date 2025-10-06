@@ -134,10 +134,7 @@ export class DataStore {
                 if (!Array.isArray(cdu.observaciones)) {
                     cdu.observaciones = [];
                 }
-                cdu.observaciones.push({
-                    texto: texto,
-                    timestamp: new Date().toISOString()
-                });
+                cdu.observaciones.push(texto);
                 this.notify();
                 return;
             }
@@ -149,9 +146,7 @@ export class DataStore {
         for (const version of this.versiones) {
             const cdu = version.cdus.find(c => c.id === cduId);
             if (cdu && Array.isArray(cdu.observaciones) && index < cdu.observaciones.length) {
-                // Mantener el timestamp original, solo actualizar el texto
-                cdu.observaciones[index].texto = texto;
-                cdu.observaciones[index].lastModified = new Date().toISOString();
+                cdu.observaciones[index] = texto;
                 this.notify();
                 return;
             }

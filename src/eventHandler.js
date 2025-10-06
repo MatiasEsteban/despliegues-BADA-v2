@@ -170,10 +170,13 @@ export class EventHandlers {
                 let totalCdus = 0;
                 versiones.forEach(v => totalCdus += v.cdus.length);
 
-                const confirmacion = await Modal.confirm(
-                    `Se encontraron ${versiones.length} versiones con ${totalCdus} CDUs.\n¿Desea reemplazar los datos actuales?`,
-                    'Confirmar Importación'
-                );
+                const confirmacion = await Modal.show({
+                    title: 'Confirmar Importación',
+                    message: `Se encontraron ${versiones.length} versiones con ${totalCdus} CDUs.\n¿Desea reemplazar los datos actuales?`,
+                    type: 'warning',
+                    confirmText: 'Sí, reemplazar',
+                    cancelText: 'Cancelar'
+                });
 
                 if (confirmacion) {
                     this.dataStore.replaceAll(versiones);
@@ -214,10 +217,21 @@ export class EventHandlers {
     setupTablaEvents() {
         const tbody = document.getElementById('tabla-body');
         
+        // Función para auto-ajustar altura de textarea
+        const autoResizeTextarea = (textarea) => {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        };
+        
         // Evento para actualizar datos cuando se editan campos
         tbody.addEventListener('input', (e) => {
             const campo = e.target.dataset.campo;
             if (!campo) return;
+            
+            // Auto-ajustar altura de descripción
+            if (campo === 'descripcionCDU' && e.target.tagName === 'TEXTAREA') {
+                autoResizeTextarea(e.target);
+            }
             
             const valor = e.target.value;
             
@@ -234,6 +248,32 @@ export class EventHandlers {
                 this.dataStore.updateCdu(cduId, campo, valor);
             }
         });
+        
+        // Observer para inicializar altura de textareas recién creados
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1) { // Element node
+                        const textareas = node.querySelectorAll 
+                            ? node.querySelectorAll('.campo-descripcion')
+                            : [];
+                        textareas.forEach(autoResizeTextarea);
+                        
+                        // Si el nodo mismo es un textarea
+                        if (node.classList && node.classList.contains('campo-descripcion')) {
+                            autoResizeTextarea(node);
+                        }
+                    }
+                });
+            });
+        });
+        
+        observer.observe(tbody, { childList: true, subtree: true });
+        
+        // Inicializar textareas existentes
+        setTimeout(() => {
+            tbody.querySelectorAll('.campo-descripcion').forEach(autoResizeTextarea);
+        }, 100);
 
         // Evento para eliminar versiones o CDUs, gestionar observaciones y expandir/colapsar CDUs
         tbody.addEventListener('click', async (e) => {

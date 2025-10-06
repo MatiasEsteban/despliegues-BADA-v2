@@ -419,7 +419,27 @@ h1 {
 .tabla-despliegues td:nth-child(6) { width: 180px; } /* Estado */
 
 .tabla-despliegues th:nth-child(7),
-.tabla-despliegues td:nth-child(7) { width: 150px; } /* Responsable */
+.tabla-despliegues td:nth-child(7) { 
+    width: 150px;
+    position: sticky;
+    left: 0;
+    z-index: 10;
+} /* Responsable - sticky */
+
+.tabla-despliegues thead th:nth-child(7) {
+    z-index: 20;
+    background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.15);
+}
+
+.tabla-despliegues tbody td:nth-child(7) {
+    background: var(--bg-primary);
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
+}
+
+.tabla-despliegues tbody tr:hover td:nth-child(7) {
+    background: var(--bg-secondary);
+}
 
 .tabla-despliegues th:nth-child(8),
 .tabla-despliegues td:nth-child(8) { width: 300px; } /* Observaciones */
@@ -498,7 +518,7 @@ h1 {
     background: transparent !important;
 }
 
-.tabla-despliegues td {
+.tabla-despliegues tbody td {
     padding: 0.5rem;
     vertical-align: top;
 }
@@ -590,11 +610,11 @@ h1 {
     border-color: #10B981;
 }
 
-/* Campo de descripción - ocupa todo el alto de la fila */
+/* Campo de descripción - se adapta automáticamente */
 .tabla-despliegues .campo-descripcion {
-    height: fit-content(100%);
-    min-height: 75px;
-    resize: vertical;
+    min-height: 60px;
+    resize: none;
+    overflow: hidden;
     transition: all 0.3s ease;
 }
 
@@ -666,14 +686,7 @@ h1 {
 .observacion-input-row {
     display: flex;
     gap: 0.5rem;
-    align-items: stretch;
-}
-
-.observacion-input-wrapper {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+    align-items: center;
 }
 
 .observacion-item input {
@@ -682,21 +695,6 @@ h1 {
     padding: 0.5rem;
     border: 2px solid var(--border-color);
     border-radius: 6px;
-}
-
-.observacion-timestamp {
-    font-size: 0.7rem;
-    color: var(--text-secondary);
-    font-style: italic;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding-left: 0.5rem;
-}
-
-.observacion-timestamp svg {
-    width: 0.75rem;
-    height: 0.75rem;
 }
 
 .btn-observacion {
