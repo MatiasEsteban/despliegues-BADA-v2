@@ -278,7 +278,7 @@ export class Renderer {
 
     // Actualizar solo las estadísticas (más eficiente)
     updateStats() {
-        const stats = this.dataStore.getStats();
+        const stats = this.dataStore.getUniqueStats(); // Usar estadísticas únicas
         DOMBuilder.actualizarEstadisticas(stats);
     }
 

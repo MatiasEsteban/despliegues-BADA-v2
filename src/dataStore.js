@@ -212,7 +212,53 @@ export class DataStore {
         this.notify();
     }
 
-    // Obtener estadísticas
+    // Obtener estadísticas únicas (por nombre de CDU)
+    getUniqueStats() {
+        const cduMap = new Map();
+        
+        // Recorrer versiones de la más reciente a la más antigua
+        // para obtener el último estado de cada CDU
+        for (let i = this.versiones.length - 1; i >= 0; i--) {
+            const version = this.versiones[i];
+            version.cdus.forEach(cdu => {
+                const nombreNormalizado = cdu.nombreCDU.trim().toLowerCase();
+                
+                // Solo agregar si no existe o si es de una versión más reciente
+                if (nombreNormalizado && !cduMap.has(nombreNormalizado)) {
+                    cduMap.set(nombreNormalizado, cdu.estado);
+                }
+            });
+        }
+        
+        // Contar estados
+        let total = 0;
+        let desarrollo = 0;
+        let pendiente = 0;
+        let certificado = 0;
+        let produccion = 0;
+        
+        cduMap.forEach(estado => {
+            total++;
+            switch(estado) {
+                case 'En Desarrollo':
+                    desarrollo++;
+                    break;
+                case 'Pendiente de Certificacion':
+                    pendiente++;
+                    break;
+                case 'Certificado OK':
+                    certificado++;
+                    break;
+                case 'En Produccion':
+                    produccion++;
+                    break;
+            }
+        });
+        
+        return { total, desarrollo, pendiente, certificado, produccion };
+    }
+
+    // Obtener estadísticas normales (todos los CDUs)
     getStats() {
         let total = 0;
         let desarrollo = 0;

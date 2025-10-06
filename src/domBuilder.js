@@ -48,6 +48,7 @@ export class DOMBuilder {
             return filas;
         }
         
+        // Renderizar todos los CDUs con scroll
         version.cdus.forEach((cdu, index) => {
             const tr = document.createElement('tr');
             tr.dataset.versionId = version.id;
@@ -101,7 +102,7 @@ export class DOMBuilder {
             tdDescripcion.appendChild(textareaDescripcion);
             tr.appendChild(tdDescripcion);
             
-            // Estado
+            // Estado con colores
             const tdEstado = document.createElement('td');
             const selectEstado = this.crearSelect(
                 ['En Desarrollo', 'Pendiente de Certificacion', 'Certificado OK', 'En Produccion'], 
@@ -260,6 +261,7 @@ export class DOMBuilder {
         const select = document.createElement('select');
         select.className = 'campo-estado';
         select.setAttribute('data-campo', 'estado');
+        select.value = valorSeleccionado; // Establecer valor para aplicar color
         
         opciones.forEach(opcion => {
             const option = document.createElement('option');

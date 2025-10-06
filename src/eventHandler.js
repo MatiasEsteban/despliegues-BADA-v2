@@ -3,6 +3,7 @@
 import { ExcelExporter } from './excelExporter.js';
 import { ExcelImporter } from './excelImporter.js';
 import { Modal } from './modal.js';
+import { Validator } from './validator.js';
 
 export class EventHandlers {
     constructor(dataStore, renderer) {
@@ -189,8 +190,24 @@ export class EventHandlers {
     }
 
     setupDescargarButton() {
-        document.getElementById('btn-descargar').addEventListener('click', () => {
-            ExcelExporter.exportar(this.dataStore.getAll());
+        document.getElementById('btn-descargar').addEventListener('click', async () => {
+            // Validar antes de descargar
+            const versiones = this.dataStore.getAll();
+            const validation = Validator.validateAllVersions(versiones);
+            
+            if (!validation.isValid) {
+                const report = Validator.generateValidationReport(validation);
+                const confirmacion = await Modal.confirm(
+                    `${report}\n¿Desea descargar de todos modos?`,
+                    'Advertencia de Validación'
+                );
+                
+                if (!confirmacion) {
+                    return;
+                }
+            }
+            
+            ExcelExporter.exportar(versiones);
         });
     }
 
