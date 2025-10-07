@@ -1,4 +1,4 @@
-// excelExporter.js - Exportación de datos con versiones agrupadas
+// excelExporter.js - Exportación de datos con versiones agrupadas y conteo único por UUID
 
 export class ExcelExporter {
     static exportar(versiones) {
@@ -23,6 +23,7 @@ export class ExcelExporter {
                 }
                 
                 datosExcel.push({
+                    'UUID': cdu.uuid || '',
                     'Fecha Despliegue': version.fechaDespliegue || '',
                     'Hora': version.horaDespliegue || '',
                     'Versión': version.numero || '',
@@ -53,6 +54,7 @@ export class ExcelExporter {
         // Hoja de detalle
         const wsDetalle = XLSX.utils.json_to_sheet(datosExcel);
         wsDetalle['!cols'] = [
+            { wch: 36 }, // UUID
             { wch: 15 },
             { wch: 8 },
             { wch: 10 },
@@ -79,11 +81,9 @@ export class ExcelExporter {
             ['Versión', 'Fecha', 'Hora', 'Total CDUs', 'En Desarrollo', 'Pendiente Cert.', 'Certificado OK', 'En Producción']
         ];
 
-        let totalGeneral = 0;
-        let desarrolloGeneral = 0;
-        let pendienteGeneral = 0;
-        let certificadoGeneral = 0;
-        let produccionGeneral = 0;
+        // Mapa para rastrear CDUs únicos por UUID
+        const cduUnicosGlobal = new Map();
+        let totalRegistrosGeneral = 0;
         
         versiones.forEach(version => {
             const desarrollo = version.cdus.filter(c => c.estado === 'En Desarrollo').length;
@@ -91,11 +91,14 @@ export class ExcelExporter {
             const certificado = version.cdus.filter(c => c.estado === 'Certificado OK').length;
             const produccion = version.cdus.filter(c => c.estado === 'En Produccion').length;
             
-            totalGeneral += version.cdus.length;
-            desarrolloGeneral += desarrollo;
-            pendienteGeneral += pendiente;
-            certificadoGeneral += certificado;
-            produccionGeneral += produccion;
+            totalRegistrosGeneral += version.cdus.length;
+            
+            // Rastrear CDUs únicos (por UUID) con su último estado
+            version.cdus.forEach(cdu => {
+                if (cdu.uuid) {
+                    cduUnicosGlobal.set(cdu.uuid, cdu.estado);
+                }
+            });
             
             resumen.push([
                 version.numero,
@@ -109,15 +112,44 @@ export class ExcelExporter {
             ]);
         });
 
+        // Contar estados de CDUs únicos
+        let desarrolloUnico = 0;
+        let pendienteUnico = 0;
+        let certificadoUnico = 0;
+        let produccionUnico = 0;
+        
+        cduUnicosGlobal.forEach(estado => {
+            switch(estado) {
+                case 'En Desarrollo':
+                    desarrolloUnico++;
+                    break;
+                case 'Pendiente de Certificacion':
+                    pendienteUnico++;
+                    break;
+                case 'Certificado OK':
+                    certificadoUnico++;
+                    break;
+                case 'En Produccion':
+                    produccionUnico++;
+                    break;
+            }
+        });
+
         // Agregar totales generales
         resumen.push([]);
         resumen.push(['TOTALES GENERALES']);
         resumen.push(['Total Versiones:', versiones.length]);
-        resumen.push(['Total CDUs:', totalGeneral]);
-        resumen.push(['En Desarrollo:', desarrolloGeneral]);
-        resumen.push(['Pendiente Certificación:', pendienteGeneral]);
-        resumen.push(['Certificado OK:', certificadoGeneral]);
-        resumen.push(['En Producción:', produccionGeneral]);
+        resumen.push(['Total Registros de CDUs:', totalRegistrosGeneral]);
+        resumen.push([]);
+        resumen.push(['CDUs ÚNICOS (por UUID):']);
+        resumen.push(['Total CDUs Únicos:', cduUnicosGlobal.size]);
+        resumen.push(['En Desarrollo:', desarrolloUnico]);
+        resumen.push(['Pendiente Certificación:', pendienteUnico]);
+        resumen.push(['Certificado OK:', certificadoUnico]);
+        resumen.push(['En Producción:', produccionUnico]);
+        resumen.push([]);
+        resumen.push(['Nota: Los CDUs únicos se cuentan una sola vez aunque aparezcan en múltiples versiones.']);
+        resumen.push(['El estado mostrado es el más reciente de cada CDU.']);
 
         return resumen;
     }

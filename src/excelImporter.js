@@ -1,4 +1,6 @@
-// excelImporter.js - Importación de datos con versiones agrupadas
+// excelImporter.js - Importación de datos con versiones agrupadas y UUID retrocompatible
+
+import { v4 as uuidv4 } from 'uuid';
 
 export class ExcelImporter {
     static async importar(file) {
@@ -42,6 +44,13 @@ export class ExcelImporter {
         const versionesMap = new Map();
         let cduIdCounter = 1;
         
+        // Mapa para rastrear UUIDs por nombre de CDU (para retrocompatibilidad)
+        // Estructura: nombreCDU normalizado -> UUID
+        const nombreToUuidMap = new Map();
+        
+        // Mapa para evitar UUIDs duplicados
+        const uuidMap = new Map();
+        
         jsonData.forEach(row => {
             // Limpiar el número de versión (remover puntos y espacios)
             const versionNum = String(row['Versión'] || row['Version'] || '').replace(/\./g, '').trim();
@@ -49,6 +58,9 @@ export class ExcelImporter {
             
             const nombreCDU = row['Nombre CDU'] || row['CDU'] || '';
             if (!nombreCDU) return;
+            
+            // Normalizar nombre para comparación (sin espacios, minúsculas)
+            const nombreNormalizado = nombreCDU.trim().toLowerCase();
             
             // Si la versión no existe, crearla
             if (!versionesMap.has(versionNum)) {
@@ -60,6 +72,35 @@ export class ExcelImporter {
                 });
             }
             
+            // Obtener o generar UUID con lógica retrocompatible
+            let uuid = row['UUID'] || '';
+            
+            // Si tiene UUID en el archivo y es válido, usarlo
+            if (uuid && !uuidMap.has(uuid)) {
+                // UUID válido del archivo
+                uuidMap.set(uuid, true);
+                // Asociar este UUID con el nombre del CDU
+                if (nombreNormalizado && !nombreToUuidMap.has(nombreNormalizado)) {
+                    nombreToUuidMap.set(nombreNormalizado, uuid);
+                }
+            } else {
+                // No tiene UUID o está duplicado
+                // Verificar si ya existe un UUID para este nombre de CDU
+                if (nombreNormalizado && nombreToUuidMap.has(nombreNormalizado)) {
+                    // Reutilizar UUID existente para el mismo nombre de CDU
+                    uuid = nombreToUuidMap.get(nombreNormalizado);
+                } else {
+                    // Generar nuevo UUID
+                    uuid = uuidv4();
+                    // Registrar el UUID
+                    uuidMap.set(uuid, true);
+                    // Asociar con el nombre del CDU
+                    if (nombreNormalizado) {
+                        nombreToUuidMap.set(nombreNormalizado, uuid);
+                    }
+                }
+            }
+            
             // Procesar observaciones
             const observacionesText = row['Observaciones/Cambios'] || row['Observaciones'] || row['Cambios'] || '';
             const observaciones = this.parsearObservaciones(observacionesText);
@@ -68,6 +109,7 @@ export class ExcelImporter {
             const version = versionesMap.get(versionNum);
             version.cdus.push({
                 id: cduIdCounter++,
+                uuid: uuid, // UUID único para tracking (mismo para CDUs con mismo nombre)
                 nombreCDU: nombreCDU,
                 descripcionCDU: row['Descripción CDU'] || row['Descripcion CDU'] || row['Descripción'] || '',
                 estado: this.normalizarEstado(row['Estado'] || 'En Desarrollo'),
@@ -89,6 +131,8 @@ export class ExcelImporter {
             const numB = parseInt(b.numero) || 0;
             return numA - numB;
         });
+        
+        console.log(`✅ Importación completada: ${versiones.length} versiones, ${nombreToUuidMap.size} CDUs únicos detectados`);
         
         return versiones;
     }

@@ -1,5 +1,7 @@
 // dataStore.js - Manejo del estado y datos con versiones agrupadas
 
+import { v4 as uuidv4 } from 'uuid';
+
 export class DataStore {
     constructor() {
         // Estructura: versiones con sus CDUs
@@ -59,9 +61,10 @@ export class DataStore {
         const latestNumber = this.getLatestVersionNumber();
         const newNumber = String(latestNumber + 1);
         
-        // Copiar CDUs manteniendo descripción y estado
+        // Copiar CDUs manteniendo UUID, descripción y estado
         const cdusCopy = versionToCopy.cdus.map(cdu => ({
-            id: this.nextCduId++,
+            id: this.nextCduId++, // Nuevo ID para el DOM
+            uuid: cdu.uuid, // Mantener el mismo UUID para tracking
             nombreCDU: cdu.nombreCDU,
             descripcionCDU: cdu.descripcionCDU,
             estado: cdu.estado,
@@ -93,6 +96,7 @@ export class DataStore {
         
         const nuevoCdu = {
             id: this.nextCduId++,
+            uuid: uuidv4(), // UUID único para rastrear el CDU a través de versiones
             nombreCDU: '',
             descripcionCDU: '',
             estado: 'En Desarrollo',
@@ -207,7 +211,7 @@ export class DataStore {
         this.notify();
     }
 
-    // Obtener estadísticas únicas (por nombre de CDU)
+    // Obtener estadísticas únicas (por UUID de CDU)
     getUniqueStats() {
         const cduMap = new Map();
         
@@ -216,11 +220,11 @@ export class DataStore {
         for (let i = this.versiones.length - 1; i >= 0; i--) {
             const version = this.versiones[i];
             version.cdus.forEach(cdu => {
-                const nombreNormalizado = cdu.nombreCDU.trim().toLowerCase();
+                const uuid = cdu.uuid;
                 
-                // Solo agregar si no existe o si es de una versión más reciente
-                if (nombreNormalizado && !cduMap.has(nombreNormalizado)) {
-                    cduMap.set(nombreNormalizado, cdu.estado);
+                // Solo agregar si no existe (usamos la versión más reciente)
+                if (uuid && !cduMap.has(uuid)) {
+                    cduMap.set(uuid, cdu.estado);
                 }
             });
         }
