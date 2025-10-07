@@ -1,4 +1,4 @@
-// dataStore.js - Manejo del estado y datos con versiones agrupadas
+// dataStore.js - Manejo del estado y datos con versiones agrupadas, historial y comentarios
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -20,7 +20,6 @@ export class DataStore {
     }
 
     getAll() {
-        // Devolver referencia directa para lectura
         return this.versiones;
     }
 
@@ -35,6 +34,29 @@ export class DataStore {
         return numeros.length > 0 ? Math.max(...numeros) : 0;
     }
 
+    // Agregar entrada al historial de un CDU
+    addHistorialEntry(cduId, tipo, valorAnterior, valorNuevo, campo = '') {
+        for (const version of this.versiones) {
+            const cdu = version.cdus.find(c => c.id === cduId);
+            if (cdu) {
+                if (!Array.isArray(cdu.historial)) {
+                    cdu.historial = [];
+                }
+                
+                const entry = {
+                    timestamp: new Date().toISOString(),
+                    tipo, // 'estado', 'responsable', 'descripcion', 'observacion', 'creacion'
+                    campo,
+                    valorAnterior,
+                    valorNuevo
+                };
+                
+                cdu.historial.push(entry);
+                return;
+            }
+        }
+    }
+
     // Crear nueva versión vacía (sin CDUs)
     addNewEmptyVersion() {
         const latestNumber = this.getLatestVersionNumber();
@@ -45,6 +67,7 @@ export class DataStore {
             numero: newNumber,
             fechaDespliegue: new Date().toISOString().split('T')[0],
             horaDespliegue: '',
+            comentarios: '', // Nuevo campo para comentarios de versión
             cdus: []
         };
         
@@ -63,13 +86,14 @@ export class DataStore {
         
         // Copiar CDUs manteniendo UUID, descripción y estado
         const cdusCopy = versionToCopy.cdus.map(cdu => ({
-            id: this.nextCduId++, // Nuevo ID para el DOM
-            uuid: cdu.uuid, // Mantener el mismo UUID para tracking
+            id: this.nextCduId++,
+            uuid: cdu.uuid,
             nombreCDU: cdu.nombreCDU,
             descripcionCDU: cdu.descripcionCDU,
             estado: cdu.estado,
             responsable: cdu.responsable,
-            observaciones: [...(cdu.observaciones || [])]
+            observaciones: [...(cdu.observaciones || [])],
+            historial: [] // Nuevo historial para la copia
         }));
         
         const nuevaVersion = {
@@ -77,6 +101,7 @@ export class DataStore {
             numero: newNumber,
             fechaDespliegue: new Date().toISOString().split('T')[0],
             horaDespliegue: '',
+            comentarios: '', // Nueva versión sin comentarios
             cdus: cdusCopy
         };
         
@@ -88,7 +113,6 @@ export class DataStore {
     // Agregar CDU a la última versión
     addCduToLatestVersion() {
         if (this.versiones.length === 0) {
-            // Si no hay versiones, crear una versión vacía primero
             this.addNewEmptyVersion();
         }
         
@@ -96,12 +120,19 @@ export class DataStore {
         
         const nuevoCdu = {
             id: this.nextCduId++,
-            uuid: uuidv4(), // UUID único para rastrear el CDU a través de versiones
+            uuid: uuidv4(),
             nombreCDU: '',
             descripcionCDU: '',
             estado: 'En Desarrollo',
             responsable: '',
-            observaciones: []
+            observaciones: [],
+            historial: [{
+                timestamp: new Date().toISOString(),
+                tipo: 'creacion',
+                campo: '',
+                valorAnterior: null,
+                valorNuevo: 'CDU Creado'
+            }]
         };
         
         ultimaVersion.cdus.push(nuevoCdu);
@@ -109,7 +140,7 @@ export class DataStore {
         return nuevoCdu;
     }
 
-    // Actualizar datos de versión (fecha, hora)
+    // Actualizar datos de versión (fecha, hora, comentarios)
     updateVersion(versionId, campo, valor) {
         const version = this.versiones.find(v => v.id === versionId);
         if (version) {
@@ -118,13 +149,25 @@ export class DataStore {
         }
     }
 
-    // Actualizar datos de CDU
+    // Actualizar datos de CDU con registro de historial
     updateCdu(cduId, campo, valor) {
         for (const version of this.versiones) {
             const cdu = version.cdus.find(c => c.id === cduId);
             if (cdu) {
-                cdu[campo] = valor;
-                this.notify();
+                const valorAnterior = cdu[campo];
+                
+                // Solo registrar si el valor cambió
+                if (valorAnterior !== valor) {
+                    cdu[campo] = valor;
+                    
+                    // Determinar tipo de cambio
+                    let tipo = campo;
+                    if (campo === 'nombreCDU') tipo = 'nombre';
+                    if (campo === 'descripcionCDU') tipo = 'descripcion';
+                    
+                    this.addHistorialEntry(cduId, tipo, valorAnterior, valor, campo);
+                    this.notify();
+                }
                 return;
             }
         }
@@ -139,6 +182,8 @@ export class DataStore {
                     cdu.observaciones = [];
                 }
                 cdu.observaciones.push(texto);
+                
+                this.addHistorialEntry(cduId, 'observacion', null, 'Nueva observación agregada');
                 this.notify();
                 return;
             }
@@ -163,6 +208,8 @@ export class DataStore {
             const cdu = version.cdus.find(c => c.id === cduId);
             if (cdu && Array.isArray(cdu.observaciones) && index < cdu.observaciones.length) {
                 cdu.observaciones.splice(index, 1);
+                
+                this.addHistorialEntry(cduId, 'observacion', null, 'Observación eliminada');
                 this.notify();
                 return;
             }
@@ -182,7 +229,6 @@ export class DataStore {
             if (index !== -1) {
                 version.cdus.splice(index, 1);
                 
-                // Si la versión quedó sin CDUs, eliminar la versión
                 if (version.cdus.length === 0) {
                     this.deleteVersion(version.id);
                 }
@@ -215,21 +261,17 @@ export class DataStore {
     getUniqueStats() {
         const cduMap = new Map();
         
-        // Recorrer versiones de la más reciente a la más antigua
-        // para obtener el último estado de cada CDU
         for (let i = this.versiones.length - 1; i >= 0; i--) {
             const version = this.versiones[i];
             version.cdus.forEach(cdu => {
                 const uuid = cdu.uuid;
                 
-                // Solo agregar si no existe (usamos la versión más reciente)
                 if (uuid && !cduMap.has(uuid)) {
                     cduMap.set(uuid, cdu.estado);
                 }
             });
         }
         
-        // Contar estados
         let total = 0;
         let desarrollo = 0;
         let pendiente = 0;

@@ -1,8 +1,7 @@
-// excelExporter.js - Exportación de datos con versiones agrupadas y conteo único por UUID
+// excelExporter.js - Exportación de datos con historial y comentarios
 
 export class ExcelExporter {
     static exportar(versiones) {
-        // Aplanar la estructura para el Excel
         const datosExcel = [];
         
         versiones.forEach(version => {
@@ -11,7 +10,6 @@ export class ExcelExporter {
             }
             
             version.cdus.forEach(cdu => {
-                // Convertir array de observaciones a texto separado por ||
                 let observacionesTexto = '';
                 if (Array.isArray(cdu.observaciones)) {
                     observacionesTexto = cdu.observaciones
@@ -22,16 +20,29 @@ export class ExcelExporter {
                     observacionesTexto = cdu.observaciones;
                 }
                 
+                // Formatear historial para Excel
+                let historialTexto = '';
+                if (Array.isArray(cdu.historial) && cdu.historial.length > 0) {
+                    historialTexto = cdu.historial
+                        .map(entry => {
+                            const fecha = new Date(entry.timestamp).toLocaleString('es-ES');
+                            return `[${fecha}] ${entry.tipo}: ${entry.valorAnterior || ''} → ${entry.valorNuevo || ''}`;
+                        })
+                        .join(' || ');
+                }
+                
                 datosExcel.push({
                     'UUID': cdu.uuid || '',
                     'Fecha Despliegue': version.fechaDespliegue || '',
                     'Hora': version.horaDespliegue || '',
                     'Versión': version.numero || '',
+                    'Comentarios Versión': version.comentarios || '',
                     'Nombre CDU': cdu.nombreCDU || '',
                     'Descripción CDU': cdu.descripcionCDU || '',
                     'Estado': cdu.estado || '',
                     'Responsable': cdu.responsable || '',
-                    'Observaciones/Cambios': observacionesTexto
+                    'Observaciones/Cambios': observacionesTexto,
+                    'Historial': historialTexto
                 });
             });
         });
@@ -55,18 +66,19 @@ export class ExcelExporter {
         const wsDetalle = XLSX.utils.json_to_sheet(datosExcel);
         wsDetalle['!cols'] = [
             { wch: 36 }, // UUID
-            { wch: 15 },
-            { wch: 8 },
-            { wch: 10 },
-            { wch: 20 },
-            { wch: 30 },
-            { wch: 25 },
-            { wch: 20 },
-            { wch: 50 }
+            { wch: 15 }, // Fecha
+            { wch: 8 },  // Hora
+            { wch: 10 }, // Versión
+            { wch: 40 }, // Comentarios Versión
+            { wch: 20 }, // Nombre CDU
+            { wch: 30 }, // Descripción
+            { wch: 25 }, // Estado
+            { wch: 20 }, // Responsable
+            { wch: 50 }, // Observaciones
+            { wch: 60 }  // Historial
         ];
         XLSX.utils.book_append_sheet(wb, wsDetalle, 'Detalle Despliegues');
 
-        // Descargar archivo
         const fecha = new Date().toISOString().split('T')[0];
         XLSX.writeFile(wb, `Despliegues_BADA_${fecha}.xlsx`);
     }
@@ -81,7 +93,6 @@ export class ExcelExporter {
             ['Versión', 'Fecha', 'Hora', 'Total CDUs', 'En Desarrollo', 'Pendiente Cert.', 'Certificado OK', 'En Producción']
         ];
 
-        // Mapa para rastrear CDUs únicos por UUID
         const cduUnicosGlobal = new Map();
         let totalRegistrosGeneral = 0;
         
@@ -93,7 +104,6 @@ export class ExcelExporter {
             
             totalRegistrosGeneral += version.cdus.length;
             
-            // Rastrear CDUs únicos (por UUID) con su último estado
             version.cdus.forEach(cdu => {
                 if (cdu.uuid) {
                     cduUnicosGlobal.set(cdu.uuid, cdu.estado);
@@ -112,7 +122,6 @@ export class ExcelExporter {
             ]);
         });
 
-        // Contar estados de CDUs únicos
         let desarrolloUnico = 0;
         let pendienteUnico = 0;
         let certificadoUnico = 0;
@@ -135,7 +144,6 @@ export class ExcelExporter {
             }
         });
 
-        // Agregar totales generales
         resumen.push([]);
         resumen.push(['TOTALES GENERALES']);
         resumen.push(['Total Versiones:', versiones.length]);
@@ -150,6 +158,7 @@ export class ExcelExporter {
         resumen.push([]);
         resumen.push(['Nota: Los CDUs únicos se cuentan una sola vez aunque aparezcan en múltiples versiones.']);
         resumen.push(['El estado mostrado es el más reciente de cada CDU.']);
+        resumen.push(['El historial registra todos los cambios realizados en cada CDU.']);
 
         return resumen;
     }

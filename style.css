@@ -1106,3 +1106,372 @@ h1 {
         width: 100%;
     }
 }
+/* ========================================
+   NUEVOS ESTILOS - Agregar al final de style.css
+   ======================================== */
+
+/* Estados con iconos */
+.estado-select-container {
+    position: relative;
+}
+
+.estado-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: center;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.estado-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.campo-estado {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.estado-display[class*="En Desarrollo"] .estado-display,
+.estado-select-container:has(.campo-estado[value="En Desarrollo"]) .estado-display {
+    background: #FEF3C7;
+    color: #92400E;
+    border-color: #FCD34D;
+}
+
+.estado-select-container:has(.campo-estado[value="Pendiente de Certificacion"]) .estado-display {
+    background: #FEE2E2;
+    color: #991B1B;
+    border-color: #FCA5A5;
+}
+
+.estado-select-container:has(.campo-estado[value="Certificado OK"]) .estado-display {
+    background: #DBEAFE;
+    color: #1E40AF;
+    border-color: #93C5FD;
+}
+
+.estado-select-container:has(.campo-estado[value="En Produccion"]) .estado-display {
+    background: #D1FAE5;
+    color: #065F46;
+    border-color: #6EE7B7;
+}
+
+[data-theme="dark"] .estado-select-container:has(.campo-estado[value="En Desarrollo"]) .estado-display {
+    background: #78350F;
+    color: #FEF3C7;
+    border-color: #D97706;
+}
+
+[data-theme="dark"] .estado-select-container:has(.campo-estado[value="Pendiente de Certificacion"]) .estado-display {
+    background: #7F1D1D;
+    color: #FEE2E2;
+    border-color: #DC2626;
+}
+
+[data-theme="dark"] .estado-select-container:has(.campo-estado[value="Certificado OK"]) .estado-display {
+    background: #1E3A8A;
+    color: #DBEAFE;
+    border-color: #3B82F6;
+}
+
+[data-theme="dark"] .estado-select-container:has(.campo-estado[value="En Produccion"]) .estado-display {
+    background: #064E3B;
+    color: #D1FAE5;
+    border-color: #10B981;
+}
+
+/* Comentarios de versión */
+.version-comments-row {
+    background: var(--bg-secondary);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.version-comments-cell {
+    padding: 1rem !important;
+}
+
+.version-comments-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #FFF9E6;
+    border-left: 4px solid #F59E0B;
+    border-radius: 6px;
+}
+
+[data-theme="dark"] .version-comments-container {
+    background: #422006;
+    border-left-color: #F59E0B;
+}
+
+.version-comments-label {
+    font-weight: 600;
+    color: #92400E;
+    white-space: nowrap;
+}
+
+[data-theme="dark"] .version-comments-label {
+    color: #FCD34D;
+}
+
+.version-comments-text {
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+/* Botones de versión y CDU */
+.version-cell-with-actions,
+.cdu-cell-with-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-version-comments,
+.btn-historial {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.4rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-version-comments:hover,
+.btn-historial:hover {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    transform: scale(1.1);
+}
+
+.btn-version-comments:hover .icon-small,
+.btn-historial:hover .icon-small {
+    stroke: white;
+}
+
+.icon-small {
+    width: 16px;
+    height: 16px;
+    stroke: var(--text-primary);
+    transition: stroke 0.2s;
+}
+
+.cdu-cell-with-actions input {
+    flex: 1;
+}
+
+/* Modal de historial */
+.modal-historial,
+.modal-comentarios {
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-historial-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.modal-close-btn {
+    background: transparent;
+    border: none;
+    font-size: 2rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.modal-close-btn:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.modal-historial-cdu {
+    padding: 0.75rem;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.modal-historial-content {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 1.5rem;
+    max-height: 400px;
+}
+
+.modal-historial-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-historial-content::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.modal-historial-content::-webkit-scrollbar-thumb {
+    background: var(--accent-color);
+    border-radius: 4px;
+}
+
+.historial-empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.historial-entry {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border-left: 4px solid var(--accent-color);
+    transition: all 0.2s;
+}
+
+.historial-entry:hover {
+    background: var(--bg-primary);
+    box-shadow: 0 2px 4px var(--shadow);
+}
+
+.historial-tipo-creacion {
+    border-left-color: #10B981;
+}
+
+.historial-tipo-estado {
+    border-left-color: #3B82F6;
+}
+
+.historial-tipo-responsable {
+    border-left-color: #8B5CF6;
+}
+
+.historial-tipo-nombre {
+    border-left-color: #F59E0B;
+}
+
+.historial-tipo-descripcion {
+    border-left-color: #6B7280;
+}
+
+.historial-tipo-observacion {
+    border-left-color: #EC4899;
+}
+
+.historial-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.historial-details {
+    flex: 1;
+}
+
+.historial-timestamp {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.historial-message {
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+.historial-old {
+    color: #EF4444;
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.historial-new {
+    color: #10B981;
+    font-weight: 600;
+}
+
+/* Modal de comentarios */
+.modal-comentarios-content {
+    margin-bottom: 1.5rem;
+}
+
+.comentarios-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.comentarios-textarea {
+    width: 100%;
+    min-height: 150px;
+    padding: 1rem;
+    border: 2px solid var(--input-border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    resize: vertical;
+    transition: all 0.2s;
+}
+
+.comentarios-textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1);
+}
+
+/* Responsive para modals */
+@media (max-width: 900px) {
+    .modal-historial,
+    .modal-comentarios {
+        max-width: 95%;
+        max-height: 90vh;
+    }
+    
+    .modal-historial-content {
+        max-height: 300px;
+    }
+    
+    .historial-entry {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .historial-icon {
+        font-size: 1.25rem;
+    }
+}

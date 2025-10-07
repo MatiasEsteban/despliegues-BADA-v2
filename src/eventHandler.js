@@ -1,4 +1,4 @@
-// eventHandlers.js - Manejo de eventos con versiones agrupadas
+// eventHandlers.js - Manejo de eventos con historial y comentarios
 
 import { ExcelExporter } from './excelExporter.js';
 import { ExcelImporter } from './excelImporter.js';
@@ -33,11 +33,9 @@ export class EventHandlers {
             const isCollapsed = filtersSection.classList.contains('filters-collapsed');
             
             if (isCollapsed) {
-                // Expandir
                 filtersSection.classList.remove('filters-collapsed');
                 btnToggle.classList.add('active');
             } else {
-                // Colapsar
                 filtersSection.classList.add('filters-collapsed');
                 btnToggle.classList.remove('active');
             }
@@ -63,7 +61,6 @@ export class EventHandlers {
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
         </svg>`;
 
-        // Cargar tema guardado
         const savedTheme = localStorage.getItem('theme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
         btnTheme.innerHTML = savedTheme === 'dark' ? sunIcon : moonIcon;
@@ -133,7 +130,6 @@ export class EventHandlers {
                 return;
             }
             
-            // Duplicar la última versión
             const ultimaVersion = versiones[versiones.length - 1];
             const nuevaVersion = this.dataStore.duplicateVersion(ultimaVersion.id);
             
@@ -194,7 +190,6 @@ export class EventHandlers {
 
     setupDescargarButton() {
         document.getElementById('btn-descargar').addEventListener('click', async () => {
-            // Validar antes de descargar
             const versiones = this.dataStore.getAll();
             const validation = Validator.validateAllVersions(versiones);
             
@@ -217,25 +212,22 @@ export class EventHandlers {
     setupTablaEvents() {
         const tbody = document.getElementById('tabla-body');
         
-        // Función para auto-ajustar altura de textarea
         const autoResizeTextarea = (textarea) => {
             textarea.style.height = 'auto';
             textarea.style.height = textarea.scrollHeight + 'px';
         };
         
-        // Evento para actualizar datos cuando se editan campos
+        // Evento para actualizar datos
         tbody.addEventListener('input', (e) => {
             const campo = e.target.dataset.campo;
             if (!campo) return;
             
-            // Auto-ajustar altura de descripción
             if (campo === 'descripcionCDU' && e.target.tagName === 'TEXTAREA') {
                 autoResizeTextarea(e.target);
             }
             
             const valor = e.target.value;
             
-            // Verificar si es un campo de versión, CDU u observación
             if (e.target.dataset.versionId) {
                 const versionId = parseInt(e.target.dataset.versionId);
                 this.dataStore.updateVersion(versionId, campo, valor);
@@ -249,17 +241,36 @@ export class EventHandlers {
             }
         });
         
-        // Observer para inicializar altura de textareas recién creados
+        // Evento especial para cambio de estado (con historial)
+        tbody.addEventListener('change', (e) => {
+            if (e.target.classList.contains('campo-estado')) {
+                const cduId = parseInt(e.target.dataset.cduId);
+                const valor = e.target.value;
+                
+                // Actualizar el display del estado con icono
+                const container = e.target.closest('.estado-select-container');
+                if (container) {
+                    const display = container.querySelector('.estado-display');
+                    const DOMBuilder = window.DOMBuilder || this.renderer.constructor;
+                    display.innerHTML = `
+                        ${DOMBuilder.getEstadoIcon(valor)}
+                        <span>${valor}</span>
+                    `;
+                }
+                
+                this.dataStore.updateCdu(cduId, 'estado', valor);
+            }
+        });
+        
         const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 mutation.addedNodes.forEach((node) => {
-                    if (node.nodeType === 1) { // Element node
+                    if (node.nodeType === 1) {
                         const textareas = node.querySelectorAll 
                             ? node.querySelectorAll('.campo-descripcion')
                             : [];
                         textareas.forEach(autoResizeTextarea);
                         
-                        // Si el nodo mismo es un textarea
                         if (node.classList && node.classList.contains('campo-descripcion')) {
                             autoResizeTextarea(node);
                         }
@@ -270,13 +281,51 @@ export class EventHandlers {
         
         observer.observe(tbody, { childList: true, subtree: true });
         
-        // Inicializar textareas existentes
         setTimeout(() => {
             tbody.querySelectorAll('.campo-descripcion').forEach(autoResizeTextarea);
         }, 100);
 
-        // Evento para eliminar versiones o CDUs, gestionar observaciones y expandir/colapsar CDUs
+        // Evento para acciones (eliminar, historial, comentarios, etc.)
         tbody.addEventListener('click', async (e) => {
+            // Mostrar historial
+            const btnHistorial = e.target.closest('[data-action="show-historial"]');
+            if (btnHistorial) {
+                const cduId = parseInt(btnHistorial.dataset.cduId);
+                const versiones = this.dataStore.getAll();
+                let cdu = null;
+                
+                for (const version of versiones) {
+                    cdu = version.cdus.find(c => c.id === cduId);
+                    if (cdu) break;
+                }
+                
+                if (cdu) {
+                    await Modal.showHistorial(cdu.nombreCDU, cdu.historial || []);
+                }
+                return;
+            }
+            
+            // Mostrar/editar comentarios de versión
+            const btnComentarios = e.target.closest('[data-action="toggle-comments"]');
+            if (btnComentarios) {
+                const versionId = parseInt(btnComentarios.dataset.versionId);
+                const versiones = this.dataStore.getAll();
+                const version = versiones.find(v => v.id === versionId);
+                
+                if (version) {
+                    const nuevoComentario = await Modal.showComentariosVersion(
+                        version.numero,
+                        version.comentarios || ''
+                    );
+                    
+                    if (nuevoComentario !== null) {
+                        this.dataStore.updateVersion(versionId, 'comentarios', nuevoComentario);
+                        this.renderer.fullRender();
+                    }
+                }
+                return;
+            }
+            
             // Eliminar CDU o versión
             const btnEliminar = e.target.closest('.btn-eliminar');
             if (btnEliminar) {
@@ -284,7 +333,6 @@ export class EventHandlers {
                 const cduId = btnEliminar.dataset.cduId;
                 
                 if (versionId) {
-                    // Eliminar versión completa
                     const confirmacion = await Modal.confirm(
                         '¿Está seguro de eliminar esta versión completa con todos sus CDUs?',
                         'Confirmar Eliminación'
@@ -294,7 +342,6 @@ export class EventHandlers {
                         this.renderer.fullRender();
                     }
                 } else if (cduId) {
-                    // Eliminar solo el CDU
                     const confirmacion = await Modal.confirm(
                         '¿Está seguro de eliminar este CDU?',
                         'Confirmar Eliminación'
@@ -307,7 +354,7 @@ export class EventHandlers {
                 return;
             }
             
-            // Expandir/colapsar CDUs de una versión
+            // Expandir/colapsar CDUs
             const btnExpandCdus = e.target.closest('[data-action="expand-cdus"], [data-action="collapse-cdus"]');
             if (btnExpandCdus) {
                 const versionId = parseInt(btnExpandCdus.dataset.versionId);
@@ -322,7 +369,6 @@ export class EventHandlers {
                 this.dataStore.addObservacion(cduId, '');
                 this.renderer.fullRender();
                 
-                // Enfocar el nuevo campo
                 setTimeout(() => {
                     const container = document.querySelector(`[data-cdu-id="${cduId}"].observaciones-container`);
                     if (container) {
@@ -354,37 +400,31 @@ export class EventHandlers {
     }
 
     setupFilterEvents() {
-        // Búsqueda general
         const filterSearch = document.getElementById('filter-search');
         filterSearch.addEventListener('input', (e) => {
             this.renderer.setFilters({ search: e.target.value });
         });
 
-        // Filtro de estado
         const filterEstado = document.getElementById('filter-estado');
         filterEstado.addEventListener('change', (e) => {
             this.renderer.setFilters({ estado: e.target.value });
         });
 
-        // Filtro de responsable
         const filterResponsable = document.getElementById('filter-responsable');
         filterResponsable.addEventListener('input', (e) => {
             this.renderer.setFilters({ responsable: e.target.value });
         });
 
-        // Filtro de fecha desde
         const filterFechaDesde = document.getElementById('filter-fecha-desde');
         filterFechaDesde.addEventListener('change', (e) => {
             this.renderer.setFilters({ fechaDesde: e.target.value });
         });
 
-        // Filtro de fecha hasta
         const filterFechaHasta = document.getElementById('filter-fecha-hasta');
         filterFechaHasta.addEventListener('change', (e) => {
             this.renderer.setFilters({ fechaHasta: e.target.value });
         });
 
-        // Botón de limpiar filtros
         const btnClearFilters = document.getElementById('btn-clear-filters');
         btnClearFilters.addEventListener('click', () => {
             this.renderer.clearFilters();

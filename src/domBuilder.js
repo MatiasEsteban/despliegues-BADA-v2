@@ -1,9 +1,52 @@
-// domBuilder.js - Construcción de elementos del DOM con versiones agrupadas
+// domBuilder.js - Construcción de elementos del DOM con iconos y historial
 
 export class DOMBuilder {
+    // Iconos SVG para estados
+    static getEstadoIcon(estado) {
+        const icons = {
+            'En Desarrollo': `<svg class="estado-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+            </svg>`,
+            'Pendiente de Certificacion': `<svg class="estado-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>`,
+            'Certificado OK': `<svg class="estado-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>`,
+            'En Produccion': `<svg class="estado-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>`
+        };
+        return icons[estado] || '';
+    }
+
     static crearFilasVersion(version, isExpanded = false) {
         const filas = [];
         const numCdus = version.cdus.length;
+        
+        // Fila de comentarios de versión (si existen)
+        if (version.comentarios && version.comentarios.trim()) {
+            const trComentarios = document.createElement('tr');
+            trComentarios.className = 'version-comments-row';
+            trComentarios.dataset.versionId = version.id;
+            
+            const tdComentarios = document.createElement('td');
+            tdComentarios.colSpan = 9;
+            tdComentarios.className = 'version-comments-cell';
+            tdComentarios.innerHTML = `
+                <div class="version-comments-container">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span class="version-comments-label">Comentarios de versión:</span>
+                    <span class="version-comments-text">${version.comentarios}</span>
+                </div>
+            `;
+            trComentarios.appendChild(tdComentarios);
+            filas.push(trComentarios);
+        }
         
         // Si no hay CDUs, crear una fila placeholder
         if (numCdus === 0) {
@@ -27,15 +70,27 @@ export class DOMBuilder {
             tdHora.appendChild(inputHora);
             tr.appendChild(tdHora);
             
-            // Versión
+            // Versión con botón de comentarios
             const tdVersion = document.createElement('td');
-            tdVersion.className = 'celda-version';
+            tdVersion.className = 'celda-version version-cell-with-actions';
             const inputVersion = this.crearInput('text', 'campo-version', version.numero, 'numero');
             inputVersion.dataset.versionId = version.id;
+            
+            const btnComentarios = document.createElement('button');
+            btnComentarios.className = 'btn-version-comments';
+            btnComentarios.type = 'button';
+            btnComentarios.title = 'Comentarios de versión';
+            btnComentarios.dataset.versionId = version.id;
+            btnComentarios.dataset.action = 'toggle-comments';
+            btnComentarios.innerHTML = `<svg class="icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>`;
+            
             tdVersion.appendChild(inputVersion);
+            tdVersion.appendChild(btnComentarios);
             tr.appendChild(tdVersion);
             
-            // Mensaje de versión vacía (colspan para ocupar el resto)
+            // Mensaje de versión vacía
             const tdMensaje = document.createElement('td');
             tdMensaje.colSpan = 6;
             tdMensaje.style.textAlign = 'center';
@@ -52,7 +107,7 @@ export class DOMBuilder {
         const hasMoreThanTwo = numCdus > 2;
         const cdusToShow = (isExpanded || !hasMoreThanTwo) 
             ? version.cdus 
-            : version.cdus.slice(-2); // Mostrar solo los últimos 2
+            : version.cdus.slice(-2);
         
         const numCdusToShow = cdusToShow.length;
         
@@ -63,11 +118,11 @@ export class DOMBuilder {
             tr.dataset.cduId = cdu.id;
             tr.className = 'fila-cdu';
             
-            // Primera fila de la versión: mostrar fecha, hora y versión con rowspan
+            // Primera fila de la versión
             if (index === 0) {
                 tr.classList.add('primera-fila-version');
                 
-                // Fecha (compartida por toda la versión visible)
+                // Fecha
                 const tdFecha = document.createElement('td');
                 tdFecha.rowSpan = numCdusToShow;
                 tdFecha.className = 'celda-version';
@@ -76,7 +131,7 @@ export class DOMBuilder {
                 tdFecha.appendChild(inputFecha);
                 tr.appendChild(tdFecha);
                 
-                // Hora (compartida por toda la versión visible)
+                // Hora
                 const tdHora = document.createElement('td');
                 tdHora.rowSpan = numCdusToShow;
                 tdHora.className = 'celda-version';
@@ -85,24 +140,53 @@ export class DOMBuilder {
                 tdHora.appendChild(inputHora);
                 tr.appendChild(tdHora);
                 
-                // Versión (compartida)
+                // Versión con botón de comentarios
                 const tdVersion = document.createElement('td');
                 tdVersion.rowSpan = numCdusToShow;
-                tdVersion.className = 'celda-version';
+                tdVersion.className = 'celda-version version-cell-with-actions';
                 const inputVersion = this.crearInput('text', 'campo-version', version.numero, 'numero');
                 inputVersion.dataset.versionId = version.id;
+                
+                const btnComentarios = document.createElement('button');
+                btnComentarios.className = 'btn-version-comments';
+                btnComentarios.type = 'button';
+                btnComentarios.title = 'Comentarios de versión';
+                btnComentarios.dataset.versionId = version.id;
+                btnComentarios.dataset.action = 'toggle-comments';
+                btnComentarios.innerHTML = `<svg class="icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>`;
+                
                 tdVersion.appendChild(inputVersion);
+                tdVersion.appendChild(btnComentarios);
                 tr.appendChild(tdVersion);
             }
             
-            // CDU (específico de cada fila)
+            // CDU con botón de historial
             const tdCDU = document.createElement('td');
+            const cduContainer = document.createElement('div');
+            cduContainer.className = 'cdu-cell-with-actions';
+            
             const inputCDU = this.crearInput('text', 'campo-cdu', cdu.nombreCDU, 'nombreCDU', 'Nombre CDU');
             inputCDU.dataset.cduId = cdu.id;
-            tdCDU.appendChild(inputCDU);
+            
+            const btnHistorial = document.createElement('button');
+            btnHistorial.className = 'btn-historial';
+            btnHistorial.type = 'button';
+            btnHistorial.title = 'Ver historial';
+            btnHistorial.dataset.cduId = cdu.id;
+            btnHistorial.dataset.action = 'show-historial';
+            btnHistorial.innerHTML = `<svg class="icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>`;
+            
+            cduContainer.appendChild(inputCDU);
+            cduContainer.appendChild(btnHistorial);
+            tdCDU.appendChild(cduContainer);
             tr.appendChild(tdCDU);
             
-            // Descripción (textarea que ocupa todo el alto)
+            // Descripción
             const tdDescripcion = document.createElement('td');
             const textareaDescripcion = this.crearTextarea(cdu.descripcionCDU, 'descripcionCDU', 'Descripción del CDU');
             textareaDescripcion.className = 'campo-descripcion';
@@ -110,9 +194,9 @@ export class DOMBuilder {
             tdDescripcion.appendChild(textareaDescripcion);
             tr.appendChild(tdDescripcion);
             
-            // Estado con colores
+            // Estado con iconos
             const tdEstado = document.createElement('td');
-            const selectEstado = this.crearSelect(
+            const selectEstado = this.crearSelectConIconos(
                 ['En Desarrollo', 'Pendiente de Certificacion', 'Certificado OK', 'En Produccion'], 
                 cdu.estado
             );
@@ -127,7 +211,7 @@ export class DOMBuilder {
             tdResponsable.appendChild(inputResponsable);
             tr.appendChild(tdResponsable);
             
-            // Observaciones (nuevo sistema sin timestamp)
+            // Observaciones
             const tdObservaciones = document.createElement('td');
             const containerObservaciones = this.crearObservacionesContainer(cdu);
             tdObservaciones.appendChild(containerObservaciones);
@@ -143,7 +227,7 @@ export class DOMBuilder {
             filas.push(tr);
         });
         
-        // Si hay más de 2 CDUs y no está expandido, agregar botón para expandir
+        // Botón para expandir/colapsar CDUs
         if (hasMoreThanTwo && !isExpanded) {
             const trExpand = document.createElement('tr');
             trExpand.className = 'expand-cdus-row';
@@ -166,12 +250,9 @@ export class DOMBuilder {
             
             tdExpand.appendChild(btnExpand);
             trExpand.appendChild(tdExpand);
-            
-            // Insertar al FINAL (después de los CDUs visibles)
             filas.push(trExpand);
         }
         
-        // Si está expandido y hay más de 2 CDUs, agregar botón para colapsar
         if (hasMoreThanTwo && isExpanded) {
             const trCollapse = document.createElement('tr');
             trCollapse.className = 'expand-cdus-row';
@@ -194,12 +275,42 @@ export class DOMBuilder {
             
             tdCollapse.appendChild(btnCollapse);
             trCollapse.appendChild(tdCollapse);
-            
-            // Insertar al FINAL también
             filas.push(trCollapse);
         }
         
         return filas;
+    }
+
+    static crearSelectConIconos(opciones, valorSeleccionado) {
+        const container = document.createElement('div');
+        container.className = 'estado-select-container';
+        
+        // Mostrar el estado actual con icono
+        const display = document.createElement('div');
+        display.className = 'estado-display';
+        display.innerHTML = `
+            ${this.getEstadoIcon(valorSeleccionado)}
+            <span>${valorSeleccionado}</span>
+        `;
+        
+        const select = document.createElement('select');
+        select.className = 'campo-estado';
+        select.setAttribute('data-campo', 'estado');
+        select.value = valorSeleccionado;
+        
+        opciones.forEach(opcion => {
+            const option = document.createElement('option');
+            option.value = opcion;
+            option.textContent = opcion;
+            if (valorSeleccionado === opcion) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+        
+        container.appendChild(display);
+        container.appendChild(select);
+        return container;
     }
 
     static crearObservacionesContainer(cdu) {
@@ -216,14 +327,12 @@ export class DOMBuilder {
             container.appendChild(empty);
         } else {
             observaciones.forEach((obs, index) => {
-                // Convertir a string si es objeto
                 const obsTexto = typeof obs === 'string' ? obs : (obs.texto || '');
                 const item = this.crearObservacionItem(cdu.id, obsTexto, index);
                 container.appendChild(item);
             });
         }
         
-        // Botón para agregar observación
         const btnAgregar = document.createElement('button');
         btnAgregar.className = 'btn-observacion btn-add';
         btnAgregar.type = 'button';
@@ -283,7 +392,7 @@ export class DOMBuilder {
         const select = document.createElement('select');
         select.className = 'campo-estado';
         select.setAttribute('data-campo', 'estado');
-        select.value = valorSeleccionado; // Establecer valor para aplicar color
+        select.value = valorSeleccionado;
         
         opciones.forEach(opcion => {
             const option = document.createElement('option');
