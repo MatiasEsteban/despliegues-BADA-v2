@@ -1,17 +1,14 @@
-// renderer.js - Renderizado de la interfaz con versiones agrupadas y filtros
+// renderer.js - Sistema dual de renderizado: Vista Tarjetas + Vista Detalle
 
 import { DOMBuilder } from './domBuilder.js';
 
-// Exportar DOMBuilder globalmente para uso en eventHandlers
 window.DOMBuilder = DOMBuilder;
 
 export class Renderer {
     constructor(dataStore) {
         this.dataStore = dataStore;
-        this.tbody = document.getElementById('tabla-body');
-        this.isInitialRender = true;
-        this.showingOldVersions = false;
-        this.expandedVersions = new Set();
+        this.currentView = 'cards'; // 'cards' o 'detail'
+        this.currentVersionId = null;
         this.filters = {
             search: '',
             estado: '',
@@ -21,6 +18,24 @@ export class Renderer {
         };
     }
 
+    // Navegación entre vistas
+    showCardsView() {
+        document.getElementById('view-cards').classList.add('active');
+        document.getElementById('view-detail').classList.remove('active');
+        this.currentView = 'cards';
+        this.currentVersionId = null;
+        this.renderCardsView();
+    }
+
+    showDetailView(versionId) {
+        document.getElementById('view-cards').classList.remove('active');
+        document.getElementById('view-detail').classList.add('active');
+        this.currentView = 'detail';
+        this.currentVersionId = versionId;
+        this.renderDetailView(versionId);
+    }
+
+    // Aplicar filtros
     applyFilters(versiones) {
         const hasActiveFilters = this.filters.search || 
                                  this.filters.estado || 
@@ -85,163 +100,145 @@ export class Renderer {
         document.getElementById('filter-versions').textContent = filteredVersions.length;
     }
 
-    renderTable(showAll = false) {
+    // Renderizar vista de tarjetas
+    renderCardsView() {
         const allVersions = this.dataStore.getAll();
         const filteredVersions = this.applyFilters(allVersions);
         
         this.updateFilterStats(filteredVersions, allVersions);
         
-        this.tbody.innerHTML = '';
+        const grid = document.getElementById('versions-grid');
+        grid.innerHTML = '';
         
         if (filteredVersions.length === 0) {
-            this.showNoResultsMessage();
+            this.showNoVersionsMessage(grid);
             return;
         }
         
-        let versionesToRender;
-        const hasOldVersions = filteredVersions.length > 2;
-        
-        if (showAll || !hasOldVersions) {
-            versionesToRender = filteredVersions;
-        } else {
-            versionesToRender = filteredVersions.slice(-2);
-        }
-        
-        versionesToRender.forEach(version => {
-            const isExpanded = this.expandedVersions.has(version.id);
-            const filas = DOMBuilder.crearFilasVersion(version, isExpanded);
-            filas.forEach(fila => this.tbody.appendChild(fila));
+        // Ordenar de más reciente a más antigua
+        const sortedVersions = [...filteredVersions].sort((a, b) => {
+            const numA = parseInt(a.numero) || 0;
+            const numB = parseInt(b.numero) || 0;
+            return numB - numA;
         });
         
-        if (hasOldVersions && !showAll) {
-            this.addToggleOldVersionsButton(filteredVersions.length - 2);
-        }
+        sortedVersions.forEach(version => {
+            const card = DOMBuilder.crearTarjetaVersion(version, (vId) => {
+                this.showDetailView(vId);
+            });
+            grid.appendChild(card);
+        });
     }
 
-    showNoResultsMessage() {
+    showNoVersionsMessage(container) {
+        const message = document.createElement('div');
+        message.className = 'no-versions-message';
+        message.innerHTML = `
+            <svg style="width: 64px; height: 64px; margin-bottom: 1rem; opacity: 0.5; color: var(--text-secondary);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+            </svg>
+            <div style="font-size: 1.25rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">
+                No hay versiones disponibles
+            </div>
+            <div style="font-size: 0.95rem; color: var(--text-secondary);">
+                Crea una nueva versión para comenzar
+            </div>
+        `;
+        message.style.gridColumn = '1 / -1';
+        message.style.textAlign = 'center';
+        message.style.padding = '4rem 2rem';
+        container.appendChild(message);
+    }
+
+    // Renderizar vista de detalle
+    renderDetailView(versionId) {
+        const version = this.dataStore.getAll().find(v => v.id === versionId);
+        if (!version) {
+            this.showCardsView();
+            return;
+        }
+        
+        // Actualizar header de la versión
+        document.getElementById('detail-version-title').textContent = `Versión ${version.numero}`;
+        document.getElementById('detail-version-date').textContent = this.formatDate(version.fechaDespliegue);
+        document.getElementById('detail-version-time').textContent = version.horaDespliegue || 'Sin hora';
+        
+        // Mostrar/ocultar comentarios
+        const commentsDisplay = document.getElementById('version-comments-display');
+        const commentsText = document.getElementById('version-comments-text');
+        
+        if (version.comentarios && version.comentarios.trim()) {
+            commentsText.textContent = version.comentarios;
+            commentsDisplay.style.display = 'block';
+        } else {
+            commentsDisplay.style.display = 'none';
+        }
+        
+        // Renderizar tabla de CDUs
+        const tbody = document.getElementById('tabla-body');
+        tbody.innerHTML = '';
+        
+        if (version.cdus.length === 0) {
+            this.showNoCdusMessage(tbody);
+            return;
+        }
+        
+        version.cdus.forEach(cdu => {
+            const fila = DOMBuilder.crearFilaCDU(cdu);
+            tbody.appendChild(fila);
+        });
+        
+        // Auto-resize de textareas
+        setTimeout(() => {
+            tbody.querySelectorAll('.campo-descripcion').forEach(textarea => {
+                textarea.style.height = 'auto';
+                textarea.style.height = textarea.scrollHeight + 'px';
+            });
+        }, 50);
+    }
+
+    showNoCdusMessage(tbody) {
         const tr = document.createElement('tr');
         const td = document.createElement('td');
-        td.colSpan = 9;
+        td.colSpan = 6;
         td.style.textAlign = 'center';
         td.style.padding = '3rem';
         td.style.color = 'var(--text-secondary)';
         td.innerHTML = `
             <svg style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.35-4.35"></path>
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
             </svg>
-            <div style="font-size: 1.1rem; font-weight: 500; margin-bottom: 0.5rem;">No se encontraron resultados</div>
-            <div style="font-size: 0.875rem;">Intenta ajustar los filtros de búsqueda</div>
+            <div style="font-size: 1.1rem; font-weight: 500; margin-bottom: 0.5rem;">
+                Esta versión no tiene CDUs
+            </div>
+            <div style="font-size: 0.875rem;">
+                Usa el botón "Nuevo CDU" para agregar
+            </div>
         `;
         tr.appendChild(td);
-        this.tbody.appendChild(tr);
+        tbody.appendChild(tr);
     }
 
-    addToggleOldVersionsButton(numOldVersions) {
-        const tr = document.createElement('tr');
-        tr.className = 'versiones-anteriores-row';
-        
-        const td = document.createElement('td');
-        td.colSpan = 9;
-        td.className = 'versiones-anteriores-section';
-        
-        const button = document.createElement('button');
-        button.className = 'btn-toggle-versiones';
-        button.innerHTML = `
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-            <span>Mostrar ${numOldVersions} versión${numOldVersions !== 1 ? 'es' : ''} anterior${numOldVersions !== 1 ? 'es' : ''}</span>
-        `;
-        
-        button.addEventListener('click', () => {
-            this.showingOldVersions = !this.showingOldVersions;
-            if (this.showingOldVersions) {
-                button.innerHTML = `
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="18 15 12 9 6 15"></polyline>
-                    </svg>
-                    <span>Ocultar versiones anteriores</span>
-                `;
-                this.renderOldVersions();
-            } else {
-                this.fullRender();
-            }
+    formatDate(dateString) {
+        if (!dateString) return 'Sin fecha';
+        const date = new Date(dateString + 'T00:00:00');
+        return date.toLocaleDateString('es-ES', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
         });
-        
-        td.appendChild(button);
-        tr.appendChild(td);
-        
-        this.tbody.insertBefore(tr, this.tbody.firstChild);
-    }
-
-    renderOldVersions() {
-        const allVersions = this.dataStore.getAll();
-        const filteredVersions = this.applyFilters(allVersions);
-        
-        this.updateFilterStats(filteredVersions, allVersions);
-        
-        if (filteredVersions.length === 0) {
-            this.tbody.innerHTML = '';
-            this.showNoResultsMessage();
-            return;
-        }
-        
-        const oldVersions = filteredVersions.slice(0, -2);
-        
-        this.tbody.innerHTML = '';
-        
-        const tr = document.createElement('tr');
-        tr.className = 'versiones-anteriores-row';
-        
-        const td = document.createElement('td');
-        td.colSpan = 9;
-        td.className = 'versiones-anteriores-section';
-        
-        const button = document.createElement('button');
-        button.className = 'btn-toggle-versiones expanded';
-        button.innerHTML = `
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="18 15 12 9 6 15"></polyline>
-            </svg>
-            <span>Ocultar versiones anteriores</span>
-        `;
-        
-        button.addEventListener('click', () => {
-            this.showingOldVersions = false;
-            this.fullRender();
-        });
-        
-        td.appendChild(button);
-        tr.appendChild(td);
-        this.tbody.appendChild(tr);
-        
-        oldVersions.forEach(version => {
-            const isExpanded = this.expandedVersions.has(version.id);
-            const filas = DOMBuilder.crearFilasVersion(version, isExpanded);
-            filas.forEach(fila => this.tbody.appendChild(fila));
-        });
-        
-        const recentVersions = filteredVersions.slice(-2);
-        recentVersions.forEach(version => {
-            const isExpanded = this.expandedVersions.has(version.id);
-            const filas = DOMBuilder.crearFilasVersion(version, isExpanded);
-            filas.forEach(fila => this.tbody.appendChild(fila));
-        });
-    }
-
-    toggleVersionCdus(versionId) {
-        if (this.expandedVersions.has(versionId)) {
-            this.expandedVersions.delete(versionId);
-        } else {
-            this.expandedVersions.add(versionId);
-        }
-        this.fullRender();
     }
 
     setFilters(filters) {
         this.filters = { ...this.filters, ...filters };
-        this.fullRender();
+        if (this.currentView === 'cards') {
+            this.renderCardsView();
+        }
+        // En vista detalle no aplicamos filtros
     }
 
     clearFilters() {
@@ -259,7 +256,9 @@ export class Renderer {
         document.getElementById('filter-fecha-desde').value = '';
         document.getElementById('filter-fecha-hasta').value = '';
         
-        this.fullRender();
+        if (this.currentView === 'cards') {
+            this.renderCardsView();
+        }
     }
 
     updateStats() {
@@ -268,27 +267,20 @@ export class Renderer {
     }
 
     init() {
-        this.renderTable();
+        this.showCardsView();
         this.updateStats();
         
         this.dataStore.subscribe(() => {
-            if (this.isInitialRender) {
-                this.isInitialRender = false;
-                return;
-            }
             this.updateStats();
         });
     }
 
     fullRender() {
-        this.renderTable(this.showingOldVersions);
+        if (this.currentView === 'cards') {
+            this.renderCardsView();
+        } else if (this.currentView === 'detail' && this.currentVersionId) {
+            this.renderDetailView(this.currentVersionId);
+        }
         this.updateStats();
-        
-        setTimeout(() => {
-            this.tbody.querySelectorAll('.campo-descripcion').forEach(textarea => {
-                textarea.style.height = 'auto';
-                textarea.style.height = textarea.scrollHeight + 'px';
-            });
-        }, 50);
     }
 }
