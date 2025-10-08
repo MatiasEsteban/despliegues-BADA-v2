@@ -16,6 +16,23 @@
     --accent-color: #4a5568;
     --accent-hover: #2d3748;
     --shadow: rgba(0, 0, 0, 0.1);
+    
+    /* Nuevos colores de estados */
+    --estado-desarrollo-bg: #FFF4E6;
+    --estado-desarrollo-color: #C05621;
+    --estado-desarrollo-border: #F97316;
+    
+    --estado-pendiente-bg: #FEFCE8;
+    --estado-pendiente-color: #854D0E;
+    --estado-pendiente-border: #EAB308;
+    
+    --estado-certificado-bg: #EFF6FF;
+    --estado-certificado-color: #1E40AF;
+    --estado-certificado-border: #3B82F6;
+    
+    --estado-produccion-bg: #ECFDF5;
+    --estado-produccion-color: #065F46;
+    --estado-produccion-border: #10B981;
 }
 
 [data-theme="dark"] {
@@ -30,6 +47,23 @@
     --accent-color: #4a5568;
     --accent-hover: #718096;
     --shadow: rgba(0, 0, 0, 0.3);
+    
+    /* Nuevos colores de estados - tema oscuro */
+    --estado-desarrollo-bg: #7C2D12;
+    --estado-desarrollo-color: #FED7AA;
+    --estado-desarrollo-border: #F97316;
+    
+    --estado-pendiente-bg: #713F12;
+    --estado-pendiente-color: #FEF08A;
+    --estado-pendiente-border: #EAB308;
+    
+    --estado-certificado-bg: #1E3A8A;
+    --estado-certificado-color: #DBEAFE;
+    --estado-certificado-border: #3B82F6;
+    
+    --estado-produccion-bg: #064E3B;
+    --estado-produccion-color: #D1FAE5;
+    --estado-produccion-border: #10B981;
 }
 
 body {
@@ -398,8 +432,8 @@ h1 {
     color: white;
 }
 
-.stat-desarrollo { background: #F59E0B; }
-.stat-pendiente { background: #EF4444; }
+.stat-desarrollo { background: #F97316; }
+.stat-pendiente { background: #EAB308; }
 .stat-certificado { background: #3B82F6; }
 .stat-produccion { background: #10B981; }
 
@@ -572,7 +606,7 @@ h1 {
 .tabla-despliegues th:nth-child(1) { width: 180px; }
 .tabla-despliegues th:nth-child(2) { width: 250px; }
 .tabla-despliegues th:nth-child(3) { width: 200px; }
-.tabla-despliegues th:nth-child(4) { width: 180px; }
+.tabla-despliegues th:nth-child(4) { width: 220px; }
 .tabla-despliegues th:nth-child(5) { width: 300px; }
 .tabla-despliegues th:nth-child(6) { width: 100px; }
 
@@ -617,7 +651,7 @@ h1 {
     resize: vertical;
 }
 
-/* Estados con iconos */
+/* =============== ESTADOS CON ICONOS Y BORDES ANIMADOS =============== */
 .estado-select-container {
     position: relative;
 }
@@ -626,18 +660,29 @@ h1 {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.6rem;
+    padding: 0.6rem 0.8rem;
     border-radius: 8px;
     font-weight: 600;
-    border: 2px solid transparent;
+    border: 2px solid;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.estado-display:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .estado-icon {
     width: 20px;
     height: 20px;
     flex-shrink: 0;
+    transition: transform 0.3s ease;
+}
+
+.estado-display:hover .estado-icon {
+    transform: scale(1.1) rotate(5deg);
 }
 
 .campo-estado {
@@ -650,52 +695,39 @@ h1 {
     cursor: pointer;
 }
 
+/* Opción 1: Desarrollo */
 .estado-select-container:has(.campo-estado[value="En Desarrollo"]) .estado-display {
-    background: #FEF3C7;
-    color: #92400E;
-    border-color: #FCD34D;
+    background: var(--estado-desarrollo-bg);
+    color: var(--estado-desarrollo-color);
+    border-color: var(--estado-desarrollo-border);
 }
 
+/* Opción 2: Pendiente */
 .estado-select-container:has(.campo-estado[value="Pendiente de Certificacion"]) .estado-display {
-    background: #FEE2E2;
-    color: #991B1B;
-    border-color: #FCA5A5;
+    background: var(--estado-pendiente-bg);
+    color: var(--estado-pendiente-color);
+    border-color: var(--estado-pendiente-border);
 }
 
+/* Opción 3: Certificado */
 .estado-select-container:has(.campo-estado[value="Certificado OK"]) .estado-display {
-    background: #DBEAFE;
-    color: #1E40AF;
-    border-color: #93C5FD;
+    background: var(--estado-certificado-bg);
+    color: var(--estado-certificado-color);
+    border-color: var(--estado-certificado-border);
 }
 
+/* Opción 4: Producción */
 .estado-select-container:has(.campo-estado[value="En Produccion"]) .estado-display {
-    background: #D1FAE5;
-    color: #065F46;
-    border-color: #6EE7B7;
+    background: var(--estado-produccion-bg);
+    color: var(--estado-produccion-color);
+    border-color: var(--estado-produccion-border);
 }
 
-[data-theme="dark"] .estado-select-container:has(.campo-estado[value="En Desarrollo"]) .estado-display {
-    background: #78350F;
-    color: #FEF3C7;
-    border-color: #D97706;
-}
-
-[data-theme="dark"] .estado-select-container:has(.campo-estado[value="Pendiente de Certificacion"]) .estado-display {
-    background: #7F1D1D;
-    color: #FEE2E2;
-    border-color: #DC2626;
-}
-
-[data-theme="dark"] .estado-select-container:has(.campo-estado[value="Certificado OK"]) .estado-display {
-    background: #1E3A8A;
-    color: #DBEAFE;
-    border-color: #3B82F6;
-}
-
-[data-theme="dark"] .estado-select-container:has(.campo-estado[value="En Produccion"]) .estado-display {
-    background: #064E3B;
-    color: #D1FAE5;
-    border-color: #10B981;
+/* Estilos para el dropdown del select */
+.campo-estado option {
+    padding: 0.5rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 /* CDU con historial */
@@ -728,6 +760,77 @@ h1 {
     width: 16px;
     height: 16px;
     stroke: var(--text-primary);
+}
+
+/* =============== RESPONSABLES CON ROLES =============== */
+.responsables-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.responsable-item {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.responsable-item input {
+    flex: 1;
+}
+
+.responsable-rol-select {
+    min-width: 80px;
+    padding: 0.5rem;
+    border: 2px solid var(--input-border);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: all 0.2s;
+}
+
+.responsable-rol-select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1);
+}
+
+.btn-responsable {
+    padding: 0.5rem 0.75rem;
+    min-width: 36px;
+    height: 36px;
+    border: 2px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.btn-responsable:hover {
+    background: var(--accent-color);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-responsable.btn-remove {
+    background: transparent;
+    color: #f56565;
+    border-color: #f56565;
+}
+
+.btn-responsable.btn-remove:hover {
+    background: #f56565;
+    color: white;
+}
+
+.responsables-empty {
+    color: var(--text-secondary);
+    font-style: italic;
+    font-size: 0.875rem;
 }
 
 /* Observaciones */
@@ -821,10 +924,10 @@ h1 {
 }
 
 .stat-primary { color: #4a5568; }
-.stat-success { color: #38a169; }
-.stat-warning { color: #dd6b20; }
-.stat-danger { color: #e53e3e; }
-.stat-info { color: #3182ce; }
+.stat-success { color: #10B981; }
+.stat-warning { color: #F97316; }
+.stat-danger { color: #EAB308; }
+.stat-info { color: #3B82F6; }
 
 /* =============== MODALS =============== */
 .modal-overlay {

@@ -1,4 +1,4 @@
-// dataStore.js - Manejo del estado y datos con versiones agrupadas, historial y comentarios
+// dataStore.js - Manejo del estado y datos con versiones agrupadas, historial, comentarios y roles
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -85,7 +85,9 @@ export class DataStore {
             nombreCDU: cdu.nombreCDU,
             descripcionCDU: cdu.descripcionCDU,
             estado: cdu.estado,
-            responsable: cdu.responsable,
+            responsables: Array.isArray(cdu.responsables) 
+                ? cdu.responsables.map(r => ({...r}))
+                : (cdu.responsable ? [{ nombre: cdu.responsable, rol: 'Dev' }] : []),
             observaciones: [...(cdu.observaciones || [])],
             historial: []
         }));
@@ -118,7 +120,7 @@ export class DataStore {
             nombreCDU: '',
             descripcionCDU: '',
             estado: 'En Desarrollo',
-            responsable: '',
+            responsables: [],
             observaciones: [],
             historial: [{
                 timestamp: new Date().toISOString(),
@@ -134,7 +136,7 @@ export class DataStore {
         return nuevoCdu;
     }
 
-    // NUEVO: Agregar CDU a una versión específica
+    // Agregar CDU a una versión específica
     addCduToVersion(versionId) {
         const version = this.versiones.find(v => v.id === versionId);
         if (!version) return null;
@@ -145,7 +147,7 @@ export class DataStore {
             nombreCDU: '',
             descripcionCDU: '',
             estado: 'En Desarrollo',
-            responsable: '',
+            responsables: [],
             observaciones: [],
             historial: [{
                 timestamp: new Date().toISOString(),
@@ -185,6 +187,60 @@ export class DataStore {
                     this.addHistorialEntry(cduId, tipo, valorAnterior, valor, campo);
                     this.notify();
                 }
+                return;
+            }
+        }
+    }
+
+    // NUEVO: Manejo de responsables con roles
+    addResponsable(cduId, nombre = '', rol = 'Dev') {
+        for (const version of this.versiones) {
+            const cdu = version.cdus.find(c => c.id === cduId);
+            if (cdu) {
+                if (!Array.isArray(cdu.responsables)) {
+                    cdu.responsables = [];
+                }
+                cdu.responsables.push({ nombre, rol });
+                
+                this.addHistorialEntry(cduId, 'responsable', null, `Agregado: ${nombre} (${rol})`);
+                this.notify();
+                return;
+            }
+        }
+    }
+
+    updateResponsable(cduId, index, campo, valor) {
+        for (const version of this.versiones) {
+            const cdu = version.cdus.find(c => c.id === cduId);
+            if (cdu && Array.isArray(cdu.responsables) && index < cdu.responsables.length) {
+                const valorAnterior = cdu.responsables[index][campo];
+                cdu.responsables[index][campo] = valor;
+                
+                if (campo === 'nombre') {
+                    this.addHistorialEntry(cduId, 'responsable', valorAnterior, valor);
+                } else if (campo === 'rol') {
+                    this.addHistorialEntry(cduId, 'responsable', 
+                        `${cdu.responsables[index].nombre} (${valorAnterior})`,
+                        `${cdu.responsables[index].nombre} (${valor})`);
+                }
+                
+                this.notify();
+                return;
+            }
+        }
+    }
+
+    deleteResponsable(cduId, index) {
+        for (const version of this.versiones) {
+            const cdu = version.cdus.find(c => c.id === cduId);
+            if (cdu && Array.isArray(cdu.responsables) && index < cdu.responsables.length) {
+                const responsable = cdu.responsables[index];
+                cdu.responsables.splice(index, 1);
+                
+                this.addHistorialEntry(cduId, 'responsable', 
+                    `${responsable.nombre} (${responsable.rol})`, 
+                    'Eliminado');
+                this.notify();
                 return;
             }
         }
@@ -259,6 +315,13 @@ export class DataStore {
             nuevasVersiones.forEach(v => {
                 v.cdus.forEach(c => {
                     if (c.id > maxCduId) maxCduId = c.id;
+                    
+                    // Migrar responsable antiguo a nuevo formato
+                    if (c.responsable && !Array.isArray(c.responsables)) {
+                        c.responsables = [{ nombre: c.responsable, rol: 'Dev' }];
+                    } else if (!Array.isArray(c.responsables)) {
+                        c.responsables = [];
+                    }
                 });
             });
             this.nextCduId = maxCduId + 1;

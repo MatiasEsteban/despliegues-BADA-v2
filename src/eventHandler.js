@@ -1,4 +1,4 @@
-// eventHandlers.js - Manejo de eventos con navegación entre vistas
+// eventHandlers.js - Manejo de eventos con navegación entre vistas y responsables con roles
 
 import { ExcelExporter } from './excelExporter.js';
 import { ExcelImporter } from './excelImporter.js';
@@ -240,17 +240,26 @@ export class EventHandlers {
             
             const valor = e.target.value;
             
+            // Manejar actualización de observaciones
             if (campo === 'observacion') {
                 const cduId = parseInt(e.target.dataset.cduId);
                 const obsIndex = parseInt(e.target.dataset.obsIndex);
                 this.dataStore.updateObservacion(cduId, obsIndex, valor);
-            } else if (e.target.dataset.cduId) {
+            } 
+            // NUEVO: Manejar actualización de nombre de responsable
+            else if (campo === 'responsable-nombre') {
+                const cduId = parseInt(e.target.dataset.cduId);
+                const respIndex = parseInt(e.target.dataset.respIndex);
+                this.dataStore.updateResponsable(cduId, respIndex, 'nombre', valor);
+            }
+            // Otros campos
+            else if (e.target.dataset.cduId) {
                 const cduId = parseInt(e.target.dataset.cduId);
                 this.dataStore.updateCdu(cduId, campo, valor);
             }
         });
         
-        // Evento para cambio de estado
+        // Evento para cambio de estado y roles
         tbody.addEventListener('change', (e) => {
             if (e.target.classList.contains('campo-estado')) {
                 const cduId = parseInt(e.target.dataset.cduId);
@@ -267,6 +276,13 @@ export class EventHandlers {
                 }
                 
                 this.dataStore.updateCdu(cduId, 'estado', valor);
+            }
+            // NUEVO: Manejar cambio de rol de responsable
+            else if (e.target.dataset.campo === 'responsable-rol') {
+                const cduId = parseInt(e.target.dataset.cduId);
+                const respIndex = parseInt(e.target.dataset.respIndex);
+                const valor = e.target.value;
+                this.dataStore.updateResponsable(cduId, respIndex, 'rol', valor);
             }
         });
         
@@ -314,6 +330,41 @@ export class EventHandlers {
                 );
                 if (confirmacion) {
                     this.dataStore.deleteCdu(parseInt(cduId));
+                    this.renderer.fullRender();
+                }
+                return;
+            }
+            
+            // NUEVO: Agregar responsable
+            const btnAddResp = e.target.closest('[data-action="add-responsable"]');
+            if (btnAddResp) {
+                const cduId = parseInt(btnAddResp.dataset.cduId);
+                this.dataStore.addResponsable(cduId, '', 'Dev');
+                this.renderer.fullRender();
+                
+                setTimeout(() => {
+                    const container = document.querySelector(`[data-cdu-id="${cduId}"].responsables-container`);
+                    if (container) {
+                        const inputs = container.querySelectorAll('input[data-campo="responsable-nombre"]');
+                        const lastInput = inputs[inputs.length - 1];
+                        if (lastInput) lastInput.focus();
+                    }
+                }, 100);
+                return;
+            }
+            
+            // NUEVO: Eliminar responsable
+            const btnRemoveResp = e.target.closest('[data-action="remove-responsable"]');
+            if (btnRemoveResp) {
+                const cduId = parseInt(btnRemoveResp.dataset.cduId);
+                const respIndex = parseInt(btnRemoveResp.dataset.respIndex);
+                
+                const confirmacion = await Modal.confirm(
+                    '¿Eliminar este responsable?',
+                    'Confirmar'
+                );
+                if (confirmacion) {
+                    this.dataStore.deleteResponsable(cduId, respIndex);
                     this.renderer.fullRender();
                 }
                 return;

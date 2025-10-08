@@ -1,4 +1,4 @@
-// excelImporter.js - Importación de datos con historial y comentarios
+// excelImporter.js - Importación de datos con historial, comentarios y responsables con roles
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -84,6 +84,10 @@ export class ExcelImporter {
             const observacionesText = row['Observaciones/Cambios'] || row['Observaciones'] || row['Cambios'] || '';
             const observaciones = this.parsearObservaciones(observacionesText);
             
+            // NUEVO: Parsear responsables con roles
+            const responsablesText = row['Responsables'] || row['Responsable'] || '';
+            const responsables = this.parsearResponsables(responsablesText);
+            
             // Parsear historial
             const historialText = row['Historial'] || '';
             const historial = this.parsearHistorial(historialText);
@@ -95,7 +99,7 @@ export class ExcelImporter {
                 nombreCDU: nombreCDU,
                 descripcionCDU: row['Descripción CDU'] || row['Descripcion CDU'] || row['Descripción'] || '',
                 estado: this.normalizarEstado(row['Estado'] || 'En Desarrollo'),
-                responsable: row['Responsable'] || '',
+                responsables: responsables,
                 observaciones: observaciones,
                 historial: historial
             });
@@ -116,6 +120,70 @@ export class ExcelImporter {
         console.log(`✅ Importación completada: ${versiones.length} versiones, ${nombreToUuidMap.size} CDUs únicos detectados`);
         
         return versiones;
+    }
+
+    // NUEVO: Parsear responsables con roles
+    static parsearResponsables(texto) {
+        if (!texto || texto.trim() === '') return [];
+        
+        const separadores = ['||', '\n', '|', ';'];
+        let items = [];
+        
+        for (const sep of separadores) {
+            if (texto.includes(sep)) {
+                items = texto
+                    .split(sep)
+                    .map(resp => resp.trim())
+                    .filter(resp => resp.length > 0);
+                break;
+            }
+        }
+        
+        if (items.length === 0) {
+            items = [texto.trim()];
+        }
+        
+        // Parsear cada item en formato "Nombre (Rol)" o solo "Nombre"
+        return items.map(item => {
+            const match = item.match(/^(.+?)\s*\((\w+)\)\s*$/);
+            if (match) {
+                return {
+                    nombre: match[1].trim(),
+                    rol: this.normalizarRol(match[2].trim())
+                };
+            } else {
+                return {
+                    nombre: item.trim(),
+                    rol: 'Dev' // Rol por defecto
+                };
+            }
+        });
+    }
+
+    // NUEVO: Normalizar roles
+    static normalizarRol(rol) {
+        const rolUpper = rol.toUpperCase();
+        const rolesValidos = ['DEV', 'AF', 'UX', 'AN'];
+        
+        if (rolesValidos.includes(rolUpper)) {
+            return rolUpper === 'DEV' ? 'Dev' : rolUpper;
+        }
+        
+        // Mapeo de variaciones comunes
+        const mapeoRoles = {
+            'developer': 'Dev',
+            'desarrollo': 'Dev',
+            'dev': 'Dev',
+            'analista': 'AN',
+            'an': 'AN',
+            'analista funcional': 'AF',
+            'af': 'AF',
+            'ux': 'UX',
+            'diseño': 'UX',
+            'uxui': 'UX'
+        };
+        
+        return mapeoRoles[rol.toLowerCase()] || 'Dev';
     }
 
     static parsearHistorial(texto) {

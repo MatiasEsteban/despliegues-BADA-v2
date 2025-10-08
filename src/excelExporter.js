@@ -1,4 +1,4 @@
-// excelExporter.js - Exportación de datos con historial y comentarios
+// excelExporter.js - Exportación de datos con historial, comentarios y responsables con roles
 
 export class ExcelExporter {
     static exportar(versiones) {
@@ -18,6 +18,17 @@ export class ExcelExporter {
                         .join(' || ');
                 } else if (cdu.observaciones) {
                     observacionesTexto = cdu.observaciones;
+                }
+                
+                // Formatear responsables con roles
+                let responsablesTexto = '';
+                if (Array.isArray(cdu.responsables) && cdu.responsables.length > 0) {
+                    responsablesTexto = cdu.responsables
+                        .map(r => `${r.nombre} (${r.rol})`)
+                        .join(' || ');
+                } else if (cdu.responsable) {
+                    // Migración de formato antiguo
+                    responsablesTexto = `${cdu.responsable} (Dev)`;
                 }
                 
                 // Formatear historial para Excel
@@ -40,7 +51,7 @@ export class ExcelExporter {
                     'Nombre CDU': cdu.nombreCDU || '',
                     'Descripción CDU': cdu.descripcionCDU || '',
                     'Estado': cdu.estado || '',
-                    'Responsable': cdu.responsable || '',
+                    'Responsables': responsablesTexto,
                     'Observaciones/Cambios': observacionesTexto,
                     'Historial': historialTexto
                 });
@@ -73,7 +84,7 @@ export class ExcelExporter {
             { wch: 20 }, // Nombre CDU
             { wch: 30 }, // Descripción
             { wch: 25 }, // Estado
-            { wch: 20 }, // Responsable
+            { wch: 30 }, // Responsables (con roles)
             { wch: 50 }, // Observaciones
             { wch: 60 }  // Historial
         ];
@@ -159,6 +170,7 @@ export class ExcelExporter {
         resumen.push(['Nota: Los CDUs únicos se cuentan una sola vez aunque aparezcan en múltiples versiones.']);
         resumen.push(['El estado mostrado es el más reciente de cada CDU.']);
         resumen.push(['El historial registra todos los cambios realizados en cada CDU.']);
+        resumen.push(['Los responsables se muestran con su rol: Nombre (Rol).']);
 
         return resumen;
     }

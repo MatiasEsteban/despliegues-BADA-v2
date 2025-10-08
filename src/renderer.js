@@ -55,7 +55,7 @@ export class Renderer {
                         version.numero.toLowerCase().includes(searchLower) ||
                         cdu.nombreCDU.toLowerCase().includes(searchLower) ||
                         cdu.descripcionCDU.toLowerCase().includes(searchLower) ||
-                        cdu.responsable.toLowerCase().includes(searchLower);
+                        this.getResponsablesText(cdu).toLowerCase().includes(searchLower);
                     
                     if (!matchesSearch) return false;
                 }
@@ -64,9 +64,11 @@ export class Renderer {
                     return false;
                 }
                 
+                // ACTUALIZADO: Filtro de responsables compatible con nuevo formato
                 if (this.filters.responsable) {
                     const responsableLower = this.filters.responsable.toLowerCase();
-                    if (!cdu.responsable.toLowerCase().includes(responsableLower)) {
+                    const responsablesText = this.getResponsablesText(cdu).toLowerCase();
+                    if (!responsablesText.includes(responsableLower)) {
                         return false;
                     }
                 }
@@ -89,6 +91,17 @@ export class Renderer {
         }).filter(version => version.cdus.length > 0);
         
         return filtered;
+    }
+
+    // NUEVO: Obtener texto de responsables para filtros y búsqueda
+    getResponsablesText(cdu) {
+        if (Array.isArray(cdu.responsables) && cdu.responsables.length > 0) {
+            return cdu.responsables.map(r => `${r.nombre} ${r.rol}`).join(' ');
+        } else if (cdu.responsable) {
+            // Compatibilidad con formato antiguo
+            return cdu.responsable;
+        }
+        return '';
     }
 
     updateFilterStats(filteredVersions, totalVersions) {

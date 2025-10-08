@@ -1,4 +1,4 @@
-// domBuilder.js - Constructor de tarjetas de versión y filas de CDU
+// domBuilder.js - Constructor de tarjetas de versión y filas de CDU con responsables con roles
 
 export class DOMBuilder {
     // Iconos SVG para estados
@@ -103,7 +103,7 @@ export class DOMBuilder {
         return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
     }
 
-    // Crear fila de CDU para vista de detalle (sin columnas de versión/fecha/hora)
+    // Crear fila de CDU para vista de detalle
     static crearFilaCDU(cdu) {
         const tr = document.createElement('tr');
         tr.dataset.cduId = cdu.id;
@@ -150,12 +150,11 @@ export class DOMBuilder {
         tdEstado.appendChild(selectEstado);
         tr.appendChild(tdEstado);
         
-        // Responsable
-        const tdResponsable = document.createElement('td');
-        const inputResponsable = this.crearInput('text', 'campo-responsable', cdu.responsable, 'responsable', 'Nombre');
-        inputResponsable.dataset.cduId = cdu.id;
-        tdResponsable.appendChild(inputResponsable);
-        tr.appendChild(tdResponsable);
+        // Responsables con roles
+        const tdResponsables = document.createElement('td');
+        const containerResponsables = this.crearResponsablesContainer(cdu);
+        tdResponsables.appendChild(containerResponsables);
+        tr.appendChild(tdResponsables);
         
         // Observaciones
         const tdObservaciones = document.createElement('td');
@@ -202,6 +201,90 @@ export class DOMBuilder {
         container.appendChild(display);
         container.appendChild(select);
         return container;
+    }
+
+    // NUEVO: Crear contenedor de responsables con roles
+    static crearResponsablesContainer(cdu) {
+        const container = document.createElement('div');
+        container.className = 'responsables-container';
+        container.dataset.cduId = cdu.id;
+        
+        // Migrar formato antiguo si existe
+        let responsables = [];
+        if (Array.isArray(cdu.responsables)) {
+            responsables = cdu.responsables;
+        } else if (cdu.responsable) {
+            responsables = [{ nombre: cdu.responsable, rol: 'Dev' }];
+        }
+        
+        if (responsables.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'responsables-empty';
+            empty.textContent = 'Sin responsables';
+            container.appendChild(empty);
+        } else {
+            responsables.forEach((resp, index) => {
+                const item = this.crearResponsableItem(cdu.id, resp.nombre || '', resp.rol || 'Dev', index);
+                container.appendChild(item);
+            });
+        }
+        
+        const btnAgregar = document.createElement('button');
+        btnAgregar.className = 'btn-responsable btn-add';
+        btnAgregar.type = 'button';
+        btnAgregar.dataset.cduId = cdu.id;
+        btnAgregar.dataset.action = 'add-responsable';
+        btnAgregar.innerHTML = '+';
+        btnAgregar.title = 'Agregar responsable';
+        container.appendChild(btnAgregar);
+        
+        return container;
+    }
+
+    static crearResponsableItem(cduId, nombre, rol, index) {
+        const item = document.createElement('div');
+        item.className = 'responsable-item';
+        item.dataset.index = index;
+        
+        const inputNombre = document.createElement('input');
+        inputNombre.type = 'text';
+        inputNombre.value = nombre || '';
+        inputNombre.placeholder = 'Nombre...';
+        inputNombre.dataset.cduId = cduId;
+        inputNombre.dataset.respIndex = index;
+        inputNombre.dataset.campo = 'responsable-nombre';
+        
+        const selectRol = document.createElement('select');
+        selectRol.className = 'responsable-rol-select';
+        selectRol.dataset.cduId = cduId;
+        selectRol.dataset.respIndex = index;
+        selectRol.dataset.campo = 'responsable-rol';
+        
+        const roles = ['Dev', 'AF', 'UX', 'AN'];
+        roles.forEach(rolOption => {
+            const option = document.createElement('option');
+            option.value = rolOption;
+            option.textContent = rolOption;
+            if (rol === rolOption) {
+                option.selected = true;
+            }
+            selectRol.appendChild(option);
+        });
+        
+        const btnRemove = document.createElement('button');
+        btnRemove.className = 'btn-responsable btn-remove';
+        btnRemove.type = 'button';
+        btnRemove.innerHTML = '×';
+        btnRemove.title = 'Eliminar responsable';
+        btnRemove.dataset.cduId = cduId;
+        btnRemove.dataset.respIndex = index;
+        btnRemove.dataset.action = 'remove-responsable';
+        
+        item.appendChild(inputNombre);
+        item.appendChild(selectRol);
+        item.appendChild(btnRemove);
+        
+        return item;
     }
 
     static crearObservacionesContainer(cdu) {
