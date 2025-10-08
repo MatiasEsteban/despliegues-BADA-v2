@@ -1,4 +1,4 @@
-// eventHandlers.js - Manejo de eventos con navegación entre vistas y responsables con roles
+// eventHandlers.js - Manejo de eventos con clicks en displays de estado y rol
 
 import { ExcelExporter } from './excelExporter.js';
 import { ExcelImporter } from './excelImporter.js';
@@ -176,7 +176,7 @@ export class EventHandlers {
                     return;
                 }
 
-                // CORREGIDO: Contar CDUs únicos por UUID
+                // Contar CDUs únicos por UUID
                 const uuidsUnicos = new Set();
                 versiones.forEach(v => {
                     v.cdus.forEach(cdu => {
@@ -311,22 +311,47 @@ export class EventHandlers {
                 this.dataStore.updateResponsable(cduId, respIndex, 'rol', valor);
             }
         });
-        
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                mutation.addedNodes.forEach((node) => {
-                    if (node.nodeType === 1) {
-                        const textareas = node.querySelectorAll ? node.querySelectorAll('.campo-descripcion') : [];
-                        textareas.forEach(autoResizeTextarea);
-                    }
-                });
-            });
-        });
-        
-        observer.observe(tbody, { childList: true, subtree: true });
 
-        // Evento para acciones
+        // NUEVO: Clicks en displays para abrir selects
         tbody.addEventListener('click', async (e) => {
+            // Click en display de ESTADO para abrir el select
+            const estadoDisplay = e.target.closest('.estado-display');
+            if (estadoDisplay) {
+                const container = estadoDisplay.closest('.estado-select-container');
+                if (container) {
+                    const select = container.querySelector('.campo-estado');
+                    if (select) {
+                        // Simular click en el select
+                        select.style.pointerEvents = 'auto';
+                        select.focus();
+                        select.click();
+                        setTimeout(() => {
+                            select.style.pointerEvents = 'none';
+                        }, 100);
+                    }
+                }
+                return;
+            }
+
+            // Click en display de ROL para abrir el select
+            const rolDisplay = e.target.closest('.rol-display');
+            if (rolDisplay) {
+                const container = rolDisplay.closest('.rol-select-container');
+                if (container) {
+                    const select = container.querySelector('.responsable-rol-select');
+                    if (select) {
+                        // Simular click en el select
+                        select.style.pointerEvents = 'auto';
+                        select.focus();
+                        select.click();
+                        setTimeout(() => {
+                            select.style.pointerEvents = 'none';
+                        }, 100);
+                    }
+                }
+                return;
+            }
+            
             // Mostrar historial
             const btnHistorial = e.target.closest('[data-action="show-historial"]');
             if (btnHistorial) {
@@ -431,6 +456,19 @@ export class EventHandlers {
                 return;
             }
         });
+        
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1) {
+                        const textareas = node.querySelectorAll ? node.querySelectorAll('.campo-descripcion') : [];
+                        textareas.forEach(autoResizeTextarea);
+                    }
+                });
+            });
+        });
+        
+        observer.observe(tbody, { childList: true, subtree: true });
     }
 
     setupFilterEvents() {

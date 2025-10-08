@@ -651,7 +651,7 @@ h1 {
     resize: vertical;
 }
 
-/* =============== ESTADOS CON CLASES DIRECTAS =============== */
+/* =============== ESTADOS CON ANIMACIONES =============== */
 .estado-select-container {
     position: relative;
 }
@@ -665,24 +665,26 @@ h1 {
     font-weight: 600;
     border: 2px solid;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    pointer-events: none;
 }
 
-.estado-display:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+/* HOVER en el CONTENEDOR aplica estilos al DISPLAY */
+.estado-select-container:hover .estado-display {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .estado-icon {
     width: 20px;
     height: 20px;
     flex-shrink: 0;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-.estado-display:hover .estado-icon {
-    transform: scale(1.1) rotate(5deg);
+.estado-select-container:hover .estado-icon {
+    transform: scale(1.2) rotate(8deg);
 }
 
 .campo-estado {
@@ -759,7 +761,7 @@ h1 {
     stroke: var(--text-primary);
 }
 
-/* =============== RESPONSABLES CON DISPLAY VISUAL DE ROLES =============== */
+/* =============== ROLES CON ANIMACIONES =============== */
 .responsables-container {
     display: flex;
     flex-direction: column;
@@ -779,7 +781,7 @@ h1 {
     min-width: 0;
 }
 
-/* Display visual de roles (similar a estados) */
+/* Display visual de roles con animaciones */
 .rol-select-container {
     position: relative;
     min-width: 85px;
@@ -798,17 +800,18 @@ h1 {
     font-weight: 600;
     color: var(--text-primary);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    pointer-events: none;
 }
 
-.rol-display:hover {
+/* HOVER en el CONTENEDOR aplica estilos al DISPLAY */
+.rol-select-container:hover .rol-display {
     background: var(--accent-color);
     color: white;
     border-color: var(--accent-color);
-}
-
-.rol-display:hover .rol-icon {
-    stroke: white;
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .rol-icon {
@@ -816,14 +819,21 @@ h1 {
     height: 14px;
     flex-shrink: 0;
     stroke: var(--text-primary);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-.rol-display:hover .rol-icon {
+.rol-select-container:hover .rol-icon {
     stroke: white;
+    transform: scale(1.15) rotate(-5deg);
 }
 
 .rol-display span {
     font-size: 0.75rem;
+    transition: transform 0.3s ease;
+}
+
+.rol-select-container:hover .rol-display span {
+    transform: translateX(1px);
 }
 
 .responsable-rol-select {
