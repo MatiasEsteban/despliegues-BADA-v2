@@ -87,7 +87,7 @@ export class DataStore {
             estado: cdu.estado,
             responsables: Array.isArray(cdu.responsables) 
                 ? cdu.responsables.map(r => ({...r}))
-                : (cdu.responsable ? [{ nombre: cdu.responsable, rol: 'Dev' }] : []),
+                : (cdu.responsable ? [{ nombre: cdu.responsable, rol: 'DEV' }] : []),
             observaciones: [...(cdu.observaciones || [])],
             historial: []
         }));
@@ -193,7 +193,7 @@ export class DataStore {
     }
 
     // NUEVO: Manejo de responsables con roles
-    addResponsable(cduId, nombre = '', rol = 'Dev') {
+    addResponsable(cduId, nombre = '', rol = 'DEV') {
         for (const version of this.versiones) {
             const cdu = version.cdus.find(c => c.id === cduId);
             if (cdu) {
@@ -318,7 +318,7 @@ export class DataStore {
                     
                     // Migrar responsable antiguo a nuevo formato
                     if (c.responsable && !Array.isArray(c.responsables)) {
-                        c.responsables = [{ nombre: c.responsable, rol: 'Dev' }];
+                        c.responsables = [{ nombre: c.responsable, rol: 'DEV' }];
                     } else if (!Array.isArray(c.responsables)) {
                         c.responsables = [];
                     }

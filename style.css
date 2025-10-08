@@ -17,7 +17,7 @@
     --accent-hover: #2d3748;
     --shadow: rgba(0, 0, 0, 0.1);
     
-    /* Nuevos colores de estados */
+    /* Colores de estados */
     --estado-desarrollo-bg: #FFF4E6;
     --estado-desarrollo-color: #C05621;
     --estado-desarrollo-border: #F97316;
@@ -48,7 +48,7 @@
     --accent-hover: #718096;
     --shadow: rgba(0, 0, 0, 0.3);
     
-    /* Nuevos colores de estados - tema oscuro */
+    /* Colores de estados - tema oscuro */
     --estado-desarrollo-bg: #7C2D12;
     --estado-desarrollo-color: #FED7AA;
     --estado-desarrollo-border: #F97316;
@@ -651,7 +651,7 @@ h1 {
     resize: vertical;
 }
 
-/* =============== ESTADOS CON ICONOS Y BORDES ANIMADOS =============== */
+/* =============== ESTADOS CON CLASES DIRECTAS =============== */
 .estado-select-container {
     position: relative;
 }
@@ -661,7 +661,7 @@ h1 {
     align-items: center;
     gap: 0.5rem;
     padding: 0.6rem 0.8rem;
-    border-radius: 8px;
+    border-radius: 6px;
     font-weight: 600;
     border: 2px solid;
     cursor: pointer;
@@ -695,29 +695,26 @@ h1 {
     cursor: pointer;
 }
 
-/* Opción 1: Desarrollo */
-.estado-select-container:has(.campo-estado[value="En Desarrollo"]) .estado-display {
+/* Clases directas para estados */
+.estado-desarrollo .estado-display {
     background: var(--estado-desarrollo-bg);
     color: var(--estado-desarrollo-color);
     border-color: var(--estado-desarrollo-border);
 }
 
-/* Opción 2: Pendiente */
-.estado-select-container:has(.campo-estado[value="Pendiente de Certificacion"]) .estado-display {
+.estado-pendiente .estado-display {
     background: var(--estado-pendiente-bg);
     color: var(--estado-pendiente-color);
     border-color: var(--estado-pendiente-border);
 }
 
-/* Opción 3: Certificado */
-.estado-select-container:has(.campo-estado[value="Certificado OK"]) .estado-display {
+.estado-certificado .estado-display {
     background: var(--estado-certificado-bg);
     color: var(--estado-certificado-color);
     border-color: var(--estado-certificado-border);
 }
 
-/* Opción 4: Producción */
-.estado-select-container:has(.campo-estado[value="En Produccion"]) .estado-display {
+.estado-produccion .estado-display {
     background: var(--estado-produccion-bg);
     color: var(--estado-produccion-color);
     border-color: var(--estado-produccion-border);
@@ -762,7 +759,7 @@ h1 {
     stroke: var(--text-primary);
 }
 
-/* =============== RESPONSABLES CON ROLES =============== */
+/* =============== RESPONSABLES CON DISPLAY VISUAL DE ROLES =============== */
 .responsables-container {
     display: flex;
     flex-direction: column;
@@ -779,23 +776,64 @@ h1 {
 
 .responsable-item input {
     flex: 1;
+    min-width: 0;
 }
 
-.responsable-rol-select {
-    min-width: 80px;
-    padding: 0.5rem;
-    border: 2px solid var(--input-border);
+/* Display visual de roles (similar a estados) */
+.rol-select-container {
+    position: relative;
+    min-width: 85px;
+    max-width: 85px;
+}
+
+.rol-display {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 0.4rem;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
     border-radius: 6px;
     font-size: 0.875rem;
-    background: var(--bg-primary);
+    font-weight: 600;
     color: var(--text-primary);
+    cursor: pointer;
     transition: all 0.2s;
 }
 
-.responsable-rol-select:focus {
-    outline: none;
+.rol-display:hover {
+    background: var(--accent-color);
+    color: white;
     border-color: var(--accent-color);
-    box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1);
+}
+
+.rol-display:hover .rol-icon {
+    stroke: white;
+}
+
+.rol-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    stroke: var(--text-primary);
+}
+
+.rol-display:hover .rol-icon {
+    stroke: white;
+}
+
+.rol-display span {
+    font-size: 0.75rem;
+}
+
+.responsable-rol-select {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
 }
 
 .btn-responsable {
@@ -808,6 +846,7 @@ h1 {
     cursor: pointer;
     border-radius: 6px;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 
 .btn-responsable:hover {
@@ -929,7 +968,7 @@ h1 {
 .stat-danger { color: #EAB308; }
 .stat-info { color: #3B82F6; }
 
-/* =============== MODALS =============== */
+/* =============== MODALS RESPONSIVE =============== */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -944,6 +983,7 @@ h1 {
     z-index: 1000;
     opacity: 0;
     transition: opacity 0.3s ease;
+    padding: 1rem;
 }
 
 .modal-overlay.modal-show {
@@ -956,6 +996,8 @@ h1 {
     padding: 2rem;
     max-width: 450px;
     width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
     transform: scale(0.9);
     opacity: 0;
@@ -1001,19 +1043,21 @@ h1 {
 .modal-message {
     color: var(--text-secondary);
     line-height: 1.6;
+    white-space: pre-line;
 }
 
 .modal-actions {
     display: flex;
     gap: 0.75rem;
     justify-content: center;
+    flex-wrap: wrap;
 }
 
-/* Modal Historial */
+/* Modal Historial y Comentarios RESPONSIVE */
 .modal-historial,
 .modal-comentarios {
     max-width: 600px;
-    max-height: 80vh;
+    max-height: 85vh;
     display: flex;
     flex-direction: column;
 }
@@ -1027,6 +1071,13 @@ h1 {
     border-bottom: 2px solid var(--border-color);
 }
 
+.modal-historial-cdu {
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+}
+
 .modal-close-btn {
     background: transparent;
     border: none;
@@ -1036,6 +1087,7 @@ h1 {
     width: 32px;
     height: 32px;
     border-radius: 6px;
+    flex-shrink: 0;
 }
 
 .modal-close-btn:hover {
@@ -1046,7 +1098,22 @@ h1 {
 .modal-historial-content {
     flex: 1;
     overflow-y: auto;
-    max-height: 400px;
+    max-height: 50vh;
+    padding-right: 0.5rem;
+}
+
+.modal-historial-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-historial-content::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.modal-historial-content::-webkit-scrollbar-thumb {
+    background: var(--accent-color);
+    border-radius: 4px;
 }
 
 .historial-entry {
@@ -1072,8 +1139,32 @@ h1 {
     color: var(--text-primary);
 }
 
+.historial-old {
+    color: var(--text-secondary);
+    text-decoration: line-through;
+}
+
+.historial-new {
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+.historial-empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
 .modal-comentarios-content {
     margin-bottom: 1.5rem;
+}
+
+.comentarios-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
 }
 
 .comentarios-textarea {
@@ -1088,6 +1179,12 @@ h1 {
     resize: vertical;
 }
 
+.comentarios-textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1);
+}
+
 @media (max-width: 900px) {
     .versions-grid {
         grid-template-columns: 1fr;
@@ -1099,5 +1196,23 @@ h1 {
     
     .tabla-despliegues {
         min-width: 1000px;
+    }
+    
+    .modal {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .modal-title {
+        font-size: 1.25rem;
+    }
+    
+    .modal-actions {
+        flex-direction: column;
+    }
+    
+    .modal-actions .btn {
+        width: 100%;
     }
 }

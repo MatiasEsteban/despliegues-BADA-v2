@@ -28,7 +28,7 @@ export class ExcelExporter {
                         .join(' || ');
                 } else if (cdu.responsable) {
                     // Migración de formato antiguo
-                    responsablesTexto = `${cdu.responsable} (Dev)`;
+                    responsablesTexto = `${cdu.responsable} (DEV)`;
                 }
                 
                 // Formatear historial para Excel

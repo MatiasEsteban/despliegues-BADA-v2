@@ -154,7 +154,7 @@ export class ExcelImporter {
             } else {
                 return {
                     nombre: item.trim(),
-                    rol: 'Dev' // Rol por defecto
+                    rol: 'DEV' // Rol por defecto
                 };
             }
         });
@@ -163,27 +163,31 @@ export class ExcelImporter {
     // NUEVO: Normalizar roles
     static normalizarRol(rol) {
         const rolUpper = rol.toUpperCase();
-        const rolesValidos = ['DEV', 'AF', 'UX', 'AN'];
+        const rolesValidos = ['DEV', 'AF', 'UX', 'AN', 'QA'];
         
         if (rolesValidos.includes(rolUpper)) {
-            return rolUpper === 'DEV' ? 'Dev' : rolUpper;
+            return rolUpper;
         }
         
         // Mapeo de variaciones comunes
         const mapeoRoles = {
-            'developer': 'Dev',
-            'desarrollo': 'Dev',
-            'dev': 'Dev',
+            'developer': 'DEV',
+            'desarrollo': 'DEV',
+            'dev': 'DEV',
             'analista': 'AN',
             'an': 'AN',
             'analista funcional': 'AF',
             'af': 'AF',
             'ux': 'UX',
             'diseño': 'UX',
-            'uxui': 'UX'
+            'uxui': 'UX',
+            'qa': 'QA',
+            'quality assurance': 'QA',
+            'testing': 'QA',
+            'tester': 'QA'
         };
         
-        return mapeoRoles[rol.toLowerCase()] || 'Dev';
+        return mapeoRoles[rol.toLowerCase()] || 'DEV';
     }
 
     static parsearHistorial(texto) {

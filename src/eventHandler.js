@@ -4,6 +4,7 @@ import { ExcelExporter } from './excelExporter.js';
 import { ExcelImporter } from './excelImporter.js';
 import { Modal } from './modal.js';
 import { Validator } from './validator.js';
+import { DOMBuilder } from './domBuilder.js';
 
 export class EventHandlers {
     constructor(dataStore, renderer) {
@@ -175,12 +176,23 @@ export class EventHandlers {
                     return;
                 }
 
-                let totalCdus = 0;
-                versiones.forEach(v => totalCdus += v.cdus.length);
+                // CORREGIDO: Contar CDUs únicos por UUID
+                const uuidsUnicos = new Set();
+                versiones.forEach(v => {
+                    v.cdus.forEach(cdu => {
+                        if (cdu.uuid) {
+                            uuidsUnicos.add(cdu.uuid);
+                        }
+                    });
+                });
+
+                const totalCdusUnicos = uuidsUnicos.size;
+                let totalRegistros = 0;
+                versiones.forEach(v => totalRegistros += v.cdus.length);
 
                 const confirmacion = await Modal.show({
                     title: 'Confirmar Importación',
-                    message: `Se encontraron ${versiones.length} versiones con ${totalCdus} CDUs.\n¿Desea reemplazar los datos actuales?`,
+                    message: `Se encontraron:\n• ${versiones.length} versiones\n• ${totalCdusUnicos} CDUs únicos\n• ${totalRegistros} registros totales\n\n¿Desea reemplazar los datos actuales?`,
                     type: 'warning',
                     confirmText: 'Sí, reemplazar',
                     cancelText: 'Cancelar'
@@ -188,8 +200,8 @@ export class EventHandlers {
 
                 if (confirmacion) {
                     this.dataStore.replaceAll(versiones);
-                    this.renderer.showCardsView(); // Volver a vista de tarjetas
-                    await Modal.success('Datos cargados exitosamente', 'Importación Exitosa');
+                    this.renderer.showCardsView();
+                    await Modal.success(`Importación exitosa:\n• ${totalCdusUnicos} CDUs únicos\n• ${totalRegistros} registros totales`, 'Importación Exitosa');
                 }
             } catch (error) {
                 await Modal.error('Error al cargar el archivo: ' + error.message, 'Error');
@@ -246,7 +258,7 @@ export class EventHandlers {
                 const obsIndex = parseInt(e.target.dataset.obsIndex);
                 this.dataStore.updateObservacion(cduId, obsIndex, valor);
             } 
-            // NUEVO: Manejar actualización de nombre de responsable
+            // Manejar actualización de nombre de responsable
             else if (campo === 'responsable-nombre') {
                 const cduId = parseInt(e.target.dataset.cduId);
                 const respIndex = parseInt(e.target.dataset.respIndex);
@@ -261,14 +273,20 @@ export class EventHandlers {
         
         // Evento para cambio de estado y roles
         tbody.addEventListener('change', (e) => {
+            // ESTADO: Actualizar display visual Y clase CSS
             if (e.target.classList.contains('campo-estado')) {
                 const cduId = parseInt(e.target.dataset.cduId);
                 const valor = e.target.value;
                 
                 const container = e.target.closest('.estado-select-container');
                 if (container) {
+                    // Remover todas las clases de estado
+                    container.classList.remove('estado-desarrollo', 'estado-pendiente', 'estado-certificado', 'estado-produccion');
+                    // Agregar la clase correspondiente al nuevo estado
+                    container.classList.add(DOMBuilder.getEstadoClass(valor));
+                    
+                    // Actualizar el display visual
                     const display = container.querySelector('.estado-display');
-                    const DOMBuilder = window.DOMBuilder || this.renderer.constructor;
                     display.innerHTML = `
                         ${DOMBuilder.getEstadoIcon(valor)}
                         <span>${valor}</span>
@@ -277,11 +295,19 @@ export class EventHandlers {
                 
                 this.dataStore.updateCdu(cduId, 'estado', valor);
             }
-            // NUEVO: Manejar cambio de rol de responsable
+            // ROL: Actualizar display visual
             else if (e.target.dataset.campo === 'responsable-rol') {
                 const cduId = parseInt(e.target.dataset.cduId);
                 const respIndex = parseInt(e.target.dataset.respIndex);
                 const valor = e.target.value;
+                
+                // Actualizar el display visual del rol
+                const container = e.target.closest('.rol-select-container');
+                if (container) {
+                    const display = container.querySelector('.rol-display');
+                    display.innerHTML = `${DOMBuilder.getRolIcon(valor)}<span>${valor}</span>`;
+                }
+                
                 this.dataStore.updateResponsable(cduId, respIndex, 'rol', valor);
             }
         });
@@ -335,11 +361,11 @@ export class EventHandlers {
                 return;
             }
             
-            // NUEVO: Agregar responsable
+            // Agregar responsable
             const btnAddResp = e.target.closest('[data-action="add-responsable"]');
             if (btnAddResp) {
                 const cduId = parseInt(btnAddResp.dataset.cduId);
-                this.dataStore.addResponsable(cduId, '', 'Dev');
+                this.dataStore.addResponsable(cduId, '', 'DEV');
                 this.renderer.fullRender();
                 
                 setTimeout(() => {
@@ -353,7 +379,7 @@ export class EventHandlers {
                 return;
             }
             
-            // NUEVO: Eliminar responsable
+            // Eliminar responsable
             const btnRemoveResp = e.target.closest('[data-action="remove-responsable"]');
             if (btnRemoveResp) {
                 const cduId = parseInt(btnRemoveResp.dataset.cduId);

@@ -1,4 +1,4 @@
-// validator.js - Sistema de validaciones de campos
+// validator.js - Sistema de validaciones de campos con soporte para responsables con roles
 
 export class Validator {
     // Validar una versión completa
@@ -25,7 +25,7 @@ export class Validator {
         };
     }
     
-    // Validar un CDU
+    // Validar un CDU con nuevo formato de responsables
     static validateCdu(cdu) {
         const errors = [];
         
@@ -43,10 +43,23 @@ export class Validator {
             });
         }
         
-        if (!cdu.responsable || cdu.responsable.trim() === '') {
+        // CORREGIDO: Validar nuevo formato de responsables (array)
+        let tieneResponsable = false;
+        
+        // Verificar formato NUEVO (array de objetos)
+        if (Array.isArray(cdu.responsables) && cdu.responsables.length > 0) {
+            // Verificar que al menos un responsable tenga nombre
+            tieneResponsable = cdu.responsables.some(r => r.nombre && r.nombre.trim() !== '');
+        } 
+        // Verificar formato ANTIGUO (campo responsable)
+        else if (cdu.responsable && cdu.responsable.trim() !== '') {
+            tieneResponsable = true;
+        }
+        
+        if (!tieneResponsable) {
             errors.push({
-                field: 'responsable',
-                message: 'El responsable es obligatorio'
+                field: 'responsables',
+                message: 'El CDU debe tener al menos un responsable con nombre'
             });
         }
         

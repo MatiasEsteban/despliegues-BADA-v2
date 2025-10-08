@@ -64,7 +64,7 @@ export class Renderer {
                     return false;
                 }
                 
-                // ACTUALIZADO: Filtro de responsables compatible con nuevo formato
+                // Filtro de responsables compatible con nuevo formato
                 if (this.filters.responsable) {
                     const responsableLower = this.filters.responsable.toLowerCase();
                     const responsablesText = this.getResponsablesText(cdu).toLowerCase();
@@ -93,7 +93,7 @@ export class Renderer {
         return filtered;
     }
 
-    // NUEVO: Obtener texto de responsables para filtros y búsqueda
+    // Obtener texto de responsables para filtros y búsqueda
     getResponsablesText(cdu) {
         if (Array.isArray(cdu.responsables) && cdu.responsables.length > 0) {
             return cdu.responsables.map(r => `${r.nombre} ${r.rol}`).join(' ');

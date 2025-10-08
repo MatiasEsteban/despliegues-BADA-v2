@@ -22,6 +22,48 @@ export class DOMBuilder {
         return icons[estado] || '';
     }
 
+    // Iconos SVG para roles
+    static getRolIcon(rol) {
+        const icons = {
+            'DEV': `<svg class="rol-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="16 18 22 12 16 6"></polyline>
+                <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>`,
+            'AF': `<svg class="rol-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>`,
+            'UX': `<svg class="rol-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>`,
+            'AN': `<svg class="rol-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="20" x2="12" y2="10"></line>
+                <line x1="18" y1="20" x2="18" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="16"></line>
+            </svg>`,
+            'QA': `<svg class="rol-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>`
+        };
+        return icons[rol] || icons['DEV'];
+    }
+
+    // Obtener clase CSS según el estado
+    static getEstadoClass(estado) {
+        const classes = {
+            'En Desarrollo': 'estado-desarrollo',
+            'Pendiente de Certificacion': 'estado-pendiente',
+            'Certificado OK': 'estado-certificado',
+            'En Produccion': 'estado-produccion'
+        };
+        return classes[estado] || 'estado-desarrollo';
+    }
+
     // Crear tarjeta de versión para vista de grid
     static crearTarjetaVersion(version, onClickCallback) {
         const card = document.createElement('div');
@@ -174,7 +216,7 @@ export class DOMBuilder {
 
     static crearSelectConIconos(opciones, valorSeleccionado) {
         const container = document.createElement('div');
-        container.className = 'estado-select-container';
+        container.className = 'estado-select-container ' + this.getEstadoClass(valorSeleccionado);
         
         const display = document.createElement('div');
         display.className = 'estado-display';
@@ -214,7 +256,7 @@ export class DOMBuilder {
         if (Array.isArray(cdu.responsables)) {
             responsables = cdu.responsables;
         } else if (cdu.responsable) {
-            responsables = [{ nombre: cdu.responsable, rol: 'Dev' }];
+            responsables = [{ nombre: cdu.responsable, rol: 'DEV' }];
         }
         
         if (responsables.length === 0) {
@@ -224,7 +266,7 @@ export class DOMBuilder {
             container.appendChild(empty);
         } else {
             responsables.forEach((resp, index) => {
-                const item = this.crearResponsableItem(cdu.id, resp.nombre || '', resp.rol || 'Dev', index);
+                const item = this.crearResponsableItem(cdu.id, resp.nombre || '', resp.rol || 'DEV', index);
                 container.appendChild(item);
             });
         }
@@ -246,13 +288,13 @@ export class DOMBuilder {
         item.className = 'responsable-item';
         item.dataset.index = index;
         
-        const inputNombre = document.createElement('input');
-        inputNombre.type = 'text';
-        inputNombre.value = nombre || '';
-        inputNombre.placeholder = 'Nombre...';
-        inputNombre.dataset.cduId = cduId;
-        inputNombre.dataset.respIndex = index;
-        inputNombre.dataset.campo = 'responsable-nombre';
+        // CONTENEDOR DE ROL CON DISPLAY VISUAL (similar a estados)
+        const rolContainer = document.createElement('div');
+        rolContainer.className = 'rol-select-container';
+        
+        const rolDisplay = document.createElement('div');
+        rolDisplay.className = 'rol-display';
+        rolDisplay.innerHTML = `${this.getRolIcon(rol)}<span>${rol}</span>`;
         
         const selectRol = document.createElement('select');
         selectRol.className = 'responsable-rol-select';
@@ -260,7 +302,7 @@ export class DOMBuilder {
         selectRol.dataset.respIndex = index;
         selectRol.dataset.campo = 'responsable-rol';
         
-        const roles = ['Dev', 'AF', 'UX', 'AN'];
+        const roles = ['DEV', 'AF', 'UX', 'AN', 'QA'];
         roles.forEach(rolOption => {
             const option = document.createElement('option');
             option.value = rolOption;
@@ -271,6 +313,19 @@ export class DOMBuilder {
             selectRol.appendChild(option);
         });
         
+        rolContainer.appendChild(rolDisplay);
+        rolContainer.appendChild(selectRol);
+        
+        // INPUT DE NOMBRE (ahora a la derecha)
+        const inputNombre = document.createElement('input');
+        inputNombre.type = 'text';
+        inputNombre.value = nombre || '';
+        inputNombre.placeholder = 'Nombre...';
+        inputNombre.dataset.cduId = cduId;
+        inputNombre.dataset.respIndex = index;
+        inputNombre.dataset.campo = 'responsable-nombre';
+        
+        // BOTÓN ELIMINAR
         const btnRemove = document.createElement('button');
         btnRemove.className = 'btn-responsable btn-remove';
         btnRemove.type = 'button';
@@ -280,8 +335,9 @@ export class DOMBuilder {
         btnRemove.dataset.respIndex = index;
         btnRemove.dataset.action = 'remove-responsable';
         
+        // Orden: ROL - NOMBRE - ELIMINAR
+        item.appendChild(rolContainer);
         item.appendChild(inputNombre);
-        item.appendChild(selectRol);
         item.appendChild(btnRemove);
         
         return item;
