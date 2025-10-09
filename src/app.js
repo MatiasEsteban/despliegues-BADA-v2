@@ -14,6 +14,5 @@ export class App {
     init() {
         this.renderer.init();
         this.eventHandlers.setupEventListeners();
-        console.log('✅ Aplicación de Control de Despliegues inicializada');
     }
 }

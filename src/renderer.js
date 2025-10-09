@@ -6,17 +6,18 @@ window.DOMBuilder = DOMBuilder;
 
 export class Renderer {
     constructor(dataStore) {
-        this.dataStore = dataStore;
-        this.currentView = 'cards';
-        this.currentVersionId = null;
-        this.filters = {
-            search: '',
-            estado: '',
-            responsable: '',
-            fechaDesde: '',
-            fechaHasta: ''
-        };
-    }
+    this.dataStore = dataStore;
+    this.currentView = 'cards';
+    this.currentVersionId = null;
+    this.isRendering = false; // AGREGAR ESTA LÍNEA
+    this.filters = {
+        search: '',
+        estado: '',
+        responsable: '',
+        fechaDesde: '',
+        fechaHasta: ''
+    };
+}
 
     showCardsView() {
         document.getElementById('view-cards').classList.add('active');
@@ -361,11 +362,19 @@ export class Renderer {
     }
 
     fullRender() {
-        if (this.currentView === 'cards') {
-            this.renderCardsView();
-        } else if (this.currentView === 'detail' && this.currentVersionId) {
-            this.renderDetailView(this.currentVersionId);
-        }
-        this.updateStats();
+    console.log('🎨 fullRender iniciado');
+    this.isRendering = true;
+    
+    if (this.currentView === 'cards') {
+        this.renderCardsView();
+    } else if (this.currentView === 'detail' && this.currentVersionId) {
+        this.renderDetailView(this.currentVersionId);
     }
+    this.updateStats();
+    
+    setTimeout(() => {
+        this.isRendering = false;
+        console.log('🎨 fullRender completado');
+    }, 100);
+}
 }

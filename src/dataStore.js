@@ -1,4 +1,4 @@
-// dataStore.js - Manejo del estado y datos con comentarios categorizados y changelog de estados
+// dataStore.js - Manejo del estado y datos con sistema de cambios pendientes CORREGIDO
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -8,10 +8,22 @@ export class DataStore {
         this.nextVersionId = 2;
         this.nextCduId = 3;
         this.observers = [];
+        
+        // Sistema de cambios pendientes
+        this.pendingChanges = [];
+        this.changeObservers = [];
     }
 
     subscribe(callback) {
         this.observers.push(callback);
+    }
+
+    subscribeToChanges(callback) {
+        this.changeObservers.push(callback);
+    }
+
+    notifyChangeObservers() {
+        this.changeObservers.forEach(callback => callback(this.pendingChanges));
     }
 
     notify() {
@@ -20,6 +32,95 @@ export class DataStore {
 
     getAll() {
         return this.versiones;
+    }
+
+    getPendingChanges() {
+        return this.pendingChanges;
+    }
+
+    hasPendingChanges() {
+        return this.pendingChanges.length > 0;
+    }
+
+    // Agregar cambio pendiente - CORREGIDO
+    addPendingChange(change) {
+        // Verificar si ya existe un cambio para el mismo CDU y campo
+        const existingIndex = this.pendingChanges.findIndex(
+            c => c.cduId === change.cduId && c.campo === change.campo
+        );
+
+        if (existingIndex !== -1) {
+            // CRÍTICO: Al actualizar, mantener el valorAnterior ORIGINAL
+            const originalValorAnterior = this.pendingChanges[existingIndex].valorAnterior;
+            
+            // Si el nuevo valor es igual al original, eliminar el cambio pendiente
+            if (change.valorNuevo === originalValorAnterior) {
+                this.pendingChanges.splice(existingIndex, 1);
+            } else {
+                // Actualizar solo el valorNuevo, mantener el valorAnterior original
+                this.pendingChanges[existingIndex] = {
+                    ...change,
+                    valorAnterior: originalValorAnterior
+                };
+            }
+        } else {
+            // Agregar nuevo cambio
+            this.pendingChanges.push(change);
+        }
+
+        this.notifyChangeObservers();
+    }
+
+    // Aplicar todos los cambios pendientes - CORREGIDO
+    applyPendingChanges() {
+        
+        const appliedChanges = [];
+
+        this.pendingChanges.forEach(change => {
+            for (const version of this.versiones) {
+                const cdu = version.cdus.find(c => c.id === change.cduId);
+                if (cdu) {
+                    // CRÍTICO: Aplicar el cambio directamente usando los valores guardados
+                    cdu[change.campo] = change.valorNuevo;
+                    
+                    // Registrar en historial
+                    let tipo = change.campo;
+                    if (change.campo === 'nombreCDU') tipo = 'nombre';
+                    if (change.campo === 'descripcionCDU') tipo = 'descripcion';
+                    
+                    this.addHistorialEntry(
+                        change.cduId, 
+                        tipo, 
+                        change.valorAnterior, 
+                        change.valorNuevo, 
+                        change.campo
+                    );
+                    
+                    appliedChanges.push({
+                        ...change,
+                        versionNumero: change.versionNumero || version.numero,
+                        cduNombre: change.cduNombre || cdu.nombreCDU
+                    });
+                    
+                    break;
+                }
+            }
+        });
+
+
+
+        // Limpiar cambios pendientes
+        this.pendingChanges = [];
+        this.notifyChangeObservers();
+        this.notify();
+
+        return appliedChanges;
+    }
+
+    // Descartar cambios pendientes
+    discardPendingChanges() {
+        this.pendingChanges = [];
+        this.notifyChangeObservers();
     }
 
     getLatestVersionNumber() {
@@ -54,7 +155,6 @@ export class DataStore {
         }
     }
 
-    // Estructura de comentarios por defecto
     getDefaultComentarios() {
         return {
             mejoras: [],
@@ -179,11 +279,9 @@ export class DataStore {
         }
     }
 
-    // NUEVO: Gestión de comentarios categorizados
     addComentarioCategoria(versionId, categoria, texto = '') {
         const version = this.versiones.find(v => v.id === versionId);
         if (version) {
-            // Migrar a nuevo formato si es necesario
             if (typeof version.comentarios === 'string') {
                 const oldComments = version.comentarios;
                 version.comentarios = this.getDefaultComentarios();
@@ -223,7 +321,6 @@ export class DataStore {
             if (cdu) {
                 const valorAnterior = cdu[campo];
                 
-                // Solo actualizar si el valor cambió
                 if (valorAnterior !== valor) {
                     cdu[campo] = valor;
                     
@@ -231,7 +328,6 @@ export class DataStore {
                     if (campo === 'nombreCDU') tipo = 'nombre';
                     if (campo === 'descripcionCDU') tipo = 'descripcion';
                     
-                    // Agregar entrada al historial
                     this.addHistorialEntry(cduId, tipo, valorAnterior, valor, campo);
                     this.notify();
                 }
@@ -372,7 +468,6 @@ export class DataStore {
                 v.cdus.forEach(c => {
                     if (c.id > maxCduId) maxCduId = c.id;
                     
-                    // Migrar responsable antiguo a nuevo formato
                     if (c.responsable && !Array.isArray(c.responsables)) {
                         c.responsables = [{ nombre: c.responsable, rol: 'DEV' }];
                     } else if (!Array.isArray(c.responsables)) {
@@ -380,7 +475,6 @@ export class DataStore {
                     }
                 });
                 
-                // Migrar comentarios al nuevo formato si es necesario
                 if (typeof v.comentarios === 'string') {
                     const oldComments = v.comentarios;
                     v.comentarios = this.getDefaultComentarios();

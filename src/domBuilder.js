@@ -183,14 +183,16 @@ export class DOMBuilder {
         tr.appendChild(tdDescripcion);
         
         // Estado con iconos
-        const tdEstado = document.createElement('td');
-        const selectEstado = this.crearSelectConIconos(
-            ['En Desarrollo', 'Pendiente de Certificacion', 'Certificado OK', 'En Produccion'], 
-            cdu.estado
-        );
-        selectEstado.dataset.cduId = cdu.id;
-        tdEstado.appendChild(selectEstado);
-        tr.appendChild(tdEstado);
+// Estado con iconos
+const tdEstado = document.createElement('td');
+const selectEstado = this.crearSelectConIconos(
+    ['En Desarrollo', 'Pendiente de Certificacion', 'Certificado OK', 'En Produccion'], 
+    cdu.estado,
+    cdu.id // AGREGAR EL cduId AQUÍ
+);
+// Ya no es necesario: selectEstado.dataset.cduId = cdu.id;
+tdEstado.appendChild(selectEstado);
+tr.appendChild(tdEstado);
         
         // Responsables con roles
         const tdResponsables = document.createElement('td');
@@ -214,36 +216,41 @@ export class DOMBuilder {
         return tr;
     }
 
-    static crearSelectConIconos(opciones, valorSeleccionado) {
-        const container = document.createElement('div');
-        container.className = 'estado-select-container ' + this.getEstadoClass(valorSeleccionado);
-        
-        const display = document.createElement('div');
-        display.className = 'estado-display';
-        display.innerHTML = `
-            ${this.getEstadoIcon(valorSeleccionado)}
-            <span>${valorSeleccionado}</span>
-        `;
-        
-        const select = document.createElement('select');
-        select.className = 'campo-estado';
-        select.setAttribute('data-campo', 'estado');
-        select.value = valorSeleccionado;
-        
-        opciones.forEach(opcion => {
-            const option = document.createElement('option');
-            option.value = opcion;
-            option.textContent = opcion;
-            if (valorSeleccionado === opcion) {
-                option.selected = true;
-            }
-            select.appendChild(option);
-        });
-        
-        container.appendChild(display);
-        container.appendChild(select);
-        return container;
+    static crearSelectConIconos(opciones, valorSeleccionado, cduId = null) {
+    const container = document.createElement('div');
+    container.className = 'estado-select-container ' + this.getEstadoClass(valorSeleccionado);
+    
+    const display = document.createElement('div');
+    display.className = 'estado-display';
+    display.innerHTML = `
+        ${this.getEstadoIcon(valorSeleccionado)}
+        <span>${valorSeleccionado}</span>
+    `;
+    
+    const select = document.createElement('select');
+    select.className = 'campo-estado';
+    select.setAttribute('data-campo', 'estado');
+    select.value = valorSeleccionado;
+    
+    // CRÍTICO: Agregar data-cdu-id al select
+    if (cduId !== null) {
+        select.dataset.cduId = cduId;
     }
+    
+    opciones.forEach(opcion => {
+        const option = document.createElement('option');
+        option.value = opcion;
+        option.textContent = opcion;
+        if (valorSeleccionado === opcion) {
+            option.selected = true;
+        }
+        select.appendChild(option);
+    });
+    
+    container.appendChild(display);
+    container.appendChild(select);
+    return container;
+}
 
     // NUEVO: Crear contenedor de responsables con roles
     static crearResponsablesContainer(cdu) {

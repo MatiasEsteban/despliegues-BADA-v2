@@ -1,4 +1,4 @@
-// eventHandlers.js - Manejo de eventos con clicks en displays de estado y rol
+// eventHandlers.js - Con debugging completo
 
 import { ExcelExporter } from './excelExporter.js';
 import { ExcelImporter } from './excelImporter.js';
@@ -10,6 +10,8 @@ export class EventHandlers {
     constructor(dataStore, renderer) {
         this.dataStore = dataStore;
         this.renderer = renderer;
+        this.saveButton = null;
+         ('🎯 EventHandlers constructor iniciado');
     }
 
     setupEventListeners() {
@@ -22,18 +24,89 @@ export class EventHandlers {
         this.setupDescargarButton();
         this.setupTablaEvents();
         this.setupFilterEvents();
+        this.setupSaveChangesButton();
         
-        console.log('✅ Event listeners configurados correctamente');
+         ('✅ Event listeners configurados correctamente');
+    }
+
+    setupSaveChangesButton() {
+        this.saveButton = document.createElement('button');
+        this.saveButton.id = 'btn-save-changes';
+        this.saveButton.className = 'btn-save-changes hidden';
+        this.saveButton.innerHTML = `
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            <span>Guardar Cambios</span>
+            <span class="changes-count">0</span>
+        `;
+        document.body.appendChild(this.saveButton);
+
+        this.dataStore.subscribeToChanges((changes) => {
+            const count = changes.length;
+             ('🔔 Notificación de cambios:', count);
+            if (count > 0) {
+                this.saveButton.classList.remove('hidden');
+                this.saveButton.querySelector('.changes-count').textContent = count;
+            } else {
+                this.saveButton.classList.add('hidden');
+            }
+        });
+
+        this.saveButton.addEventListener('click', async () => {
+             ('🖱️ Click en botón Guardar Cambios');
+            await this.handleSaveChanges();
+        });
+
+         ('✅ Botón de guardar cambios configurado');
+    }
+
+    async handleSaveChanges() {
+         ('💾 === INICIO handleSaveChanges ===');
+        
+        const pendingChanges = this.dataStore.getPendingChanges();
+         ('📦 Cambios pendientes obtenidos:', JSON.stringify(pendingChanges, null, 2));
+        
+        if (pendingChanges.length === 0) {
+             ('⚠️ No hay cambios pendientes');
+            await Modal.warning('No hay cambios pendientes para guardar.', 'Sin Cambios');
+            return;
+        }
+
+        const changesInfo = [...pendingChanges];
+         ('📊 changesInfo preparado:', changesInfo);
+
+        const confirmed = await Modal.showChangesSummary(changesInfo);
+         ('🤔 Usuario confirmó?', confirmed);
+
+        if (confirmed) {
+             ('✅ Aplicando cambios...');
+            const appliedChanges = this.dataStore.applyPendingChanges();
+             ('✅ Cambios aplicados:', appliedChanges);
+            
+            await Modal.success(
+                `Se guardaron ${appliedChanges.length} cambio${appliedChanges.length !== 1 ? 's' : ''} exitosamente.`,
+                'Cambios Guardados'
+            );
+
+            this.renderer.fullRender();
+        } else {
+             ('❌ Cambios cancelados');
+            this.dataStore.discardPendingChanges();
+            this.renderer.fullRender();
+        }
+        
+         ('💾 === FIN handleSaveChanges ===');
     }
 
     setupNavigationButtons() {
-        // Botón volver a tarjetas
         const btnBack = document.getElementById('btn-back-to-cards');
         btnBack.addEventListener('click', () => {
             this.renderer.showCardsView();
         });
         
-        // Botón editar comentarios de versión
         const btnEditComments = document.getElementById('btn-edit-version-comments');
         btnEditComments.addEventListener('click', async () => {
             if (!this.renderer.currentVersionId) return;
@@ -52,43 +125,37 @@ export class EventHandlers {
             }
         });
         
-        console.log('✅ Botones de navegación configurados');
+         ('✅ Botones de navegación configurados');
     }
 
     setupVersionMetaInputs() {
-        // Input de fecha de versión
         const dateInput = document.getElementById('detail-version-date');
         dateInput.addEventListener('change', (e) => {
             if (!this.renderer.currentVersionId) return;
             this.dataStore.updateVersion(this.renderer.currentVersionId, 'fechaDespliegue', e.target.value);
         });
 
-        // Input de hora de versión
         const timeInput = document.getElementById('detail-version-time');
         timeInput.addEventListener('change', (e) => {
             if (!this.renderer.currentVersionId) return;
             this.dataStore.updateVersion(this.renderer.currentVersionId, 'horaDespliegue', e.target.value);
         });
 
-        console.log('✅ Inputs de fecha/hora de versión configurados');
+         ('✅ Inputs de fecha/hora de versión configurados');
     }
 
     setupVersionButtons() {
-        // Botón agregar CDU
         const btnAgregar = document.getElementById('btn-agregar');
         btnAgregar.addEventListener('click', () => {
             if (!this.renderer.currentVersionId) return;
             
-            // Encontrar la versión actual
             const version = this.dataStore.getAll().find(v => v.id === this.renderer.currentVersionId);
             if (!version) return;
             
-            // Agregar CDU directamente a esta versión
             const nuevoCdu = this.dataStore.addCduToVersion(this.renderer.currentVersionId);
             this.renderer.fullRender();
         });
         
-        // Botón nueva versión limpia
         const btnNuevaVersionLimpia = document.getElementById('btn-nueva-version-limpia');
         btnNuevaVersionLimpia.addEventListener('click', async () => {
             const version = this.dataStore.addNewEmptyVersion();
@@ -99,7 +166,6 @@ export class EventHandlers {
             this.renderer.fullRender();
         });
         
-        // Botón duplicar versión
         const btnDuplicarVersion = document.getElementById('btn-duplicar-version');
         btnDuplicarVersion.addEventListener('click', async () => {
             const versiones = this.dataStore.getAll();
@@ -122,7 +188,7 @@ export class EventHandlers {
             this.renderer.fullRender();
         });
         
-        console.log('✅ Botones de versión configurados');
+         ('✅ Botones de versión configurados');
     }
 
     setupSearchToggle() {
@@ -141,7 +207,7 @@ export class EventHandlers {
             }
         });
         
-        console.log('✅ Toggle de búsqueda configurado');
+         ('✅ Toggle de búsqueda configurado');
     }
 
     setupThemeToggle() {
@@ -195,7 +261,6 @@ export class EventHandlers {
                     return;
                 }
 
-                // Contar CDUs únicos por UUID
                 const uuidsUnicos = new Set();
                 versiones.forEach(v => {
                     v.cdus.forEach(cdu => {
@@ -253,6 +318,7 @@ export class EventHandlers {
     }
 
     setupTablaEvents() {
+         ('🎯 Configurando eventos de tabla...');
         const tbody = document.getElementById('tabla-body');
         
         const autoResizeTextarea = (textarea) => {
@@ -260,71 +326,102 @@ export class EventHandlers {
             textarea.style.height = textarea.scrollHeight + 'px';
         };
         
-        // Evento INPUT solo para textareas (auto-resize visual)
         tbody.addEventListener('input', (e) => {
-            // Solo auto-resize de textareas, sin guardar datos
             if (e.target.tagName === 'TEXTAREA') {
                 autoResizeTextarea(e.target);
             }
         });
 
-        // Evento BLUR para inputs de texto (guardar cuando pierde foco)
         tbody.addEventListener('blur', (e) => {
             const campo = e.target.dataset.campo;
             if (!campo) return;
 
             const valor = e.target.value;
             
-            // Manejar actualización de observaciones
             if (campo === 'observacion') {
                 const cduId = parseInt(e.target.dataset.cduId);
                 const obsIndex = parseInt(e.target.dataset.obsIndex);
                 this.dataStore.updateObservacion(cduId, obsIndex, valor);
             } 
-            // Manejar actualización de nombre de responsable
             else if (campo === 'responsable-nombre') {
                 const cduId = parseInt(e.target.dataset.cduId);
                 const respIndex = parseInt(e.target.dataset.respIndex);
                 this.dataStore.updateResponsable(cduId, respIndex, 'nombre', valor);
             }
-            // Otros campos de texto (nombreCDU, descripcionCDU)
             else if (e.target.dataset.cduId && (campo === 'nombreCDU' || campo === 'descripcionCDU')) {
                 const cduId = parseInt(e.target.dataset.cduId);
                 this.dataStore.updateCdu(cduId, campo, valor);
             }
-        }, true); // true = usar capture para asegurar que funcione con todos los elementos
+        }, true);
         
-        // Evento para cambio de estado y roles
+        // EVENTO CHANGE - EL MÁS IMPORTANTE
         tbody.addEventListener('change', (e) => {
-            // ESTADO: Actualizar display visual Y clase CSS
+             ('🔔 === EVENTO CHANGE DISPARADO ===');
+             ('Target:', e.target);
+             ('Target classes:', e.target.className);
+             ('isRendering?', this.renderer.isRendering);
+            
+            if (this.renderer.isRendering) {
+                 ('⚠️ Ignorando evento change durante render');
+                return;
+            }
+            
             if (e.target.classList.contains('campo-estado')) {
-                const cduId = parseInt(e.target.dataset.cduId);
-                const valor = e.target.value;
+                 ('✅ Es un campo-estado');
                 
-                const container = e.target.closest('.estado-select-container');
-                if (container) {
-                    // Remover todas las clases de estado
-                    container.classList.remove('estado-desarrollo', 'estado-pendiente', 'estado-certificado', 'estado-produccion');
-                    // Agregar la clase correspondiente al nuevo estado
-                    container.classList.add(DOMBuilder.getEstadoClass(valor));
-                    
-                    // Actualizar el display visual
-                    const display = container.querySelector('.estado-display');
-                    display.innerHTML = `
-                        ${DOMBuilder.getEstadoIcon(valor)}
-                        <span>${valor}</span>
-                    `;
+                const cduId = parseInt(e.target.dataset.cduId);
+                const valorNuevo = e.target.value;
+                
+                 ('📊 cduId:', cduId, 'valorNuevo:', valorNuevo);
+                
+                let valorAnterior = null;
+                let cduNombre = '';
+                let versionNumero = '';
+                
+                for (const version of this.dataStore.getAll()) {
+                    const cdu = version.cdus.find(c => c.id === cduId);
+                    if (cdu) {
+                        valorAnterior = cdu.estado;
+                        cduNombre = cdu.nombreCDU || 'Sin nombre';
+                        versionNumero = version.numero;
+                         ('🔍 CDU encontrado:', { valorAnterior, cduNombre, versionNumero });
+                        break;
+                    }
                 }
                 
-                this.dataStore.updateCdu(cduId, 'estado', valor);
+                if (valorAnterior !== valorNuevo) {
+
+                    
+                    this.dataStore.addPendingChange({
+                        cduId,
+                        campo: 'estado',
+                        valorAnterior,
+                        valorNuevo,
+                        cduNombre,
+                        versionNumero,
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    const container = e.target.closest('.estado-select-container');
+                    if (container) {
+                        container.classList.remove('estado-desarrollo', 'estado-pendiente', 'estado-certificado', 'estado-produccion');
+                        container.classList.add(DOMBuilder.getEstadoClass(valorNuevo));
+                        
+                        const display = container.querySelector('.estado-display');
+                        display.innerHTML = `
+                            ${DOMBuilder.getEstadoIcon(valorNuevo)}
+                            <span>${valorNuevo}</span>
+                        `;
+                    }
+                } else {
+
+                }
             }
-            // ROL: Actualizar display visual
             else if (e.target.dataset.campo === 'responsable-rol') {
                 const cduId = parseInt(e.target.dataset.cduId);
                 const respIndex = parseInt(e.target.dataset.respIndex);
                 const valor = e.target.value;
                 
-                // Actualizar el display visual del rol
                 const container = e.target.closest('.rol-select-container');
                 if (container) {
                     const display = container.querySelector('.rol-display');
@@ -333,18 +430,17 @@ export class EventHandlers {
                 
                 this.dataStore.updateResponsable(cduId, respIndex, 'rol', valor);
             }
+            
+
         });
 
-        // NUEVO: Clicks en displays para abrir selects
         tbody.addEventListener('click', async (e) => {
-            // Click en display de ESTADO para abrir el select
             const estadoDisplay = e.target.closest('.estado-display');
             if (estadoDisplay) {
                 const container = estadoDisplay.closest('.estado-select-container');
                 if (container) {
                     const select = container.querySelector('.campo-estado');
                     if (select) {
-                        // Simular click en el select
                         select.style.pointerEvents = 'auto';
                         select.focus();
                         select.click();
@@ -356,14 +452,12 @@ export class EventHandlers {
                 return;
             }
 
-            // Click en display de ROL para abrir el select
             const rolDisplay = e.target.closest('.rol-display');
             if (rolDisplay) {
                 const container = rolDisplay.closest('.rol-select-container');
                 if (container) {
                     const select = container.querySelector('.responsable-rol-select');
                     if (select) {
-                        // Simular click en el select
                         select.style.pointerEvents = 'auto';
                         select.focus();
                         select.click();
@@ -375,7 +469,6 @@ export class EventHandlers {
                 return;
             }
             
-            // Mostrar historial
             const btnHistorial = e.target.closest('[data-action="show-historial"]');
             if (btnHistorial) {
                 const cduId = parseInt(btnHistorial.dataset.cduId);
@@ -393,7 +486,6 @@ export class EventHandlers {
                 return;
             }
             
-            // Eliminar CDU
             const btnEliminar = e.target.closest('.btn-eliminar');
             if (btnEliminar) {
                 const cduId = btnEliminar.dataset.cduId;
@@ -409,7 +501,6 @@ export class EventHandlers {
                 return;
             }
             
-            // Agregar responsable
             const btnAddResp = e.target.closest('[data-action="add-responsable"]');
             if (btnAddResp) {
                 const cduId = parseInt(btnAddResp.dataset.cduId);
@@ -427,7 +518,6 @@ export class EventHandlers {
                 return;
             }
             
-            // Eliminar responsable
             const btnRemoveResp = e.target.closest('[data-action="remove-responsable"]');
             if (btnRemoveResp) {
                 const cduId = parseInt(btnRemoveResp.dataset.cduId);
@@ -444,7 +534,6 @@ export class EventHandlers {
                 return;
             }
             
-            // Agregar observación
             const btnAdd = e.target.closest('[data-action="add-observacion"]');
             if (btnAdd) {
                 const cduId = parseInt(btnAdd.dataset.cduId);
@@ -462,7 +551,6 @@ export class EventHandlers {
                 return;
             }
             
-            // Eliminar observación
             const btnRemove = e.target.closest('[data-action="remove-observacion"]');
             if (btnRemove) {
                 const cduId = parseInt(btnRemove.dataset.cduId);
@@ -492,6 +580,8 @@ export class EventHandlers {
         });
         
         observer.observe(tbody, { childList: true, subtree: true });
+        
+
     }
 
     setupFilterEvents() {
@@ -525,6 +615,6 @@ export class EventHandlers {
             this.renderer.clearFilters();
         });
 
-        console.log('✅ Event listeners de filtros configurados');
+
     }
 }
