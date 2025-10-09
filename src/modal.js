@@ -1,4 +1,4 @@
-// modal.js - Sistema de modals personalizado con historial y comentarios
+// modal.js - Sistema de modals con comentarios categorizados
 
 export class Modal {
     static show(options) {
@@ -130,14 +130,32 @@ export class Modal {
         });
     }
     
-    // Modal para comentarios de versión
+    // Modal para comentarios categorizados de versión
     static showComentariosVersion(versionNumero, comentariosActuales) {
         return new Promise((resolve) => {
             const overlay = document.createElement('div');
             overlay.className = 'modal-overlay';
             
             const modal = document.createElement('div');
-            modal.className = 'modal modal-comentarios';
+            modal.className = 'modal modal-comentarios-categorized';
+            
+            // Migrar formato antiguo si es necesario
+            let comentarios = comentariosActuales;
+            if (typeof comentariosActuales === 'string') {
+                comentarios = {
+                    mejoras: [],
+                    salidas: [],
+                    cambiosCaliente: [],
+                    observaciones: comentariosActuales ? [comentariosActuales] : []
+                };
+            } else if (!comentariosActuales) {
+                comentarios = {
+                    mejoras: [],
+                    salidas: [],
+                    cambiosCaliente: [],
+                    observaciones: []
+                };
+            }
             
             modal.innerHTML = `
                 <div class="modal-historial-header">
@@ -149,9 +167,11 @@ export class Modal {
                     </h3>
                     <button class="modal-close-btn" title="Cerrar">×</button>
                 </div>
-                <div class="modal-comentarios-content">
-                    <label class="comentarios-label">Agrega notas generales sobre esta versión:</label>
-                    <textarea class="comentarios-textarea" placeholder="Ej: Cambios de última hora por incidente en producción, issues conocidos, etc.">${comentariosActuales || ''}</textarea>
+                <div class="modal-comentarios-categorized-content">
+                    ${this.renderCategoriaComentarios('mejoras', 'Mejoras y Bugfixes', comentarios.mejoras || [])}
+                    ${this.renderCategoriaComentarios('salidas', 'Salidas a Producción', comentarios.salidas || [])}
+                    ${this.renderCategoriaComentarios('cambiosCaliente', 'Cambios en Caliente (CeC)', comentarios.cambiosCaliente || [])}
+                    ${this.renderCategoriaComentarios('observaciones', 'Observaciones', comentarios.observaciones || [])}
                 </div>
                 <div class="modal-actions">
                     <button class="btn btn-secondary modal-cancel">Cancelar</button>
@@ -164,33 +184,141 @@ export class Modal {
             
             requestAnimationFrame(() => {
                 overlay.classList.add('modal-show');
-                modal.querySelector('.comentarios-textarea').focus();
             });
             
-            const textarea = modal.querySelector('.comentarios-textarea');
+            // Event listeners para botones de agregar/eliminar
+            this.setupComentariosEventListeners(modal);
+            
             const confirmBtn = modal.querySelector('.modal-confirm');
             const cancelBtn = modal.querySelector('.modal-cancel');
             const closeBtn = modal.querySelector('.modal-close-btn');
             
-            const close = (result, value = null) => {
+            const extractComentarios = () => {
+                const result = {
+                    mejoras: [],
+                    salidas: [],
+                    cambiosCaliente: [],
+                    observaciones: []
+                };
+                
+                ['mejoras', 'salidas', 'cambiosCaliente', 'observaciones'].forEach(categoria => {
+                    const container = modal.querySelector(`[data-categoria="${categoria}"]`);
+                    const inputs = container.querySelectorAll('.comentario-cat-item input');
+                    inputs.forEach(input => {
+                        if (input.value.trim()) {
+                            result[categoria].push(input.value.trim());
+                        }
+                    });
+                });
+                
+                return result;
+            };
+            
+            const close = (result, saveData = false) => {
                 overlay.classList.remove('modal-show');
                 setTimeout(() => {
                     document.body.removeChild(overlay);
-                    resolve(result ? value : null);
+                    resolve(saveData ? extractComentarios() : null);
                 }, 300);
             };
             
-            confirmBtn.addEventListener('click', () => close(true, textarea.value));
-            cancelBtn.addEventListener('click', () => close(false));
-            closeBtn.addEventListener('click', () => close(false));
+            confirmBtn.addEventListener('click', () => close(true, true));
+            cancelBtn.addEventListener('click', () => close(false, false));
+            closeBtn.addEventListener('click', () => close(false, false));
             
             const handleEsc = (e) => {
                 if (e.key === 'Escape') {
-                    close(false);
+                    close(false, false);
                     document.removeEventListener('keydown', handleEsc);
                 }
             };
             document.addEventListener('keydown', handleEsc);
+        });
+    }
+    
+    static renderCategoriaComentarios(categoria, titulo, items) {
+        const iconos = {
+            'mejoras': `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"></path>
+                <path d="M8.5 2h7"></path>
+                <path d="M7 16h10"></path>
+            </svg>`,
+            'salidas': `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>`,
+            'cambiosCaliente': `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+            </svg>`,
+            'observaciones': `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>`
+        };
+        
+        const itemsHTML = items.map((item, index) => `
+            <div class="comentario-cat-item" data-index="${index}">
+                <input type="text" value="${item}" placeholder="Escribe aquí...">
+                <button class="btn-comentario-cat btn-remove" data-action="remove">×</button>
+            </div>
+        `).join('');
+        
+        return `
+            <div class="comentario-categoria" data-categoria="${categoria}">
+                <div class="comentario-categoria-header">
+                    ${iconos[categoria]}
+                    <span class="comentario-categoria-titulo">${titulo}</span>
+                    <button class="btn-comentario-cat btn-add" data-action="add">+</button>
+                </div>
+                <div class="comentario-categoria-items">
+                    ${itemsHTML || '<div class="comentario-empty">Sin elementos</div>'}
+                </div>
+            </div>
+        `;
+    }
+    
+    static setupComentariosEventListeners(modal) {
+        modal.addEventListener('click', (e) => {
+            const btnAdd = e.target.closest('[data-action="add"]');
+            if (btnAdd) {
+                const categoria = btnAdd.closest('.comentario-categoria');
+                const itemsContainer = categoria.querySelector('.comentario-categoria-items');
+                
+                // Eliminar mensaje de vacío si existe
+                const emptyMsg = itemsContainer.querySelector('.comentario-empty');
+                if (emptyMsg) emptyMsg.remove();
+                
+                // Agregar nuevo item
+                const newIndex = itemsContainer.querySelectorAll('.comentario-cat-item').length;
+                const newItem = document.createElement('div');
+                newItem.className = 'comentario-cat-item';
+                newItem.dataset.index = newIndex;
+                newItem.innerHTML = `
+                    <input type="text" value="" placeholder="Escribe aquí...">
+                    <button class="btn-comentario-cat btn-remove" data-action="remove">×</button>
+                `;
+                itemsContainer.appendChild(newItem);
+                
+                // Focus en el nuevo input
+                setTimeout(() => newItem.querySelector('input').focus(), 50);
+                return;
+            }
+            
+            const btnRemove = e.target.closest('[data-action="remove"]');
+            if (btnRemove) {
+                const item = btnRemove.closest('.comentario-cat-item');
+                const categoria = btnRemove.closest('.comentario-categoria');
+                const itemsContainer = categoria.querySelector('.comentario-categoria-items');
+                
+                item.remove();
+                
+                // Si no quedan items, mostrar mensaje
+                if (itemsContainer.querySelectorAll('.comentario-cat-item').length === 0) {
+                    itemsContainer.innerHTML = '<div class="comentario-empty">Sin elementos</div>';
+                }
+                return;
+            }
         });
     }
     
@@ -199,7 +327,6 @@ export class Modal {
             return '<div class="historial-empty">No hay cambios registrados</div>';
         }
         
-        // Ordenar de más reciente a más antiguo
         const sorted = [...historial].sort((a, b) => 
             new Date(b.timestamp) - new Date(a.timestamp)
         );
@@ -248,9 +375,9 @@ export class Modal {
             case 'estado':
                 return `Estado cambiado: <span class="historial-old">${entry.valorAnterior || 'Sin estado'}</span> → <span class="historial-new">${entry.valorNuevo}</span>`;
             case 'responsable':
-                return `Responsable cambiado: <span class="historial-old">${entry.valorAnterior || 'Sin asignar'}</span> → <span class="historial-new">${entry.valorNuevo}</span>`;
+                return `Responsable: <span class="historial-old">${entry.valorAnterior || 'Sin asignar'}</span> → <span class="historial-new">${entry.valorNuevo}</span>`;
             case 'nombre':
-                return `Nombre cambiado: <span class="historial-old">${entry.valorAnterior || 'Sin nombre'}</span> → <span class="historial-new">${entry.valorNuevo}</span>`;
+                return `Nombre: <span class="historial-old">${entry.valorAnterior || 'Sin nombre'}</span> → <span class="historial-new">${entry.valorNuevo}</span>`;
             case 'descripcion':
                 return `Descripción actualizada`;
             case 'observacion':

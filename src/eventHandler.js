@@ -17,6 +17,7 @@ export class EventHandlers {
         this.setupSearchToggle();
         this.setupNavigationButtons();
         this.setupVersionButtons();
+        this.setupVersionMetaInputs();
         this.setupCargarButton();
         this.setupDescargarButton();
         this.setupTablaEvents();
@@ -40,18 +41,36 @@ export class EventHandlers {
             const version = this.dataStore.getAll().find(v => v.id === this.renderer.currentVersionId);
             if (!version) return;
             
-            const nuevoComentario = await Modal.showComentariosVersion(
+            const nuevosComentarios = await Modal.showComentariosVersion(
                 version.numero,
-                version.comentarios || ''
+                version.comentarios
             );
             
-            if (nuevoComentario !== null) {
-                this.dataStore.updateVersion(this.renderer.currentVersionId, 'comentarios', nuevoComentario);
+            if (nuevosComentarios !== null) {
+                this.dataStore.updateVersion(this.renderer.currentVersionId, 'comentarios', nuevosComentarios);
                 this.renderer.fullRender();
             }
         });
         
         console.log('✅ Botones de navegación configurados');
+    }
+
+    setupVersionMetaInputs() {
+        // Input de fecha de versión
+        const dateInput = document.getElementById('detail-version-date');
+        dateInput.addEventListener('change', (e) => {
+            if (!this.renderer.currentVersionId) return;
+            this.dataStore.updateVersion(this.renderer.currentVersionId, 'fechaDespliegue', e.target.value);
+        });
+
+        // Input de hora de versión
+        const timeInput = document.getElementById('detail-version-time');
+        timeInput.addEventListener('change', (e) => {
+            if (!this.renderer.currentVersionId) return;
+            this.dataStore.updateVersion(this.renderer.currentVersionId, 'horaDespliegue', e.target.value);
+        });
+
+        console.log('✅ Inputs de fecha/hora de versión configurados');
     }
 
     setupVersionButtons() {
@@ -241,15 +260,19 @@ export class EventHandlers {
             textarea.style.height = textarea.scrollHeight + 'px';
         };
         
-        // Evento para actualizar datos
+        // Evento INPUT solo para textareas (auto-resize visual)
         tbody.addEventListener('input', (e) => {
-            const campo = e.target.dataset.campo;
-            if (!campo) return;
-            
-            if (campo === 'descripcionCDU' && e.target.tagName === 'TEXTAREA') {
+            // Solo auto-resize de textareas, sin guardar datos
+            if (e.target.tagName === 'TEXTAREA') {
                 autoResizeTextarea(e.target);
             }
-            
+        });
+
+        // Evento BLUR para inputs de texto (guardar cuando pierde foco)
+        tbody.addEventListener('blur', (e) => {
+            const campo = e.target.dataset.campo;
+            if (!campo) return;
+
             const valor = e.target.value;
             
             // Manejar actualización de observaciones
@@ -264,12 +287,12 @@ export class EventHandlers {
                 const respIndex = parseInt(e.target.dataset.respIndex);
                 this.dataStore.updateResponsable(cduId, respIndex, 'nombre', valor);
             }
-            // Otros campos
-            else if (e.target.dataset.cduId) {
+            // Otros campos de texto (nombreCDU, descripcionCDU)
+            else if (e.target.dataset.cduId && (campo === 'nombreCDU' || campo === 'descripcionCDU')) {
                 const cduId = parseInt(e.target.dataset.cduId);
                 this.dataStore.updateCdu(cduId, campo, valor);
             }
-        });
+        }, true); // true = usar capture para asegurar que funcione con todos los elementos
         
         // Evento para cambio de estado y roles
         tbody.addEventListener('change', (e) => {

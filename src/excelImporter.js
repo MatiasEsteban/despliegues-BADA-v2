@@ -1,4 +1,4 @@
-// excelImporter.js - Importación de datos con historial, comentarios y responsables con roles
+// excelImporter.js - Importación con comentarios categorizados
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -53,11 +53,30 @@ export class ExcelImporter {
             const nombreNormalizado = nombreCDU.trim().toLowerCase();
             
             if (!versionesMap.has(versionNum)) {
+                // Importar comentarios categorizados
+                const comentarios = {
+                    mejoras: this.parsearLista(row['Mejoras/Bugfixes'] || row['Mejoras'] || ''),
+                    salidas: this.parsearLista(row['Salidas a Producción'] || row['Salidas'] || ''),
+                    cambiosCaliente: this.parsearLista(row['Cambios en Caliente'] || row['CeC'] || ''),
+                    observaciones: this.parsearLista(row['Observaciones Versión'] || row['Comentarios Version'] || row['Comentarios Versión'] || '')
+                };
+                
+                // Si no hay comentarios categorizados pero hay un campo genérico, migrar
+                if (comentarios.mejoras.length === 0 && 
+                    comentarios.salidas.length === 0 && 
+                    comentarios.cambiosCaliente.length === 0 && 
+                    comentarios.observaciones.length === 0) {
+                    const comentarioGenerico = row['Comentarios'] || '';
+                    if (comentarioGenerico) {
+                        comentarios.observaciones = [comentarioGenerico];
+                    }
+                }
+                
                 versionesMap.set(versionNum, {
                     numero: versionNum,
                     fechaDespliegue: this.formatearFecha(row['Fecha Despliegue'] || row['Fecha'] || ''),
                     horaDespliegue: row['Hora'] || '',
-                    comentarios: row['Comentarios Versión'] || row['Comentarios Version'] || '',
+                    comentarios: comentarios,
                     cdus: []
                 });
             }
@@ -81,14 +100,12 @@ export class ExcelImporter {
                 }
             }
             
-            const observacionesText = row['Observaciones/Cambios'] || row['Observaciones'] || row['Cambios'] || '';
+            const observacionesText = row['Observaciones CDU'] || row['Observaciones/Cambios'] || row['Observaciones'] || row['Cambios'] || '';
             const observaciones = this.parsearObservaciones(observacionesText);
             
-            // NUEVO: Parsear responsables con roles
             const responsablesText = row['Responsables'] || row['Responsable'] || '';
             const responsables = this.parsearResponsables(responsablesText);
             
-            // Parsear historial
             const historialText = row['Historial'] || '';
             const historial = this.parsearHistorial(historialText);
             
@@ -122,7 +139,23 @@ export class ExcelImporter {
         return versiones;
     }
 
-    // NUEVO: Parsear responsables con roles
+    static parsearLista(texto) {
+        if (!texto || texto.trim() === '') return [];
+        
+        const separadores = ['||', '|', ';', '\n'];
+        
+        for (const sep of separadores) {
+            if (texto.includes(sep)) {
+                return texto
+                    .split(sep)
+                    .map(item => item.trim())
+                    .filter(item => item.length > 0);
+            }
+        }
+        
+        return [texto.trim()];
+    }
+
     static parsearResponsables(texto) {
         if (!texto || texto.trim() === '') return [];
         
@@ -143,7 +176,6 @@ export class ExcelImporter {
             items = [texto.trim()];
         }
         
-        // Parsear cada item en formato "Nombre (Rol)" o solo "Nombre"
         return items.map(item => {
             const match = item.match(/^(.+?)\s*\((\w+)\)\s*$/);
             if (match) {
@@ -154,13 +186,12 @@ export class ExcelImporter {
             } else {
                 return {
                     nombre: item.trim(),
-                    rol: 'DEV' // Rol por defecto
+                    rol: 'DEV'
                 };
             }
         });
     }
 
-    // NUEVO: Normalizar roles
     static normalizarRol(rol) {
         const rolUpper = rol.toUpperCase();
         const rolesValidos = ['DEV', 'AF', 'UX', 'AN', 'QA'];
@@ -169,7 +200,6 @@ export class ExcelImporter {
             return rolUpper;
         }
         
-        // Mapeo de variaciones comunes
         const mapeoRoles = {
             'developer': 'DEV',
             'desarrollo': 'DEV',
@@ -194,7 +224,6 @@ export class ExcelImporter {
         if (!texto || texto.trim() === '') return [];
         
         const items = texto.split(' || ').map(item => {
-            // Formato: [fecha] tipo: valorAnterior → valorNuevo
             const match = item.match(/\[(.*?)\]\s*(\w+):\s*(.*?)\s*→\s*(.*?)$/);
             if (match) {
                 return {

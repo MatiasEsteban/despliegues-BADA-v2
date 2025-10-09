@@ -1,4 +1,4 @@
-// excelExporter.js - Exportación de datos con historial, comentarios y responsables con roles
+// excelExporter.js - Exportación con comentarios categorizados
 
 export class ExcelExporter {
     static exportar(versiones) {
@@ -8,6 +8,9 @@ export class ExcelExporter {
             if (!version.cdus || version.cdus.length === 0) {
                 return;
             }
+            
+            // Formatear comentarios categorizados
+            const comentariosFormateados = this.formatearComentarios(version.comentarios);
             
             version.cdus.forEach(cdu => {
                 let observacionesTexto = '';
@@ -20,18 +23,15 @@ export class ExcelExporter {
                     observacionesTexto = cdu.observaciones;
                 }
                 
-                // Formatear responsables con roles
                 let responsablesTexto = '';
                 if (Array.isArray(cdu.responsables) && cdu.responsables.length > 0) {
                     responsablesTexto = cdu.responsables
                         .map(r => `${r.nombre} (${r.rol})`)
                         .join(' || ');
                 } else if (cdu.responsable) {
-                    // Migración de formato antiguo
                     responsablesTexto = `${cdu.responsable} (DEV)`;
                 }
                 
-                // Formatear historial para Excel
                 let historialTexto = '';
                 if (Array.isArray(cdu.historial) && cdu.historial.length > 0) {
                     historialTexto = cdu.historial
@@ -47,12 +47,15 @@ export class ExcelExporter {
                     'Fecha Despliegue': version.fechaDespliegue || '',
                     'Hora': version.horaDespliegue || '',
                     'Versión': version.numero || '',
-                    'Comentarios Versión': version.comentarios || '',
+                    'Mejoras/Bugfixes': comentariosFormateados.mejoras,
+                    'Salidas a Producción': comentariosFormateados.salidas,
+                    'Cambios en Caliente': comentariosFormateados.cambiosCaliente,
+                    'Observaciones Versión': comentariosFormateados.observaciones,
                     'Nombre CDU': cdu.nombreCDU || '',
                     'Descripción CDU': cdu.descripcionCDU || '',
                     'Estado': cdu.estado || '',
                     'Responsables': responsablesTexto,
-                    'Observaciones/Cambios': observacionesTexto,
+                    'Observaciones CDU': observacionesTexto,
                     'Historial': historialTexto
                 });
             });
@@ -61,7 +64,6 @@ export class ExcelExporter {
         const resumen = this.generarResumen(versiones);
         const wb = XLSX.utils.book_new();
         
-        // Hoja de resumen
         const wsResumen = XLSX.utils.aoa_to_sheet(resumen);
         wsResumen['!cols'] = [
             { wch: 25 },
@@ -73,25 +75,63 @@ export class ExcelExporter {
         ];
         XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
 
-        // Hoja de detalle
         const wsDetalle = XLSX.utils.json_to_sheet(datosExcel);
         wsDetalle['!cols'] = [
             { wch: 36 }, // UUID
             { wch: 15 }, // Fecha
             { wch: 8 },  // Hora
             { wch: 10 }, // Versión
-            { wch: 40 }, // Comentarios Versión
+            { wch: 40 }, // Mejoras/Bugfixes
+            { wch: 40 }, // Salidas
+            { wch: 40 }, // Cambios Caliente
+            { wch: 40 }, // Observaciones Versión
             { wch: 20 }, // Nombre CDU
             { wch: 30 }, // Descripción
             { wch: 25 }, // Estado
-            { wch: 30 }, // Responsables (con roles)
-            { wch: 50 }, // Observaciones
+            { wch: 30 }, // Responsables
+            { wch: 50 }, // Observaciones CDU
             { wch: 60 }  // Historial
         ];
         XLSX.utils.book_append_sheet(wb, wsDetalle, 'Detalle Despliegues');
 
         const fecha = new Date().toISOString().split('T')[0];
         XLSX.writeFile(wb, `Despliegues_BADA_${fecha}.xlsx`);
+    }
+
+    static formatearComentarios(comentarios) {
+        // Migrar formato antiguo
+        if (typeof comentarios === 'string') {
+            return {
+                mejoras: '',
+                salidas: '',
+                cambiosCaliente: '',
+                observaciones: comentarios
+            };
+        }
+        
+        if (!comentarios) {
+            return {
+                mejoras: '',
+                salidas: '',
+                cambiosCaliente: '',
+                observaciones: ''
+            };
+        }
+        
+        return {
+            mejoras: Array.isArray(comentarios.mejoras) 
+                ? comentarios.mejoras.join(' || ') 
+                : '',
+            salidas: Array.isArray(comentarios.salidas) 
+                ? comentarios.salidas.join(' || ') 
+                : '',
+            cambiosCaliente: Array.isArray(comentarios.cambiosCaliente) 
+                ? comentarios.cambiosCaliente.join(' || ') 
+                : '',
+            observaciones: Array.isArray(comentarios.observaciones) 
+                ? comentarios.observaciones.join(' || ') 
+                : ''
+        };
     }
 
     static generarResumen(versiones) {
@@ -170,7 +210,7 @@ export class ExcelExporter {
         resumen.push(['Nota: Los CDUs únicos se cuentan una sola vez aunque aparezcan en múltiples versiones.']);
         resumen.push(['El estado mostrado es el más reciente de cada CDU.']);
         resumen.push(['El historial registra todos los cambios realizados en cada CDU.']);
-        resumen.push(['Los responsables se muestran con su rol: Nombre (Rol).']);
+        resumen.push(['Los comentarios de versión están categorizados en: Mejoras/Bugfixes, Salidas a Producción, Cambios en Caliente y Observaciones.']);
 
         return resumen;
     }

@@ -1,4 +1,4 @@
-// dataStore.js - Manejo del estado y datos con versiones agrupadas, historial, comentarios y roles
+// dataStore.js - Manejo del estado y datos con comentarios categorizados y changelog de estados
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -54,6 +54,16 @@ export class DataStore {
         }
     }
 
+    // Estructura de comentarios por defecto
+    getDefaultComentarios() {
+        return {
+            mejoras: [],
+            salidas: [],
+            cambiosCaliente: [],
+            observaciones: []
+        };
+    }
+
     addNewEmptyVersion() {
         const latestNumber = this.getLatestVersionNumber();
         const newNumber = String(latestNumber + 1);
@@ -63,7 +73,7 @@ export class DataStore {
             numero: newNumber,
             fechaDespliegue: new Date().toISOString().split('T')[0],
             horaDespliegue: '',
-            comentarios: '',
+            comentarios: this.getDefaultComentarios(),
             cdus: []
         };
         
@@ -97,7 +107,7 @@ export class DataStore {
             numero: newNumber,
             fechaDespliegue: new Date().toISOString().split('T')[0],
             horaDespliegue: '',
-            comentarios: '',
+            comentarios: this.getDefaultComentarios(),
             cdus: cdusCopy
         };
         
@@ -106,7 +116,6 @@ export class DataStore {
         return nuevaVersion;
     }
 
-    // Agregar CDU a la última versión
     addCduToLatestVersion() {
         if (this.versiones.length === 0) {
             this.addNewEmptyVersion();
@@ -136,7 +145,6 @@ export class DataStore {
         return nuevoCdu;
     }
 
-    // Agregar CDU a una versión específica
     addCduToVersion(versionId) {
         const version = this.versiones.find(v => v.id === versionId);
         if (!version) return null;
@@ -171,12 +179,51 @@ export class DataStore {
         }
     }
 
+    // NUEVO: Gestión de comentarios categorizados
+    addComentarioCategoria(versionId, categoria, texto = '') {
+        const version = this.versiones.find(v => v.id === versionId);
+        if (version) {
+            // Migrar a nuevo formato si es necesario
+            if (typeof version.comentarios === 'string') {
+                const oldComments = version.comentarios;
+                version.comentarios = this.getDefaultComentarios();
+                if (oldComments) {
+                    version.comentarios.observaciones.push(oldComments);
+                }
+            }
+            
+            if (!version.comentarios[categoria]) {
+                version.comentarios[categoria] = [];
+            }
+            
+            version.comentarios[categoria].push(texto);
+            this.notify();
+        }
+    }
+
+    updateComentarioCategoria(versionId, categoria, index, texto) {
+        const version = this.versiones.find(v => v.id === versionId);
+        if (version && version.comentarios[categoria] && index < version.comentarios[categoria].length) {
+            version.comentarios[categoria][index] = texto;
+            this.notify();
+        }
+    }
+
+    deleteComentarioCategoria(versionId, categoria, index) {
+        const version = this.versiones.find(v => v.id === versionId);
+        if (version && version.comentarios[categoria] && index < version.comentarios[categoria].length) {
+            version.comentarios[categoria].splice(index, 1);
+            this.notify();
+        }
+    }
+
     updateCdu(cduId, campo, valor) {
         for (const version of this.versiones) {
             const cdu = version.cdus.find(c => c.id === cduId);
             if (cdu) {
                 const valorAnterior = cdu[campo];
                 
+                // Solo actualizar si el valor cambió
                 if (valorAnterior !== valor) {
                     cdu[campo] = valor;
                     
@@ -184,6 +231,7 @@ export class DataStore {
                     if (campo === 'nombreCDU') tipo = 'nombre';
                     if (campo === 'descripcionCDU') tipo = 'descripcion';
                     
+                    // Agregar entrada al historial
                     this.addHistorialEntry(cduId, tipo, valorAnterior, valor, campo);
                     this.notify();
                 }
@@ -192,7 +240,6 @@ export class DataStore {
         }
     }
 
-    // NUEVO: Manejo de responsables con roles
     addResponsable(cduId, nombre = '', rol = 'DEV') {
         for (const version of this.versiones) {
             const cdu = version.cdus.find(c => c.id === cduId);
@@ -202,7 +249,7 @@ export class DataStore {
                 }
                 cdu.responsables.push({ nombre, rol });
                 
-                this.addHistorialEntry(cduId, 'responsable', null, `Agregado: ${nombre} (${rol})`);
+                this.addHistorialEntry(cduId, 'responsable', null, `Agregado: ${nombre || '(vacío)'} (${rol})`);
                 this.notify();
                 return;
             }
@@ -214,17 +261,22 @@ export class DataStore {
             const cdu = version.cdus.find(c => c.id === cduId);
             if (cdu && Array.isArray(cdu.responsables) && index < cdu.responsables.length) {
                 const valorAnterior = cdu.responsables[index][campo];
-                cdu.responsables[index][campo] = valor;
                 
-                if (campo === 'nombre') {
-                    this.addHistorialEntry(cduId, 'responsable', valorAnterior, valor);
-                } else if (campo === 'rol') {
-                    this.addHistorialEntry(cduId, 'responsable', 
-                        `${cdu.responsables[index].nombre} (${valorAnterior})`,
-                        `${cdu.responsables[index].nombre} (${valor})`);
+                if (valorAnterior !== valor) {
+                    cdu.responsables[index][campo] = valor;
+                    
+                    if (campo === 'nombre') {
+                        this.addHistorialEntry(cduId, 'responsable', 
+                            `${valorAnterior || '(vacío)'} (${cdu.responsables[index].rol})`, 
+                            `${valor || '(vacío)'} (${cdu.responsables[index].rol})`);
+                    } else if (campo === 'rol') {
+                        this.addHistorialEntry(cduId, 'responsable', 
+                            `${cdu.responsables[index].nombre || '(vacío)'} (${valorAnterior})`,
+                            `${cdu.responsables[index].nombre || '(vacío)'} (${valor})`);
+                    }
+                    
+                    this.notify();
                 }
-                
-                this.notify();
                 return;
             }
         }
@@ -238,7 +290,7 @@ export class DataStore {
                 cdu.responsables.splice(index, 1);
                 
                 this.addHistorialEntry(cduId, 'responsable', 
-                    `${responsable.nombre} (${responsable.rol})`, 
+                    `${responsable.nombre || '(vacío)'} (${responsable.rol})`, 
                     'Eliminado');
                 this.notify();
                 return;
@@ -266,8 +318,12 @@ export class DataStore {
         for (const version of this.versiones) {
             const cdu = version.cdus.find(c => c.id === cduId);
             if (cdu && Array.isArray(cdu.observaciones) && index < cdu.observaciones.length) {
-                cdu.observaciones[index] = texto;
-                this.notify();
+                const valorAnterior = cdu.observaciones[index];
+                
+                if (valorAnterior !== texto) {
+                    cdu.observaciones[index] = texto;
+                    this.notify();
+                }
                 return;
             }
         }
@@ -323,6 +379,17 @@ export class DataStore {
                         c.responsables = [];
                     }
                 });
+                
+                // Migrar comentarios al nuevo formato si es necesario
+                if (typeof v.comentarios === 'string') {
+                    const oldComments = v.comentarios;
+                    v.comentarios = this.getDefaultComentarios();
+                    if (oldComments) {
+                        v.comentarios.observaciones.push(oldComments);
+                    }
+                } else if (!v.comentarios) {
+                    v.comentarios = this.getDefaultComentarios();
+                }
             });
             this.nextCduId = maxCduId + 1;
         }

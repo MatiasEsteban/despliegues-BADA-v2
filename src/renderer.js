@@ -1,4 +1,4 @@
-// renderer.js - Sistema dual de renderizado: Vista Tarjetas + Vista Detalle
+// renderer.js - Sistema dual de renderizado con comentarios categorizados
 
 import { DOMBuilder } from './domBuilder.js';
 
@@ -7,7 +7,7 @@ window.DOMBuilder = DOMBuilder;
 export class Renderer {
     constructor(dataStore) {
         this.dataStore = dataStore;
-        this.currentView = 'cards'; // 'cards' o 'detail'
+        this.currentView = 'cards';
         this.currentVersionId = null;
         this.filters = {
             search: '',
@@ -18,7 +18,6 @@ export class Renderer {
         };
     }
 
-    // Navegación entre vistas
     showCardsView() {
         document.getElementById('view-cards').classList.add('active');
         document.getElementById('view-detail').classList.remove('active');
@@ -35,7 +34,6 @@ export class Renderer {
         this.renderDetailView(versionId);
     }
 
-    // Aplicar filtros
     applyFilters(versiones) {
         const hasActiveFilters = this.filters.search || 
                                  this.filters.estado || 
@@ -64,7 +62,6 @@ export class Renderer {
                     return false;
                 }
                 
-                // Filtro de responsables compatible con nuevo formato
                 if (this.filters.responsable) {
                     const responsableLower = this.filters.responsable.toLowerCase();
                     const responsablesText = this.getResponsablesText(cdu).toLowerCase();
@@ -93,12 +90,10 @@ export class Renderer {
         return filtered;
     }
 
-    // Obtener texto de responsables para filtros y búsqueda
     getResponsablesText(cdu) {
         if (Array.isArray(cdu.responsables) && cdu.responsables.length > 0) {
             return cdu.responsables.map(r => `${r.nombre} ${r.rol}`).join(' ');
         } else if (cdu.responsable) {
-            // Compatibilidad con formato antiguo
             return cdu.responsable;
         }
         return '';
@@ -113,7 +108,6 @@ export class Renderer {
         document.getElementById('filter-versions').textContent = filteredVersions.length;
     }
 
-    // Renderizar vista de tarjetas
     renderCardsView() {
         const allVersions = this.dataStore.getAll();
         const filteredVersions = this.applyFilters(allVersions);
@@ -128,7 +122,6 @@ export class Renderer {
             return;
         }
         
-        // Ordenar de más reciente a más antigua
         const sortedVersions = [...filteredVersions].sort((a, b) => {
             const numA = parseInt(a.numero) || 0;
             const numB = parseInt(b.numero) || 0;
@@ -165,7 +158,6 @@ export class Renderer {
         container.appendChild(message);
     }
 
-    // Renderizar vista de detalle
     renderDetailView(versionId) {
         const version = this.dataStore.getAll().find(v => v.id === versionId);
         if (!version) {
@@ -173,23 +165,23 @@ export class Renderer {
             return;
         }
         
-        // Actualizar header de la versión
         document.getElementById('detail-version-title').textContent = `Versión ${version.numero}`;
-        document.getElementById('detail-version-date').textContent = this.formatDate(version.fechaDespliegue);
-        document.getElementById('detail-version-time').textContent = version.horaDespliegue || 'Sin hora';
+        document.getElementById('detail-version-date').value = version.fechaDespliegue || '';
+        document.getElementById('detail-version-time').value = version.horaDespliegue || '';
         
-        // Mostrar/ocultar comentarios
+        // Mostrar comentarios categorizados
         const commentsDisplay = document.getElementById('version-comments-display');
-        const commentsText = document.getElementById('version-comments-text');
+        const commentsContainer = document.getElementById('version-comments-container');
         
-        if (version.comentarios && version.comentarios.trim()) {
-            commentsText.textContent = version.comentarios;
+        const hasComentarios = this.tieneComentarios(version.comentarios);
+        
+        if (hasComentarios) {
+            commentsContainer.innerHTML = this.renderComentariosCategorizados(version.comentarios);
             commentsDisplay.style.display = 'block';
         } else {
             commentsDisplay.style.display = 'none';
         }
         
-        // Renderizar tabla de CDUs
         const tbody = document.getElementById('tabla-body');
         tbody.innerHTML = '';
         
@@ -203,13 +195,94 @@ export class Renderer {
             tbody.appendChild(fila);
         });
         
-        // Auto-resize de textareas
         setTimeout(() => {
             tbody.querySelectorAll('.campo-descripcion').forEach(textarea => {
                 textarea.style.height = 'auto';
                 textarea.style.height = textarea.scrollHeight + 'px';
             });
         }, 50);
+    }
+
+    tieneComentarios(comentarios) {
+        if (typeof comentarios === 'string') {
+            return comentarios.trim().length > 0;
+        }
+        
+        if (!comentarios) return false;
+        
+        return (comentarios.mejoras && comentarios.mejoras.length > 0) ||
+               (comentarios.salidas && comentarios.salidas.length > 0) ||
+               (comentarios.cambiosCaliente && comentarios.cambiosCaliente.length > 0) ||
+               (comentarios.observaciones && comentarios.observaciones.length > 0);
+    }
+
+    renderComentariosCategorizados(comentarios) {
+        // Migrar formato antiguo
+        if (typeof comentarios === 'string') {
+            return `
+                <div class="comentario-display-categoria">
+                    <div class="comentario-display-header">
+                        <svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <strong>Observaciones</strong>
+                    </div>
+                    <ul class="comentario-display-list">
+                        <li>${comentarios}</li>
+                    </ul>
+                </div>
+            `;
+        }
+        
+        let html = '';
+        
+        const categorias = [
+            { key: 'mejoras', titulo: 'Mejoras y Bugfixes', icon: 'bug' },
+            { key: 'salidas', titulo: 'Salidas a Producción', icon: 'zap' },
+            { key: 'cambiosCaliente', titulo: 'Cambios en Caliente (CeC)', icon: 'flame' },
+            { key: 'observaciones', titulo: 'Observaciones', icon: 'file' }
+        ];
+        
+        const iconos = {
+            'bug': `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"></path>
+                <path d="M8.5 2h7"></path>
+                <path d="M7 16h10"></path>
+            </svg>`,
+            'zap': `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>`,
+            'flame': `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+            </svg>`,
+            'file': `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>`
+        };
+        
+        categorias.forEach(cat => {
+            const items = comentarios[cat.key];
+            if (items && items.length > 0) {
+                const itemsHTML = items.map(item => `<li>${item}</li>`).join('');
+                html += `
+                    <div class="comentario-display-categoria">
+                        <div class="comentario-display-header">
+                            ${iconos[cat.icon]}
+                            <strong>${cat.titulo}</strong>
+                        </div>
+                        <ul class="comentario-display-list">
+                            ${itemsHTML}
+                        </ul>
+                    </div>
+                `;
+            }
+        });
+        
+        return html;
     }
 
     showNoCdusMessage(tbody) {
@@ -251,7 +324,6 @@ export class Renderer {
         if (this.currentView === 'cards') {
             this.renderCardsView();
         }
-        // En vista detalle no aplicamos filtros
     }
 
     clearFilters() {

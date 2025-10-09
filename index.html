@@ -181,9 +181,23 @@
                 <div class="version-detail-info">
                     <h2 id="detail-version-title">Versión</h2>
                     <div class="version-detail-meta">
-                        <span id="detail-version-date">Fecha</span>
+                        <div class="version-meta-field">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            <input type="date" id="detail-version-date" class="version-date-input">
+                        </div>
                         <span class="separator">•</span>
-                        <span id="detail-version-time">Hora</span>
+                        <div class="version-meta-field">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <input type="time" id="detail-version-time" class="version-time-input">
+                        </div>
                     </div>
                 </div>
 
@@ -197,14 +211,8 @@
 
             <!-- Comentarios de Versión (si existen) -->
             <div id="version-comments-display" class="version-comments-display" style="display: none;">
-                <div class="version-comments-container">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                    <div>
-                        <span class="version-comments-label">Comentarios:</span>
-                        <p id="version-comments-text" class="version-comments-text"></p>
-                    </div>
+                <div id="version-comments-container" class="version-comments-container">
+                    <!-- Los comentarios categorizados se renderizan aquí -->
                 </div>
             </div>
 
