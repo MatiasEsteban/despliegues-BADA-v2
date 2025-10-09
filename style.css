@@ -837,6 +837,7 @@ h1 {
 /* =============== ESTADOS CON ANIMACIONES =============== */
 .estado-select-container {
     position: relative;
+    min-height: 42px;
 }
 
 .estado-display {
@@ -851,9 +852,9 @@ h1 {
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
     pointer-events: none;
+    user-select: none;
 }
 
-/* HOVER en el CONTENEDOR aplica estilos al DISPLAY */
 .estado-select-container:hover .estado-display {
     transform: translateY(-3px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
@@ -878,7 +879,17 @@ h1 {
     height: 100%;
     opacity: 0;
     cursor: pointer;
-    /* ASEGURARSE QUE ESTO ESTÉ */
+    z-index: 10;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* IMPORTANTE: Asegurar que todas las opciones sean visibles */
+.campo-estado option {
+    opacity: 1;
+    background: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 /* Clases directas para estados */
@@ -965,11 +976,11 @@ h1 {
     min-width: 0;
 }
 
-/* Display visual de roles con animaciones */
 .rol-select-container {
     position: relative;
     min-width: 85px;
     max-width: 85px;
+    min-height: 42px;
 }
 
 .rol-display {
@@ -987,9 +998,9 @@ h1 {
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     pointer-events: none;
+    user-select: none;
 }
 
-/* HOVER en el CONTENEDOR aplica estilos al DISPLAY */
 .rol-select-container:hover .rol-display {
     background: var(--accent-color);
     color: white;
@@ -1028,6 +1039,16 @@ h1 {
     height: 100%;
     opacity: 0;
     cursor: pointer;
+    z-index: 10;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.responsable-rol-select option {
+    opacity: 1;
+    background: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 .btn-responsable {
@@ -1618,4 +1639,28 @@ h1 {
         height: 24px;
         font-size: 0.75rem;
     }
+}
+/* Estilos para cambios de creación de CDU */
+.change-item-creation {
+    border-left-color: #805ad5 !important;
+    background: linear-gradient(135deg, rgba(128, 90, 213, 0.05) 0%, rgba(128, 90, 213, 0.02) 100%);
+}
+
+.change-type-badge {
+    background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.change-creation-note {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    padding: 0.5rem;
+    background: var(--bg-primary);
+    border-radius: 6px;
+    border-left: 3px solid #805ad5;
 }

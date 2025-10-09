@@ -1,4 +1,4 @@
-// eventHandlers.js - Con debugging completo
+// eventHandlers.js - Con captura completa de cambios
 
 import { ExcelExporter } from './excelExporter.js';
 import { ExcelImporter } from './excelImporter.js';
@@ -11,7 +11,7 @@ export class EventHandlers {
         this.dataStore = dataStore;
         this.renderer = renderer;
         this.saveButton = null;
-         ('🎯 EventHandlers constructor iniciado');
+        console.log('🎯 EventHandlers constructor iniciado');
     }
 
     setupEventListeners() {
@@ -26,7 +26,7 @@ export class EventHandlers {
         this.setupFilterEvents();
         this.setupSaveChangesButton();
         
-         ('✅ Event listeners configurados correctamente');
+        console.log('✅ Event listeners configurados correctamente');
     }
 
     setupSaveChangesButton() {
@@ -46,7 +46,7 @@ export class EventHandlers {
 
         this.dataStore.subscribeToChanges((changes) => {
             const count = changes.length;
-             ('🔔 Notificación de cambios:', count);
+            console.log('🔔 Notificación de cambios:', count);
             if (count > 0) {
                 this.saveButton.classList.remove('hidden');
                 this.saveButton.querySelector('.changes-count').textContent = count;
@@ -56,49 +56,61 @@ export class EventHandlers {
         });
 
         this.saveButton.addEventListener('click', async () => {
-             ('🖱️ Click en botón Guardar Cambios');
+            console.log('🖱️ Click en botón Guardar Cambios');
             await this.handleSaveChanges();
         });
 
-         ('✅ Botón de guardar cambios configurado');
+        console.log('✅ Botón de guardar cambios configurado');
     }
 
     async handleSaveChanges() {
-         ('💾 === INICIO handleSaveChanges ===');
+        console.log('💾 === INICIO handleSaveChanges ===');
         
         const pendingChanges = this.dataStore.getPendingChanges();
-         ('📦 Cambios pendientes obtenidos:', JSON.stringify(pendingChanges, null, 2));
+        console.log('📦 Cambios pendientes:', pendingChanges.length);
         
         if (pendingChanges.length === 0) {
-             ('⚠️ No hay cambios pendientes');
+            console.log('⚠️ No hay cambios pendientes');
             await Modal.warning('No hay cambios pendientes para guardar.', 'Sin Cambios');
             return;
         }
 
-        const changesInfo = [...pendingChanges];
-         ('📊 changesInfo preparado:', changesInfo);
+        const changesInfo = pendingChanges.map(change => {
+            return {
+                ...change,
+                versionNumero: change.versionNumero || 'N/A',
+                cduNombre: change.cduNombre || 'Sin nombre'
+            };
+        });
+        
+        console.log('📊 changesInfo preparado:', changesInfo);
 
-        const confirmed = await Modal.showChangesSummary(changesInfo);
-         ('🤔 Usuario confirmó?', confirmed);
+        try {
+            const confirmed = await Modal.showChangesSummary(changesInfo);
+            console.log('🤔 Usuario confirmó?', confirmed);
 
-        if (confirmed) {
-             ('✅ Aplicando cambios...');
-            const appliedChanges = this.dataStore.applyPendingChanges();
-             ('✅ Cambios aplicados:', appliedChanges);
-            
-            await Modal.success(
-                `Se guardaron ${appliedChanges.length} cambio${appliedChanges.length !== 1 ? 's' : ''} exitosamente.`,
-                'Cambios Guardados'
-            );
+            if (confirmed) {
+                console.log('✅ Aplicando cambios...');
+                const appliedChanges = this.dataStore.applyPendingChanges();
+                console.log('✅ Cambios aplicados:', appliedChanges.length);
+                
+                await Modal.success(
+                    `Se guardaron ${appliedChanges.length} cambio${appliedChanges.length !== 1 ? 's' : ''} exitosamente.`,
+                    'Cambios Guardados'
+                );
 
-            this.renderer.fullRender();
-        } else {
-             ('❌ Cambios cancelados');
-            this.dataStore.discardPendingChanges();
-            this.renderer.fullRender();
+                this.renderer.fullRender();
+            } else {
+                console.log('❌ Cambios cancelados, revirtiendo...');
+                this.dataStore.discardPendingChanges();
+                this.renderer.fullRender();
+            }
+        } catch (error) {
+            console.error('❌ Error en handleSaveChanges:', error);
+            await Modal.error('Ocurrió un error al guardar los cambios: ' + error.message, 'Error');
         }
         
-         ('💾 === FIN handleSaveChanges ===');
+        console.log('💾 === FIN handleSaveChanges ===');
     }
 
     setupNavigationButtons() {
@@ -125,7 +137,7 @@ export class EventHandlers {
             }
         });
         
-         ('✅ Botones de navegación configurados');
+        console.log('✅ Botones de navegación configurados');
     }
 
     setupVersionMetaInputs() {
@@ -141,7 +153,7 @@ export class EventHandlers {
             this.dataStore.updateVersion(this.renderer.currentVersionId, 'horaDespliegue', e.target.value);
         });
 
-         ('✅ Inputs de fecha/hora de versión configurados');
+        console.log('✅ Inputs de fecha/hora de versión configurados');
     }
 
     setupVersionButtons() {
@@ -188,7 +200,7 @@ export class EventHandlers {
             this.renderer.fullRender();
         });
         
-         ('✅ Botones de versión configurados');
+        console.log('✅ Botones de versión configurados');
     }
 
     setupSearchToggle() {
@@ -207,7 +219,7 @@ export class EventHandlers {
             }
         });
         
-         ('✅ Toggle de búsqueda configurado');
+        console.log('✅ Toggle de búsqueda configurado');
     }
 
     setupThemeToggle() {
@@ -318,7 +330,7 @@ export class EventHandlers {
     }
 
     setupTablaEvents() {
-         ('🎯 Configurando eventos de tabla...');
+        console.log('🎯 Configurando eventos de tabla...');
         const tbody = document.getElementById('tabla-body');
         
         const autoResizeTextarea = (textarea) => {
@@ -332,66 +344,163 @@ export class EventHandlers {
             }
         });
 
+        // EVENTO BLUR - Capturar cambios de texto
         tbody.addEventListener('blur', (e) => {
             const campo = e.target.dataset.campo;
             if (!campo) return;
+            if (this.renderer.isRendering) return;
 
             const valor = e.target.value;
             
             if (campo === 'observacion') {
                 const cduId = parseInt(e.target.dataset.cduId);
                 const obsIndex = parseInt(e.target.dataset.obsIndex);
+                
+                // Obtener info del CDU
+                let cduNombre = '';
+                let versionNumero = '';
+                let valorAnterior = '';
+                
+                for (const version of this.dataStore.getAll()) {
+                    const cdu = version.cdus.find(c => c.id === cduId);
+                    if (cdu) {
+                        cduNombre = cdu.nombreCDU || 'Sin nombre';
+                        versionNumero = version.numero;
+                        valorAnterior = cdu.observaciones[obsIndex] || '';
+                        break;
+                    }
+                }
+                
+                if (valorAnterior !== valor) {
+                    this.dataStore.addPendingChange({
+                        cduId,
+                        campo: 'observacion',
+                        index: obsIndex,
+                        valorAnterior,
+                        valorNuevo: valor,
+                        cduNombre,
+                        versionNumero,
+                        timestamp: new Date().toISOString(),
+                        tipo: 'observacion'
+                    });
+                }
+                
                 this.dataStore.updateObservacion(cduId, obsIndex, valor);
             } 
             else if (campo === 'responsable-nombre') {
                 const cduId = parseInt(e.target.dataset.cduId);
                 const respIndex = parseInt(e.target.dataset.respIndex);
+                
+                // Obtener info
+                let cduNombre = '';
+                let versionNumero = '';
+                let valorAnterior = '';
+                
+                for (const version of this.dataStore.getAll()) {
+                    const cdu = version.cdus.find(c => c.id === cduId);
+                    if (cdu) {
+                        cduNombre = cdu.nombreCDU || 'Sin nombre';
+                        versionNumero = version.numero;
+                        if (cdu.responsables[respIndex]) {
+                            valorAnterior = cdu.responsables[respIndex].nombre || '';
+                        }
+                        break;
+                    }
+                }
+                
+                if (valorAnterior !== valor) {
+                    this.dataStore.addPendingChange({
+                        cduId,
+                        campo: 'responsable-nombre',
+                        index: respIndex,
+                        valorAnterior,
+                        valorNuevo: valor,
+                        cduNombre,
+                        versionNumero,
+                        timestamp: new Date().toISOString(),
+                        tipo: 'responsable'
+                    });
+                }
+                
                 this.dataStore.updateResponsable(cduId, respIndex, 'nombre', valor);
             }
-            else if (e.target.dataset.cduId && (campo === 'nombreCDU' || campo === 'descripcionCDU')) {
+            else if (campo === 'nombreCDU' || campo === 'descripcionCDU') {
                 const cduId = parseInt(e.target.dataset.cduId);
+                
+                // Obtener info
+                let cduNombre = '';
+                let versionNumero = '';
+                let valorAnterior = '';
+                
+                for (const version of this.dataStore.getAll()) {
+                    const cdu = version.cdus.find(c => c.id === cduId);
+                    if (cdu) {
+                        cduNombre = campo === 'nombreCDU' ? (cdu.nombreCDU || 'Sin nombre') : cdu.nombreCDU;
+                        versionNumero = version.numero;
+                        valorAnterior = cdu[campo] || '';
+                        break;
+                    }
+                }
+                
+                if (valorAnterior !== valor) {
+                    this.dataStore.addPendingChange({
+                        cduId,
+                        campo,
+                        valorAnterior,
+                        valorNuevo: valor,
+                        cduNombre: campo === 'nombreCDU' ? valorAnterior : cduNombre,
+                        versionNumero,
+                        timestamp: new Date().toISOString(),
+                        tipo: campo === 'nombreCDU' ? 'nombre' : 'descripcion'
+                    });
+                }
+                
                 this.dataStore.updateCdu(cduId, campo, valor);
             }
         }, true);
         
-        // EVENTO CHANGE - EL MÁS IMPORTANTE
+        // EVENTO CHANGE - Estados y roles
         tbody.addEventListener('change', (e) => {
-             ('🔔 === EVENTO CHANGE DISPARADO ===');
-             ('Target:', e.target);
-             ('Target classes:', e.target.className);
-             ('isRendering?', this.renderer.isRendering);
+            console.log('🔔 === EVENTO CHANGE DISPARADO ===');
             
             if (this.renderer.isRendering) {
-                 ('⚠️ Ignorando evento change durante render');
+                console.log('⚠️ Ignorando evento change durante render');
                 return;
             }
             
             if (e.target.classList.contains('campo-estado')) {
-                 ('✅ Es un campo-estado');
-                
                 const cduId = parseInt(e.target.dataset.cduId);
                 const valorNuevo = e.target.value;
-                
-                 ('📊 cduId:', cduId, 'valorNuevo:', valorNuevo);
                 
                 let valorAnterior = null;
                 let cduNombre = '';
                 let versionNumero = '';
                 
+                const existingChange = this.dataStore.pendingChanges.find(
+                    c => c.cduId === cduId && c.campo === 'estado'
+                );
+                
+                if (existingChange) {
+                    valorAnterior = existingChange.valorAnterior;
+                }
+                
                 for (const version of this.dataStore.getAll()) {
                     const cdu = version.cdus.find(c => c.id === cduId);
                     if (cdu) {
-                        valorAnterior = cdu.estado;
+                        if (!existingChange) {
+                            valorAnterior = cdu.estado || 'En Desarrollo';
+                        }
                         cduNombre = cdu.nombreCDU || 'Sin nombre';
                         versionNumero = version.numero;
-                         ('🔍 CDU encontrado:', { valorAnterior, cduNombre, versionNumero });
                         break;
                     }
                 }
                 
+                if (valorAnterior === null || valorAnterior === undefined) {
+                    valorAnterior = 'En Desarrollo';
+                }
+                
                 if (valorAnterior !== valorNuevo) {
-
-                    
                     this.dataStore.addPendingChange({
                         cduId,
                         campo: 'estado',
@@ -399,7 +508,8 @@ export class EventHandlers {
                         valorNuevo,
                         cduNombre,
                         versionNumero,
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
+                        tipo: 'estado'
                     });
                     
                     const container = e.target.closest('.estado-select-container');
@@ -413,14 +523,46 @@ export class EventHandlers {
                             <span>${valorNuevo}</span>
                         `;
                     }
-                } else {
-
+                    
+                    // Aplicar cambio al dataStore
+                    this.dataStore.updateCdu(cduId, 'estado', valorNuevo);
                 }
             }
             else if (e.target.dataset.campo === 'responsable-rol') {
                 const cduId = parseInt(e.target.dataset.cduId);
                 const respIndex = parseInt(e.target.dataset.respIndex);
                 const valor = e.target.value;
+                
+                // Obtener info
+                let cduNombre = '';
+                let versionNumero = '';
+                let valorAnterior = '';
+                
+                for (const version of this.dataStore.getAll()) {
+                    const cdu = version.cdus.find(c => c.id === cduId);
+                    if (cdu) {
+                        cduNombre = cdu.nombreCDU || 'Sin nombre';
+                        versionNumero = version.numero;
+                        if (cdu.responsables[respIndex]) {
+                            valorAnterior = cdu.responsables[respIndex].rol || 'DEV';
+                        }
+                        break;
+                    }
+                }
+                
+                if (valorAnterior !== valor) {
+                    this.dataStore.addPendingChange({
+                        cduId,
+                        campo: 'responsable-rol',
+                        index: respIndex,
+                        valorAnterior,
+                        valorNuevo: valor,
+                        cduNombre,
+                        versionNumero,
+                        timestamp: new Date().toISOString(),
+                        tipo: 'responsable'
+                    });
+                }
                 
                 const container = e.target.closest('.rol-select-container');
                 if (container) {
@@ -430,45 +572,9 @@ export class EventHandlers {
                 
                 this.dataStore.updateResponsable(cduId, respIndex, 'rol', valor);
             }
-            
-
         });
 
         tbody.addEventListener('click', async (e) => {
-            const estadoDisplay = e.target.closest('.estado-display');
-            if (estadoDisplay) {
-                const container = estadoDisplay.closest('.estado-select-container');
-                if (container) {
-                    const select = container.querySelector('.campo-estado');
-                    if (select) {
-                        select.style.pointerEvents = 'auto';
-                        select.focus();
-                        select.click();
-                        setTimeout(() => {
-                            select.style.pointerEvents = 'none';
-                        }, 100);
-                    }
-                }
-                return;
-            }
-
-            const rolDisplay = e.target.closest('.rol-display');
-            if (rolDisplay) {
-                const container = rolDisplay.closest('.rol-select-container');
-                if (container) {
-                    const select = container.querySelector('.responsable-rol-select');
-                    if (select) {
-                        select.style.pointerEvents = 'auto';
-                        select.focus();
-                        select.click();
-                        setTimeout(() => {
-                            select.style.pointerEvents = 'none';
-                        }, 100);
-                    }
-                }
-                return;
-            }
-            
             const btnHistorial = e.target.closest('[data-action="show-historial"]');
             if (btnHistorial) {
                 const cduId = parseInt(btnHistorial.dataset.cduId);
@@ -504,6 +610,32 @@ export class EventHandlers {
             const btnAddResp = e.target.closest('[data-action="add-responsable"]');
             if (btnAddResp) {
                 const cduId = parseInt(btnAddResp.dataset.cduId);
+                
+                // Obtener info antes de agregar
+                let cduNombre = '';
+                let versionNumero = '';
+                
+                for (const version of this.dataStore.getAll()) {
+                    const cdu = version.cdus.find(c => c.id === cduId);
+                    if (cdu) {
+                        cduNombre = cdu.nombreCDU || 'Sin nombre';
+                        versionNumero = version.numero;
+                        break;
+                    }
+                }
+                
+                // Registrar como cambio pendiente
+                this.dataStore.addPendingChange({
+                    cduId,
+                    campo: 'responsable-agregado',
+                    valorAnterior: null,
+                    valorNuevo: 'Responsable agregado (DEV)',
+                    cduNombre,
+                    versionNumero,
+                    timestamp: new Date().toISOString(),
+                    tipo: 'responsable'
+                });
+                
                 this.dataStore.addResponsable(cduId, '', 'DEV');
                 this.renderer.fullRender();
                 
@@ -523,11 +655,39 @@ export class EventHandlers {
                 const cduId = parseInt(btnRemoveResp.dataset.cduId);
                 const respIndex = parseInt(btnRemoveResp.dataset.respIndex);
                 
+                // Obtener info antes de eliminar
+                let cduNombre = '';
+                let versionNumero = '';
+                let respNombre = '';
+                
+                for (const version of this.dataStore.getAll()) {
+                    const cdu = version.cdus.find(c => c.id === cduId);
+                    if (cdu && cdu.responsables[respIndex]) {
+                        cduNombre = cdu.nombreCDU || 'Sin nombre';
+                        versionNumero = version.numero;
+                        respNombre = `${cdu.responsables[respIndex].nombre || 'Sin nombre'} (${cdu.responsables[respIndex].rol})`;
+                        break;
+                    }
+                }
+                
                 const confirmacion = await Modal.confirm(
                     '¿Eliminar este responsable?',
                     'Confirmar'
                 );
                 if (confirmacion) {
+                    // Registrar como cambio pendiente
+                    this.dataStore.addPendingChange({
+                        cduId,
+                        campo: 'responsable-eliminado',
+                        index: respIndex,
+                        valorAnterior: respNombre,
+                        valorNuevo: null,
+                        cduNombre,
+                        versionNumero,
+                        timestamp: new Date().toISOString(),
+                        tipo: 'responsable'
+                    });
+                    
                     this.dataStore.deleteResponsable(cduId, respIndex);
                     this.renderer.fullRender();
                 }
@@ -537,6 +697,32 @@ export class EventHandlers {
             const btnAdd = e.target.closest('[data-action="add-observacion"]');
             if (btnAdd) {
                 const cduId = parseInt(btnAdd.dataset.cduId);
+                
+                // Obtener info
+                let cduNombre = '';
+                let versionNumero = '';
+                
+                for (const version of this.dataStore.getAll()) {
+                    const cdu = version.cdus.find(c => c.id === cduId);
+                    if (cdu) {
+                        cduNombre = cdu.nombreCDU || 'Sin nombre';
+                        versionNumero = version.numero;
+                        break;
+                    }
+                }
+                
+                // Registrar como cambio pendiente
+                this.dataStore.addPendingChange({
+                    cduId,
+                    campo: 'observacion-agregada',
+                    valorAnterior: null,
+                    valorNuevo: 'Observación agregada',
+                    cduNombre,
+                    versionNumero,
+                    timestamp: new Date().toISOString(),
+                    tipo: 'observacion'
+                });
+                
                 this.dataStore.addObservacion(cduId, '');
                 this.renderer.fullRender();
                 
@@ -556,11 +742,39 @@ export class EventHandlers {
                 const cduId = parseInt(btnRemove.dataset.cduId);
                 const obsIndex = parseInt(btnRemove.dataset.obsIndex);
                 
+                // Obtener info antes de eliminar
+                let cduNombre = '';
+                let versionNumero = '';
+                let obsTexto = '';
+                
+                for (const version of this.dataStore.getAll()) {
+                    const cdu = version.cdus.find(c => c.id === cduId);
+                    if (cdu && cdu.observaciones[obsIndex]) {
+                        cduNombre = cdu.nombreCDU || 'Sin nombre';
+                        versionNumero = version.numero;
+                        obsTexto = cdu.observaciones[obsIndex] || 'Sin texto';
+                        break;
+                    }
+                }
+                
                 const confirmacion = await Modal.confirm(
                     '¿Eliminar esta observación?',
                     'Confirmar'
                 );
                 if (confirmacion) {
+                    // Registrar como cambio pendiente
+                    this.dataStore.addPendingChange({
+                        cduId,
+                        campo: 'observacion-eliminada',
+                        index: obsIndex,
+                        valorAnterior: obsTexto,
+                        valorNuevo: null,
+                        cduNombre,
+                        versionNumero,
+                        timestamp: new Date().toISOString(),
+                        tipo: 'observacion'
+                    });
+                    
                     this.dataStore.deleteObservacion(cduId, obsIndex);
                     this.renderer.fullRender();
                 }
@@ -581,7 +795,7 @@ export class EventHandlers {
         
         observer.observe(tbody, { childList: true, subtree: true });
         
-
+        console.log('✅ Eventos de tabla configurados');
     }
 
     setupFilterEvents() {
@@ -615,6 +829,6 @@ export class EventHandlers {
             this.renderer.clearFilters();
         });
 
-
+        console.log('✅ Eventos de filtros configurados');
     }
 }

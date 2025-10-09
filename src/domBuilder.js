@@ -230,7 +230,6 @@ tr.appendChild(tdEstado);
     const select = document.createElement('select');
     select.className = 'campo-estado';
     select.setAttribute('data-campo', 'estado');
-    select.value = valorSeleccionado;
     
     // CRÍTICO: Agregar data-cdu-id al select
     if (cduId !== null) {

@@ -436,114 +436,143 @@ export class Modal {
     static confirm(message, title = 'Confirmación') {
         return this.show({ message, title, type: 'confirm' });
     }
+    
     // Modal de resumen de cambios pendientes
-static showChangesSummary(changes) {
-    return new Promise((resolve) => {
-        const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay';
-        
-        const modal = document.createElement('div');
-        modal.className = 'modal modal-changes-summary';
-        
-        const changesHTML = changes.map((change, index) => {
-            const estadoIcon = this.getEstadoIconForSummary(change.valorNuevo);
-            return `
-                <div class="change-item">
-                    <div class="change-header">
-                        <span class="change-number">#${index + 1}</span>
-                        <span class="change-version">Versión ${change.versionNumero}</span>
-                    </div>
-                    <div class="change-details">
-                        <div class="change-cdu-name">
-                            <svg class="icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                            </svg>
-                            <strong>${change.cduNombre}</strong>
+    static showChangesSummary(changes) {
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal modal-changes-summary';
+            
+            // Generar HTML de cambios
+            const changesHTML = changes.map((change, index) => {
+                // Diferenciar entre creación y modificación
+                if (change.tipo === 'creacion') {
+                    return `
+                        <div class="change-item change-item-creation">
+                            <div class="change-header">
+                                <span class="change-number">#${index + 1}</span>
+                                <span class="change-version">Versión ${change.versionNumero}</span>
+                                <span class="change-type-badge">NUEVO</span>
+                            </div>
+                            <div class="change-details">
+                                <div class="change-cdu-name">
+                                    <svg class="icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                                    </svg>
+                                    <strong>CDU Nuevo Creado</strong>
+                                </div>
+                                <div class="change-creation-note">
+                                    Se creó un nuevo CDU con estado inicial: 
+                                    <span class="estado-new">✨ En Desarrollo</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="change-estado">
-                            <span class="estado-old">${change.valorAnterior}</span>
-                            <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                                <polyline points="12 5 19 12 12 19"></polyline>
-                            </svg>
-                            <span class="estado-new">${estadoIcon} ${change.valorNuevo}</span>
+                    `;
+                }
+                
+                // Para cambios de estado
+                const estadoIcon = this.getEstadoIconForSummary(change.valorNuevo);
+                return `
+                    <div class="change-item">
+                        <div class="change-header">
+                            <span class="change-number">#${index + 1}</span>
+                            <span class="change-version">Versión ${change.versionNumero}</span>
+                        </div>
+                        <div class="change-details">
+                            <div class="change-cdu-name">
+                                <svg class="icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                <strong>${change.cduNombre}</strong>
+                            </div>
+                            <div class="change-estado">
+                                <span class="estado-old">${change.valorAnterior || 'Sin estado'}</span>
+                                <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                                <span class="estado-new">${estadoIcon} ${change.valorNuevo}</span>
+                            </div>
                         </div>
                     </div>
+                `;
+            }).join('');
+            
+            modal.innerHTML = `
+                <div class="modal-historial-header">
+                    <h3 class="modal-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px; display: inline-block; vertical-align: middle;">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        Confirmar Cambios
+                    </h3>
+                    <button class="modal-close-btn" title="Cerrar">×</button>
+                </div>
+                <div class="modal-changes-summary-info">
+                    Se guardarán <strong>${changes.length}</strong> cambio${changes.length !== 1 ? 's' : ''} en total
+                </div>
+                <div class="modal-changes-summary-content">
+                    ${changesHTML}
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary modal-cancel">Cancelar</button>
+                    <button class="btn btn-success modal-confirm">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Guardar Todo
+                    </button>
                 </div>
             `;
-        }).join('');
-        
-        modal.innerHTML = `
-            <div class="modal-historial-header">
-                <h3 class="modal-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px; display: inline-block; vertical-align: middle;">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                        <polyline points="7 3 7 8 15 8"></polyline>
-                    </svg>
-                    Confirmar Cambios
-                </h3>
-                <button class="modal-close-btn" title="Cerrar">×</button>
-            </div>
-            <div class="modal-changes-summary-info">
-                Se guardarán <strong>${changes.length}</strong> cambio${changes.length !== 1 ? 's' : ''} en total
-            </div>
-            <div class="modal-changes-summary-content">
-                ${changesHTML}
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-secondary modal-cancel">Cancelar</button>
-                <button class="btn btn-success modal-confirm">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    Guardar Todo
-                </button>
-            </div>
-        `;
-        
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
-        
-        requestAnimationFrame(() => {
-            overlay.classList.add('modal-show');
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            
+            requestAnimationFrame(() => {
+                overlay.classList.add('modal-show');
+            });
+            
+            const confirmBtn = modal.querySelector('.modal-confirm');
+            const cancelBtn = modal.querySelector('.modal-cancel');
+            const closeBtn = modal.querySelector('.modal-close-btn');
+            
+            const close = (result) => {
+                overlay.classList.remove('modal-show');
+                setTimeout(() => {
+                    document.body.removeChild(overlay);
+                    resolve(result);
+                }, 300);
+            };
+            
+            confirmBtn.addEventListener('click', () => close(true));
+            cancelBtn.addEventListener('click', () => close(false));
+            closeBtn.addEventListener('click', () => close(false));
+            
+            const handleEsc = (e) => {
+                if (e.key === 'Escape') {
+                    close(false);
+                    document.removeEventListener('keydown', handleEsc);
+                }
+            };
+            document.addEventListener('keydown', handleEsc);
         });
-        
-        const confirmBtn = modal.querySelector('.modal-confirm');
-        const cancelBtn = modal.querySelector('.modal-cancel');
-        const closeBtn = modal.querySelector('.modal-close-btn');
-        
-        const close = (result) => {
-            overlay.classList.remove('modal-show');
-            setTimeout(() => {
-                document.body.removeChild(overlay);
-                resolve(result);
-            }, 300);
-        };
-        
-        confirmBtn.addEventListener('click', () => close(true));
-        cancelBtn.addEventListener('click', () => close(false));
-        closeBtn.addEventListener('click', () => close(false));
-        
-        const handleEsc = (e) => {
-            if (e.key === 'Escape') {
-                close(false);
-                document.removeEventListener('keydown', handleEsc);
-            }
-        };
-        document.addEventListener('keydown', handleEsc);
-    });
-}
+    }
 
-static getEstadoIconForSummary(estado) {
-    const icons = {
-        'En Desarrollo': '🔧',
-        'Pendiente de Certificacion': '⏱️',
-        'Certificado OK': '✅',
-        'En Produccion': '⚡'
-    };
-    return icons[estado] || '📌';
-}
-
+    static getEstadoIconForSummary(estado) {
+        const icons = {
+            'En Desarrollo': '🔧',
+            'Pendiente de Certificacion': '⏱️',
+            'Certificado OK': '✅',
+            'En Produccion': '⚡'
+        };
+        return icons[estado] || '📌';
+    }
 }
