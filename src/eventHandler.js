@@ -353,7 +353,7 @@ export class EventHandlers {
 
                 const confirmacion = await Modal.show({
                     title: 'Confirmar Importación',
-                    message: `Se encontraron:\n• ${versiones.length} versiones\n• ${totalCdusUnicos} CDUs únicos\n• ${totalRegistros} registros totales\n\n¿Desea reemplazar los datos actuales?`,
+                    message: `Se encontraron:\n• ${versiones.length} versiones\n• ${totalCdusUnicos} CDUs únicos\n\n¿Desea reemplazar los datos actuales?`,
                     type: 'warning',
                     confirmText: 'Sí, reemplazar',
                     cancelText: 'Cancelar'
@@ -362,7 +362,7 @@ export class EventHandlers {
                 if (confirmacion) {
                     this.dataStore.replaceAll(versiones);
                     this.renderer.showCardsView();
-                    await Modal.success(`Importación exitosa:\n• ${totalCdusUnicos} CDUs únicos\n• ${totalRegistros} registros totales`, 'Importación Exitosa');
+                    await Modal.success(`Importación exitosa:\n• ${versiones.length} versiones\n• ${totalCdusUnicos} CDUs únicos\n`, 'Importación Exitosa');
                 }
             } catch (error) {
                 await Modal.error('Error al cargar el archivo: ' + error.message, 'Error');
