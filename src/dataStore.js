@@ -1,21 +1,21 @@
-// dataStore.js - Manejo del estado y datos con sistema de cambios pendientes CORREGIDO
+// dataStore.js - Manejo del estado y datos con sistema de cambios pendientes y anulación
 
 import { v4 as uuidv4 } from 'uuid';
 
 export class DataStore {
-constructor() {
-    this.versiones = [];
-    this.nextVersionId = 2;
-    this.nextCduId = 3;
-    this.observers = [];
-    
-    // Sistema de cambios pendientes
-    this.pendingChanges = [];
-    this.changeObservers = [];
-    
-    // NUEVO: Sistema de snapshot para poder revertir cambios
-    this.snapshot = null;
-}
+    constructor() {
+        this.versiones = [];
+        this.nextVersionId = 2;
+        this.nextCduId = 3;
+        this.observers = [];
+        
+        // Sistema de cambios pendientes
+        this.pendingChanges = [];
+        this.changeObservers = [];
+        
+        // Sistema de snapshot para poder revertir cambios
+        this.snapshot = null;
+    }
 
     subscribe(callback) {
         this.observers.push(callback);
@@ -45,67 +45,158 @@ constructor() {
         return this.pendingChanges.length > 0;
     }
 
-    // Agregar cambio pendiente con snapshot automático
-addPendingChange(change) {
-    // Crear snapshot si es el primer cambio
-    if (this.pendingChanges.length === 0) {
-        this.snapshot = JSON.parse(JSON.stringify(this.versiones));
-        console.log('📸 Snapshot creado');
-    }
-    
-    // Verificar si ya existe un cambio para el mismo item y campo
-    const existingIndex = this.pendingChanges.findIndex(
-        c => c.cduId === change.cduId && c.campo === change.campo && 
-            (c.index === change.index || (c.index === undefined && change.index === undefined))
-    );
-
-    if (existingIndex !== -1) {
-        const originalValorAnterior = this.pendingChanges[existingIndex].valorAnterior;
-        
-        if (change.valorNuevo === originalValorAnterior) {
-            this.pendingChanges.splice(existingIndex, 1);
-        } else {
-            this.pendingChanges[existingIndex] = {
-                ...change,
-                valorAnterior: originalValorAnterior
-            };
+    // Agregar cambio pendiente con lógica de anulación
+    addPendingChange(change) {
+        // Crear snapshot si es el primer cambio
+        if (this.pendingChanges.length === 0) {
+            this.snapshot = JSON.parse(JSON.stringify(this.versiones));
+            console.log('📸 Snapshot creado');
         }
-    } else {
-        this.pendingChanges.push(change);
+        
+        // LÓGICA DE ANULACIÓN: Buscar cambios opuestos
+        const oppositeIndex = this.findOppositeChange(change);
+        
+        if (oppositeIndex !== -1) {
+            // Hay un cambio opuesto, anularlos
+            console.log('🔄 Cambio opuesto encontrado, anulando ambos');
+            this.pendingChanges.splice(oppositeIndex, 1);
+            
+            // Si ya no hay cambios pendientes, limpiar snapshot
+            if (this.pendingChanges.length === 0) {
+                this.snapshot = null;
+                console.log('🗑️ Snapshot limpiado (sin cambios pendientes)');
+            }
+            
+            this.notifyChangeObservers();
+            return;
+        }
+        
+        // Verificar si ya existe un cambio para el mismo item y campo
+        const existingIndex = this.pendingChanges.findIndex(
+            c => c.cduId === change.cduId && 
+                 c.campo === change.campo && 
+                 c.versionId === change.versionId &&
+                 (c.index === change.index || (c.index === undefined && change.index === undefined))
+        );
+
+        if (existingIndex !== -1) {
+            const originalValorAnterior = this.pendingChanges[existingIndex].valorAnterior;
+            
+            if (change.valorNuevo === originalValorAnterior) {
+                this.pendingChanges.splice(existingIndex, 1);
+            } else {
+                this.pendingChanges[existingIndex] = {
+                    ...change,
+                    valorAnterior: originalValorAnterior
+                };
+            }
+        } else {
+            this.pendingChanges.push(change);
+        }
+
+        this.notifyChangeObservers();
     }
 
-    this.notifyChangeObservers();
-}
+    // Buscar cambio opuesto para anular (crear vs eliminar)
+    findOppositeChange(change) {
+        // Crear CDU vs Eliminar CDU
+        if (change.tipo === 'creacion' && change.campo === 'creacion') {
+            return this.pendingChanges.findIndex(
+                c => c.cduId === change.cduId && c.tipo === 'eliminacion' && c.campo === 'cdu-eliminado'
+            );
+        }
+        if (change.tipo === 'eliminacion' && change.campo === 'cdu-eliminado') {
+            return this.pendingChanges.findIndex(
+                c => c.cduId === change.cduId && c.tipo === 'creacion' && c.campo === 'creacion'
+            );
+        }
+        
+        // Agregar responsable vs Eliminar responsable
+        if (change.campo === 'responsable-agregado') {
+            return this.pendingChanges.findIndex(
+                c => c.cduId === change.cduId && 
+                     c.campo === 'responsable-eliminado' &&
+                     c.index === change.index
+            );
+        }
+        if (change.campo === 'responsable-eliminado') {
+            // Buscar si se agregó recientemente
+            for (let i = this.pendingChanges.length - 1; i >= 0; i--) {
+                const c = this.pendingChanges[i];
+                if (c.cduId === change.cduId && c.campo === 'responsable-agregado') {
+                    // Verificar si es el mismo índice o el último agregado
+                    return i;
+                }
+            }
+        }
+        
+        // Agregar observación vs Eliminar observación
+        if (change.campo === 'observacion-agregada') {
+            return this.pendingChanges.findIndex(
+                c => c.cduId === change.cduId && 
+                     c.campo === 'observacion-eliminada' &&
+                     c.index === change.index
+            );
+        }
+        if (change.campo === 'observacion-eliminada') {
+            // Buscar si se agregó recientemente
+            for (let i = this.pendingChanges.length - 1; i >= 0; i--) {
+                const c = this.pendingChanges[i];
+                if (c.cduId === change.cduId && c.campo === 'observacion-agregada') {
+                    return i;
+                }
+            }
+        }
+        
+        // Agregar comentario de versión vs Eliminar comentario de versión
+        if (change.campo && change.campo.includes('-agregado')) {
+            const categoria = change.campo.replace('-agregado', '');
+            return this.pendingChanges.findIndex(
+                c => c.versionId === change.versionId &&
+                     c.campo === categoria + '-eliminado' &&
+                     c.index === change.index
+            );
+        }
+        if (change.campo && change.campo.includes('-eliminado')) {
+            const categoria = change.campo.replace('-eliminado', '');
+            for (let i = this.pendingChanges.length - 1; i >= 0; i--) {
+                const c = this.pendingChanges[i];
+                if (c.versionId === change.versionId && c.campo === categoria + '-agregado') {
+                    return i;
+                }
+            }
+        }
+        
+        return -1;
+    }
 
-    // Aplicar todos los cambios pendientes - CORREGIDO
-  applyPendingChanges() {
-    const appliedChanges = [...this.pendingChanges];
-    
-    // Los cambios ya están aplicados en versiones, solo limpiamos
-    this.pendingChanges = [];
-    this.snapshot = null; // Limpiar snapshot
-    
-    console.log('✅ Cambios confirmados, snapshot eliminado');
-    
-    this.notifyChangeObservers();
-    this.notify();
-
-    return appliedChanges;
-}
-
-    // Descartar cambios pendientes
-discardPendingChanges() {
-    // Restaurar desde snapshot si existe
-    if (this.snapshot) {
-        this.versiones = JSON.parse(JSON.stringify(this.snapshot));
+    applyPendingChanges() {
+        const appliedChanges = [...this.pendingChanges];
+        
+        // Los cambios ya están aplicados en versiones, solo limpiamos
+        this.pendingChanges = [];
         this.snapshot = null;
-        console.log('↩️ Cambios revertidos desde snapshot');
+        
+        console.log('✅ Cambios confirmados, snapshot eliminado');
+        
+        this.notifyChangeObservers();
+        this.notify();
+
+        return appliedChanges;
     }
-    
-    this.pendingChanges = [];
-    this.notifyChangeObservers();
-    this.notify();
-}
+
+    discardPendingChanges() {
+        // Restaurar desde snapshot si existe
+        if (this.snapshot) {
+            this.versiones = JSON.parse(JSON.stringify(this.snapshot));
+            this.snapshot = null;
+            console.log('↩️ Cambios revertidos desde snapshot');
+        }
+        
+        this.pendingChanges = [];
+        this.notifyChangeObservers();
+        this.notify();
+    }
 
     getLatestVersionNumber() {
         if (this.versiones.length === 0) return 0;
@@ -201,85 +292,83 @@ discardPendingChanges() {
     }
 
     addCduToLatestVersion() {
-    if (this.versiones.length === 0) {
-        this.addNewEmptyVersion();
-    }
-    
-    const ultimaVersion = this.versiones[this.versiones.length - 1];
-    
-    const nuevoCdu = {
-        id: this.nextCduId++,
-        uuid: uuidv4(),
-        nombreCDU: '',
-        descripcionCDU: '',
-        estado: 'En Desarrollo',
-        responsables: [],
-        observaciones: [],
-        historial: [{
-            timestamp: new Date().toISOString(),
-            tipo: 'creacion',
-            campo: '',
+        if (this.versiones.length === 0) {
+            this.addNewEmptyVersion();
+        }
+        
+        const ultimaVersion = this.versiones[this.versiones.length - 1];
+        
+        const nuevoCdu = {
+            id: this.nextCduId++,
+            uuid: uuidv4(),
+            nombreCDU: '',
+            descripcionCDU: '',
+            estado: 'En Desarrollo',
+            responsables: [],
+            observaciones: [],
+            historial: [{
+                timestamp: new Date().toISOString(),
+                tipo: 'creacion',
+                campo: '',
+                valorAnterior: null,
+                valorNuevo: 'CDU Creado'
+            }]
+        };
+        
+        ultimaVersion.cdus.push(nuevoCdu);
+        
+        this.addPendingChange({
+            cduId: nuevoCdu.id,
+            campo: 'creacion',
             valorAnterior: null,
-            valorNuevo: 'CDU Creado'
-        }]
-    };
-    
-    ultimaVersion.cdus.push(nuevoCdu);
-    
-    // NUEVO: Registrar la creación como cambio pendiente
-    this.addPendingChange({
-        cduId: nuevoCdu.id,
-        campo: 'creacion',
-        valorAnterior: null,
-        valorNuevo: 'CDU creado',
-        cduNombre: 'Nuevo CDU',
-        versionNumero: ultimaVersion.numero,
-        timestamp: new Date().toISOString(),
-        tipo: 'creacion'
-    });
-    
-    this.notify();
-    return nuevoCdu;
-}
+            valorNuevo: 'CDU creado',
+            cduNombre: 'Nuevo CDU',
+            versionNumero: ultimaVersion.numero,
+            timestamp: new Date().toISOString(),
+            tipo: 'creacion'
+        });
+        
+        this.notify();
+        return nuevoCdu;
+    }
 
     addCduToVersion(versionId) {
-    const version = this.versiones.find(v => v.id === versionId);
-    if (!version) return null;
-    
-    const nuevoCdu = {
-        id: this.nextCduId++,
-        uuid: uuidv4(),
-        nombreCDU: '',
-        descripcionCDU: '',
-        estado: 'En Desarrollo',
-        responsables: [],
-        observaciones: [],
-        historial: [{
-            timestamp: new Date().toISOString(),
-            tipo: 'creacion',
-            campo: '',
+        const version = this.versiones.find(v => v.id === versionId);
+        if (!version) return null;
+        
+        const nuevoCdu = {
+            id: this.nextCduId++,
+            uuid: uuidv4(),
+            nombreCDU: '',
+            descripcionCDU: '',
+            estado: 'En Desarrollo',
+            responsables: [],
+            observaciones: [],
+            historial: [{
+                timestamp: new Date().toISOString(),
+                tipo: 'creacion',
+                campo: '',
+                valorAnterior: null,
+                valorNuevo: 'CDU Creado'
+            }]
+        };
+        
+        version.cdus.push(nuevoCdu);
+        
+        this.addPendingChange({
+            cduId: nuevoCdu.id,
+            campo: 'creacion',
             valorAnterior: null,
-            valorNuevo: 'CDU Creado'
-        }]
-    };
-    
-    version.cdus.push(nuevoCdu);
-    
-    // NUEVO: Registrar la creación como cambio pendiente
-    this.addPendingChange({
-        cduId: nuevoCdu.id,
-        campo: 'creacion',
-        valorAnterior: null,
-        valorNuevo: 'CDU creado',
-        cduNombre: 'Nuevo CDU',
-        versionNumero: version.numero,
-        timestamp: new Date().toISOString(),
-        tipo: 'creacion'
-    });
-    
-    this.notify();
-    return nuevoCdu;
-}
+            valorNuevo: 'CDU creado',
+            cduNombre: 'Nuevo CDU',
+            versionNumero: version.numero,
+            timestamp: new Date().toISOString(),
+            tipo: 'creacion'
+        });
+        
+        this.notify();
+        return nuevoCdu;
+    }
 
     updateVersion(versionId, campo, valor) {
         const version = this.versiones.find(v => v.id === versionId);

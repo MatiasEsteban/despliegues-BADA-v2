@@ -193,26 +193,26 @@ export class Modal {
             const cancelBtn = modal.querySelector('.modal-cancel');
             const closeBtn = modal.querySelector('.modal-close-btn');
             
-            const extractComentarios = () => {
-                const result = {
-                    mejoras: [],
-                    salidas: [],
-                    cambiosCaliente: [],
-                    observaciones: []
-                };
-                
-                ['mejoras', 'salidas', 'cambiosCaliente', 'observaciones'].forEach(categoria => {
-                    const container = modal.querySelector(`[data-categoria="${categoria}"]`);
-                    const inputs = container.querySelectorAll('.comentario-cat-item input');
-                    inputs.forEach(input => {
-                        if (input.value.trim()) {
-                            result[categoria].push(input.value.trim());
-                        }
-                    });
-                });
-                
-                return result;
-            };
+const extractComentarios = () => {
+    const result = {
+        mejoras: [],
+        salidas: [],
+        cambiosCaliente: [],
+        observaciones: []
+    };
+    
+    ['mejoras', 'salidas', 'cambiosCaliente', 'observaciones'].forEach(categoria => {
+        const container = modal.querySelector(`[data-categoria="${categoria}"]`);
+        const textareas = container.querySelectorAll('.comentario-cat-item textarea');
+        textareas.forEach(textarea => {
+            if (textarea.value.trim()) {
+                result[categoria].push(textarea.value.trim());
+            }
+        });
+    });
+    
+    return result;
+};
             
             const close = (result, saveData = false) => {
                 overlay.classList.remove('modal-show');
@@ -237,46 +237,46 @@ export class Modal {
     }
     
     static renderCategoriaComentarios(categoria, titulo, items) {
-        const iconos = {
-            'mejoras': `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"></path>
-                <path d="M8.5 2h7"></path>
-                <path d="M7 16h10"></path>
-            </svg>`,
-            'salidas': `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-            </svg>`,
-            'cambiosCaliente': `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
-            </svg>`,
-            'observaciones': `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-            </svg>`
-        };
-        
-        const itemsHTML = items.map((item, index) => `
-            <div class="comentario-cat-item" data-index="${index}">
-                <input type="text" value="${item}" placeholder="Escribe aquí...">
-                <button class="btn-comentario-cat btn-remove" data-action="remove">×</button>
+    const iconos = {
+        'mejoras': `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"></path>
+            <path d="M8.5 2h7"></path>
+            <path d="M7 16h10"></path>
+        </svg>`,
+        'salidas': `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>`,
+        'cambiosCaliente': `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+        </svg>`,
+        'observaciones': `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>`
+    };
+    
+    const itemsHTML = items.map((item, index) => `
+        <div class="comentario-cat-item" data-index="${index}">
+            <textarea class="comentario-textarea" rows="2" placeholder="Escribe aquí...">${item}</textarea>
+            <button class="btn-comentario-cat btn-remove" data-action="remove">×</button>
+        </div>
+    `).join('');
+    
+    return `
+        <div class="comentario-categoria" data-categoria="${categoria}">
+            <div class="comentario-categoria-header">
+                ${iconos[categoria]}
+                <span class="comentario-categoria-titulo">${titulo}</span>
+                <button class="btn-comentario-cat btn-add" data-action="add">+</button>
             </div>
-        `).join('');
-        
-        return `
-            <div class="comentario-categoria" data-categoria="${categoria}">
-                <div class="comentario-categoria-header">
-                    ${iconos[categoria]}
-                    <span class="comentario-categoria-titulo">${titulo}</span>
-                    <button class="btn-comentario-cat btn-add" data-action="add">+</button>
-                </div>
-                <div class="comentario-categoria-items">
-                    ${itemsHTML || '<div class="comentario-empty">Sin elementos</div>'}
-                </div>
+            <div class="comentario-categoria-items">
+                ${itemsHTML || '<div class="comentario-empty">Sin elementos</div>'}
             </div>
-        `;
-    }
+        </div>
+    `;
+}
     
     static setupComentariosEventListeners(modal) {
         modal.addEventListener('click', (e) => {
@@ -294,10 +294,10 @@ export class Modal {
                 const newItem = document.createElement('div');
                 newItem.className = 'comentario-cat-item';
                 newItem.dataset.index = newIndex;
-                newItem.innerHTML = `
-                    <input type="text" value="" placeholder="Escribe aquí...">
-                    <button class="btn-comentario-cat btn-remove" data-action="remove">×</button>
-                `;
+newItem.innerHTML = `
+    <textarea class="comentario-textarea" rows="2" placeholder="Escribe aquí..."></textarea>
+    <button class="btn-comentario-cat btn-remove" data-action="remove">×</button>
+`;
                 itemsContainer.appendChild(newItem);
                 
                 // Focus en el nuevo input

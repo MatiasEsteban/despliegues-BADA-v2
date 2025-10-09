@@ -1,4 +1,4 @@
-// eventHandlers.js - Con captura completa de cambios
+// eventHandlers.js - Con captura completa incluyendo comentarios de versión
 
 import { ExcelExporter } from './excelExporter.js';
 import { ExcelImporter } from './excelImporter.js';
@@ -126,18 +126,83 @@ export class EventHandlers {
             const version = this.dataStore.getAll().find(v => v.id === this.renderer.currentVersionId);
             if (!version) return;
             
+            // Guardar estado anterior
+            const comentariosAnteriores = JSON.parse(JSON.stringify(version.comentarios));
+            
             const nuevosComentarios = await Modal.showComentariosVersion(
                 version.numero,
                 version.comentarios
             );
             
             if (nuevosComentarios !== null) {
+                // Comparar y registrar cambios
+                this.registrarCambiosComentarios(version.id, comentariosAnteriores, nuevosComentarios, version.numero);
+                
                 this.dataStore.updateVersion(this.renderer.currentVersionId, 'comentarios', nuevosComentarios);
                 this.renderer.fullRender();
             }
         });
         
         console.log('✅ Botones de navegación configurados');
+    }
+
+    // NUEVO: Método para registrar cambios en comentarios de versión
+    registrarCambiosComentarios(versionId, anteriores, nuevos, versionNumero) {
+        const categorias = ['mejoras', 'salidas', 'cambiosCaliente', 'observaciones'];
+        
+        categorias.forEach(categoria => {
+            const itemsAnteriores = anteriores[categoria] || [];
+            const itemsNuevos = nuevos[categoria] || [];
+            
+            // Detectar agregados
+            if (itemsNuevos.length > itemsAnteriores.length) {
+                for (let i = itemsAnteriores.length; i < itemsNuevos.length; i++) {
+                    this.dataStore.addPendingChange({
+                        versionId,
+                        campo: `${categoria}-agregado`,
+                        index: i,
+                        valorAnterior: null,
+                        valorNuevo: itemsNuevos[i],
+                        versionNumero,
+                        timestamp: new Date().toISOString(),
+                        tipo: 'comentario-version'
+                    });
+                }
+            }
+            
+            // Detectar eliminados
+            if (itemsNuevos.length < itemsAnteriores.length) {
+                for (let i = itemsNuevos.length; i < itemsAnteriores.length; i++) {
+                    this.dataStore.addPendingChange({
+                        versionId,
+                        campo: `${categoria}-eliminado`,
+                        index: i,
+                        valorAnterior: itemsAnteriores[i],
+                        valorNuevo: null,
+                        versionNumero,
+                        timestamp: new Date().toISOString(),
+                        tipo: 'comentario-version'
+                    });
+                }
+            }
+            
+            // Detectar modificados
+            const minLength = Math.min(itemsAnteriores.length, itemsNuevos.length);
+            for (let i = 0; i < minLength; i++) {
+                if (itemsAnteriores[i] !== itemsNuevos[i]) {
+                    this.dataStore.addPendingChange({
+                        versionId,
+                        campo: `${categoria}-modificado`,
+                        index: i,
+                        valorAnterior: itemsAnteriores[i],
+                        valorNuevo: itemsNuevos[i],
+                        versionNumero,
+                        timestamp: new Date().toISOString(),
+                        tipo: 'comentario-version'
+                    });
+                }
+            }
+        });
     }
 
     setupVersionMetaInputs() {
@@ -344,7 +409,6 @@ export class EventHandlers {
             }
         });
 
-        // EVENTO BLUR - Capturar cambios de texto
         tbody.addEventListener('blur', (e) => {
             const campo = e.target.dataset.campo;
             if (!campo) return;
@@ -356,7 +420,6 @@ export class EventHandlers {
                 const cduId = parseInt(e.target.dataset.cduId);
                 const obsIndex = parseInt(e.target.dataset.obsIndex);
                 
-                // Obtener info del CDU
                 let cduNombre = '';
                 let versionNumero = '';
                 let valorAnterior = '';
@@ -391,7 +454,6 @@ export class EventHandlers {
                 const cduId = parseInt(e.target.dataset.cduId);
                 const respIndex = parseInt(e.target.dataset.respIndex);
                 
-                // Obtener info
                 let cduNombre = '';
                 let versionNumero = '';
                 let valorAnterior = '';
@@ -427,7 +489,6 @@ export class EventHandlers {
             else if (campo === 'nombreCDU' || campo === 'descripcionCDU') {
                 const cduId = parseInt(e.target.dataset.cduId);
                 
-                // Obtener info
                 let cduNombre = '';
                 let versionNumero = '';
                 let valorAnterior = '';
@@ -459,14 +520,8 @@ export class EventHandlers {
             }
         }, true);
         
-        // EVENTO CHANGE - Estados y roles
         tbody.addEventListener('change', (e) => {
-            console.log('🔔 === EVENTO CHANGE DISPARADO ===');
-            
-            if (this.renderer.isRendering) {
-                console.log('⚠️ Ignorando evento change durante render');
-                return;
-            }
+            if (this.renderer.isRendering) return;
             
             if (e.target.classList.contains('campo-estado')) {
                 const cduId = parseInt(e.target.dataset.cduId);
@@ -524,7 +579,6 @@ export class EventHandlers {
                         `;
                     }
                     
-                    // Aplicar cambio al dataStore
                     this.dataStore.updateCdu(cduId, 'estado', valorNuevo);
                 }
             }
@@ -533,7 +587,6 @@ export class EventHandlers {
                 const respIndex = parseInt(e.target.dataset.respIndex);
                 const valor = e.target.value;
                 
-                // Obtener info
                 let cduNombre = '';
                 let versionNumero = '';
                 let valorAnterior = '';
@@ -594,24 +647,9 @@ export class EventHandlers {
             
             const btnEliminar = e.target.closest('.btn-eliminar');
             if (btnEliminar) {
-                const cduId = btnEliminar.dataset.cduId;
+                const cduId = parseInt(btnEliminar.dataset.cduId);
                 
-                const confirmacion = await Modal.confirm(
-                    '¿Está seguro de eliminar este CDU?',
-                    'Confirmar Eliminación'
-                );
-                if (confirmacion) {
-                    this.dataStore.deleteCdu(parseInt(cduId));
-                    this.renderer.fullRender();
-                }
-                return;
-            }
-            
-            const btnAddResp = e.target.closest('[data-action="add-responsable"]');
-            if (btnAddResp) {
-                const cduId = parseInt(btnAddResp.dataset.cduId);
-                
-                // Obtener info antes de agregar
+                // Obtener info ANTES de eliminar
                 let cduNombre = '';
                 let versionNumero = '';
                 
@@ -624,7 +662,45 @@ export class EventHandlers {
                     }
                 }
                 
-                // Registrar como cambio pendiente
+                const confirmacion = await Modal.confirm(
+                    '¿Está seguro de eliminar este CDU?',
+                    'Confirmar Eliminación'
+                );
+                if (confirmacion) {
+                    // Registrar como cambio pendiente
+                    this.dataStore.addPendingChange({
+                        cduId,
+                        campo: 'cdu-eliminado',
+                        valorAnterior: `CDU: ${cduNombre}`,
+                        valorNuevo: null,
+                        cduNombre,
+                        versionNumero,
+                        timestamp: new Date().toISOString(),
+                        tipo: 'eliminacion'
+                    });
+                    
+                    this.dataStore.deleteCdu(cduId);
+                    this.renderer.fullRender();
+                }
+                return;
+            }
+            
+            const btnAddResp = e.target.closest('[data-action="add-responsable"]');
+            if (btnAddResp) {
+                const cduId = parseInt(btnAddResp.dataset.cduId);
+                
+                let cduNombre = '';
+                let versionNumero = '';
+                
+                for (const version of this.dataStore.getAll()) {
+                    const cdu = version.cdus.find(c => c.id === cduId);
+                    if (cdu) {
+                        cduNombre = cdu.nombreCDU || 'Sin nombre';
+                        versionNumero = version.numero;
+                        break;
+                    }
+                }
+                
                 this.dataStore.addPendingChange({
                     cduId,
                     campo: 'responsable-agregado',
@@ -655,7 +731,6 @@ export class EventHandlers {
                 const cduId = parseInt(btnRemoveResp.dataset.cduId);
                 const respIndex = parseInt(btnRemoveResp.dataset.respIndex);
                 
-                // Obtener info antes de eliminar
                 let cduNombre = '';
                 let versionNumero = '';
                 let respNombre = '';
@@ -675,7 +750,6 @@ export class EventHandlers {
                     'Confirmar'
                 );
                 if (confirmacion) {
-                    // Registrar como cambio pendiente
                     this.dataStore.addPendingChange({
                         cduId,
                         campo: 'responsable-eliminado',
@@ -698,7 +772,6 @@ export class EventHandlers {
             if (btnAdd) {
                 const cduId = parseInt(btnAdd.dataset.cduId);
                 
-                // Obtener info
                 let cduNombre = '';
                 let versionNumero = '';
                 
@@ -711,7 +784,6 @@ export class EventHandlers {
                     }
                 }
                 
-                // Registrar como cambio pendiente
                 this.dataStore.addPendingChange({
                     cduId,
                     campo: 'observacion-agregada',
@@ -742,7 +814,6 @@ export class EventHandlers {
                 const cduId = parseInt(btnRemove.dataset.cduId);
                 const obsIndex = parseInt(btnRemove.dataset.obsIndex);
                 
-                // Obtener info antes de eliminar
                 let cduNombre = '';
                 let versionNumero = '';
                 let obsTexto = '';
@@ -762,7 +833,6 @@ export class EventHandlers {
                     'Confirmar'
                 );
                 if (confirmacion) {
-                    // Registrar como cambio pendiente
                     this.dataStore.addPendingChange({
                         cduId,
                         campo: 'observacion-eliminada',

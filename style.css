@@ -1664,3 +1664,45 @@ h1 {
     border-radius: 6px;
     border-left: 3px solid #805ad5;
 }
+/* Fix para textareas en modal de comentarios */
+.comentario-cat-item input {
+    max-width: none !important;
+    width: 100% !important;
+}
+/* Estilos para textareas en modal de comentarios */
+.comentario-textarea {
+    flex: 1;
+    padding: 0.5rem;
+    border: 2px solid var(--input-border);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    resize: vertical;
+    min-height: 60px;
+    line-height: 1.5;
+    transition: all 0.2s;
+}
+
+.comentario-textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1);
+}
+
+.comentario-textarea::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+.comentario-cat-item {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
+/* Ajustar el botón de eliminar para que esté alineado con el textarea */
+.comentario-cat-item .btn-remove {
+    margin-top: 0.5rem;
+}
