@@ -44,6 +44,7 @@ export class ExcelImporter {
         const uuidMap = new Map();
         
         jsonData.forEach(row => {
+            console.log('📄 Procesando fila:', row['Nombre CDU'], 'Versión:', row['Versión']);
             const versionNum = String(row['Versión'] || row['Version'] || '').replace(/\./g, '').trim();
             if (!versionNum) return;
             
@@ -135,6 +136,13 @@ export class ExcelImporter {
         });
         
         console.log(`✅ Importación completada: ${versiones.length} versiones, ${nombreToUuidMap.size} CDUs únicos detectados`);
+            console.log('🔍 DIAGNÓSTICO - Versiones procesadas:');
+    versiones.forEach(v => {
+        console.log(`  Versión ${v.numero}: ${v.cdus.length} CDUs`);
+        v.cdus.forEach(cdu => {
+            console.log(`    - ${cdu.nombreCDU} (UUID: ${cdu.uuid})`);
+        });
+    });
         
         return versiones;
     }

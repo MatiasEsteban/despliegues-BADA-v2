@@ -4,6 +4,8 @@ import { ExcelExporter } from './excelExporter.js';
 import { ExcelImporter } from './excelImporter.js';
 import { Modal } from './modal.js';
 import { Validator } from './validator.js';
+import { Debouncer } from './debouncer.js';
+import { NotificationSystem } from './notifications.js';
 import { DOMBuilder } from './domBuilder.js';
 
 export class EventHandlers {
@@ -24,6 +26,7 @@ export class EventHandlers {
         this.setupDescargarButton();
         this.setupTablaEvents();
         this.setupFilterEvents();
+        this.setupDetailFilterEvents();
         this.setupSaveChangesButton();
         
         console.log('✅ Event listeners configurados correctamente');
@@ -63,55 +66,56 @@ export class EventHandlers {
         console.log('✅ Botón de guardar cambios configurado');
     }
 
-    async handleSaveChanges() {
-        console.log('💾 === INICIO handleSaveChanges ===');
-        
-        const pendingChanges = this.dataStore.getPendingChanges();
-        console.log('📦 Cambios pendientes:', pendingChanges.length);
-        
-        if (pendingChanges.length === 0) {
-            console.log('⚠️ No hay cambios pendientes');
-            await Modal.warning('No hay cambios pendientes para guardar.', 'Sin Cambios');
-            return;
-        }
-
-        const changesInfo = pendingChanges.map(change => {
-            return {
-                ...change,
-                versionNumero: change.versionNumero || 'N/A',
-                cduNombre: change.cduNombre || 'Sin nombre'
-            };
-        });
-        
-        console.log('📊 changesInfo preparado:', changesInfo);
-
-        try {
-            const confirmed = await Modal.showChangesSummary(changesInfo);
-            console.log('🤔 Usuario confirmó?', confirmed);
-
-            if (confirmed) {
-                console.log('✅ Aplicando cambios...');
-                const appliedChanges = this.dataStore.applyPendingChanges();
-                console.log('✅ Cambios aplicados:', appliedChanges.length);
-                
-                await Modal.success(
-                    `Se guardaron ${appliedChanges.length} cambio${appliedChanges.length !== 1 ? 's' : ''} exitosamente.`,
-                    'Cambios Guardados'
-                );
-
-                this.renderer.fullRender();
-            } else {
-                console.log('❌ Cambios cancelados, revirtiendo...');
-                this.dataStore.discardPendingChanges();
-                this.renderer.fullRender();
-            }
-        } catch (error) {
-            console.error('❌ Error en handleSaveChanges:', error);
-            await Modal.error('Ocurrió un error al guardar los cambios: ' + error.message, 'Error');
-        }
-        
-        console.log('💾 === FIN handleSaveChanges ===');
+   async handleSaveChanges() {
+    console.log('💾 === INICIO handleSaveChanges ===');
+    
+    const pendingChanges = this.dataStore.getPendingChanges();
+    console.log('📦 Cambios pendientes:', pendingChanges.length);
+    
+    if (pendingChanges.length === 0) {
+        console.log('⚠️ No hay cambios pendientes');
+        NotificationSystem.warning('No hay cambios pendientes para guardar.');
+        return;
     }
+
+    const changesInfo = pendingChanges.map(change => {
+        return {
+            ...change,
+            versionNumero: change.versionNumero || 'N/A',
+            cduNombre: change.cduNombre || 'Sin nombre'
+        };
+    });
+    
+    console.log('📊 changesInfo preparado:', changesInfo);
+
+    try {
+        const confirmed = await Modal.showChangesSummary(changesInfo);
+        console.log('🤔 Usuario confirmó?', confirmed);
+
+        if (confirmed) {
+            console.log('✅ Aplicando cambios...');
+            const appliedChanges = this.dataStore.applyPendingChanges();
+            console.log('✅ Cambios aplicados:', appliedChanges.length);
+            
+            NotificationSystem.success(
+                `Se guardaron ${appliedChanges.length} cambio${appliedChanges.length !== 1 ? 's' : ''} exitosamente.`,
+                3000
+            );
+
+            this.renderer.fullRender();
+        } else {
+            console.log('❌ Cambios cancelados, revirtiendo...');
+            this.dataStore.discardPendingChanges();
+            NotificationSystem.info('Cambios cancelados.', 2000);
+            this.renderer.fullRender();
+        }
+    } catch (error) {
+        console.error('❌ Error en handleSaveChanges:', error);
+        NotificationSystem.error('Ocurrió un error al guardar los cambios: ' + error.message);
+    }
+    
+    console.log('💾 === FIN handleSaveChanges ===');
+}
 
     setupNavigationButtons() {
         const btnBack = document.getElementById('btn-back-to-cards');
@@ -221,52 +225,47 @@ export class EventHandlers {
         console.log('✅ Inputs de fecha/hora de versión configurados');
     }
 
-    setupVersionButtons() {
-        const btnAgregar = document.getElementById('btn-agregar');
-        btnAgregar.addEventListener('click', () => {
-            if (!this.renderer.currentVersionId) return;
-            
-            const version = this.dataStore.getAll().find(v => v.id === this.renderer.currentVersionId);
-            if (!version) return;
-            
-            const nuevoCdu = this.dataStore.addCduToVersion(this.renderer.currentVersionId);
-            this.renderer.fullRender();
-        });
+  setupVersionButtons() {
+    const btnAgregar = document.getElementById('btn-agregar');
+    btnAgregar.addEventListener('click', () => {
+        if (!this.renderer.currentVersionId) return;
         
-        const btnNuevaVersionLimpia = document.getElementById('btn-nueva-version-limpia');
-        btnNuevaVersionLimpia.addEventListener('click', async () => {
-            const version = this.dataStore.addNewEmptyVersion();
-            await Modal.success(
-                `Versión ${version.numero} creada exitosamente.`,
-                'Versión Creada'
-            );
-            this.renderer.fullRender();
-        });
+        const version = this.dataStore.getAll().find(v => v.id === this.renderer.currentVersionId);
+        if (!version) return;
         
-        const btnDuplicarVersion = document.getElementById('btn-duplicar-version');
-        btnDuplicarVersion.addEventListener('click', async () => {
-            const versiones = this.dataStore.getAll();
-            
-            if (versiones.length === 0) {
-                await Modal.warning(
-                    'No hay versiones para duplicar.',
-                    'Sin Versiones'
-                );
-                return;
-            }
-            
-            const ultimaVersion = versiones[versiones.length - 1];
-            const nuevaVersion = this.dataStore.duplicateVersion(ultimaVersion.id);
-            
-            await Modal.success(
-                `Versión ${nuevaVersion.numero} creada como copia de la versión ${ultimaVersion.numero} con ${nuevaVersion.cdus.length} CDUs.`,
-                'Versión Duplicada'
-            );
-            this.renderer.fullRender();
-        });
+        const nuevoCdu = this.dataStore.addCduToVersion(this.renderer.currentVersionId);
+        NotificationSystem.success('CDU creado exitosamente', 2000);
+        this.renderer.fullRender();
+    });
+    
+    const btnNuevaVersionLimpia = document.getElementById('btn-nueva-version-limpia');
+    btnNuevaVersionLimpia.addEventListener('click', async () => {
+        const version = this.dataStore.addNewEmptyVersion();
+        NotificationSystem.success(`Versión ${version.numero} creada exitosamente.`, 3000);
+        this.renderer.fullRender();
+    });
+    
+    const btnDuplicarVersion = document.getElementById('btn-duplicar-version');
+    btnDuplicarVersion.addEventListener('click', async () => {
+        const versiones = this.dataStore.getAll();
         
-        console.log('✅ Botones de versión configurados');
-    }
+        if (versiones.length === 0) {
+            NotificationSystem.warning('No hay versiones para duplicar.', 3000);
+            return;
+        }
+        
+        const ultimaVersion = versiones[versiones.length - 1];
+        const nuevaVersion = this.dataStore.duplicateVersion(ultimaVersion.id);
+        
+        NotificationSystem.success(
+            `Versión ${nuevaVersion.numero} creada como copia de la versión ${ultimaVersion.numero} con ${nuevaVersion.cdus.length} CDUs.`,
+            4000
+        );
+        this.renderer.fullRender();
+    });
+    
+    console.log('✅ Botones de versión configurados');
+}
 
     setupSearchToggle() {
         const btnToggle = document.getElementById('btn-toggle-search');
@@ -331,68 +330,97 @@ export class EventHandlers {
             if (!file) return;
 
             try {
-                const versiones = await ExcelImporter.importar(file);
-                
-                if (versiones.length === 0) {
-                    await Modal.error('No se encontraron datos válidos en el archivo', 'Error de Importación');
-                    return;
-                }
+    const closeLoading = NotificationSystem.loading('Importando archivo Excel...');
+    
+    const versiones = await ExcelImporter.importar(file);
+    
+    closeLoading();
+    
+    if (versiones.length === 0) {
+        NotificationSystem.error('No se encontraron datos válidos en el archivo', 4000);
+        return;
+    }
 
-                const uuidsUnicos = new Set();
-                versiones.forEach(v => {
-                    v.cdus.forEach(cdu => {
-                        if (cdu.uuid) {
-                            uuidsUnicos.add(cdu.uuid);
-                        }
-                    });
-                });
-
-                const totalCdusUnicos = uuidsUnicos.size;
-                let totalRegistros = 0;
-                versiones.forEach(v => totalRegistros += v.cdus.length);
-
-                const confirmacion = await Modal.show({
-                    title: 'Confirmar Importación',
-                    message: `Se encontraron:\n• ${versiones.length} versiones\n• ${totalCdusUnicos} CDUs únicos\n\n¿Desea reemplazar los datos actuales?`,
-                    type: 'warning',
-                    confirmText: 'Sí, reemplazar',
-                    cancelText: 'Cancelar'
-                });
-
-                if (confirmacion) {
-                    this.dataStore.replaceAll(versiones);
-                    this.renderer.showCardsView();
-                    await Modal.success(`Importación exitosa:\n• ${versiones.length} versiones\n• ${totalCdusUnicos} CDUs únicos\n`, 'Importación Exitosa');
-                }
-            } catch (error) {
-                await Modal.error('Error al cargar el archivo: ' + error.message, 'Error');
-                console.error(error);
-            } finally {
-                fileInput.value = '';
+    const uuidsUnicos = new Set();
+    versiones.forEach(v => {
+        v.cdus.forEach(cdu => {
+            if (cdu.uuid) {
+                uuidsUnicos.add(cdu.uuid);
             }
+        });
+    });
+
+    const totalCdusUnicos = uuidsUnicos.size;
+    let totalRegistros = 0;
+    versiones.forEach(v => totalRegistros += v.cdus.length);
+
+    const confirmacion = await Modal.show({
+        title: 'Confirmar Importación',
+        message: `Se encontraron:\n• ${versiones.length} versiones\n• ${totalCdusUnicos} CDUs únicos\n\n¿Desea reemplazar los datos actuales?`,
+        type: 'warning',
+        confirmText: 'Sí, reemplazar',
+        cancelText: 'Cancelar'
+    });
+
+    if (confirmacion) {
+        this.dataStore.replaceAll(versiones);
+        this.renderer.showCardsView();
+        NotificationSystem.success(
+            `Importación exitosa: ${versiones.length} versiones y ${totalCdusUnicos} CDUs únicos`,
+            4000
+        );
+    } else {
+        NotificationSystem.info('Importación cancelada', 2000);
+    }
+} catch (error) {
+    NotificationSystem.error('Error al cargar el archivo: ' + error.message, 5000);
+    console.error(error);
+} finally {
+    fileInput.value = '';
+}
         });
     }
 
-    setupDescargarButton() {
-        document.getElementById('btn-descargar').addEventListener('click', async () => {
-            const versiones = this.dataStore.getAll();
-            const validation = Validator.validateAllVersions(versiones);
+setupDescargarButton() {
+    document.getElementById('btn-descargar').addEventListener('click', async () => {
+        const versiones = this.dataStore.getAll();
+        
+        if (versiones.length === 0) {
+            NotificationSystem.warning('No hay datos para exportar.', 3000);
+            return;
+        }
+        
+        const validation = Validator.validateAllVersions(versiones);
+        
+        if (!validation.isValid) {
+            const report = Validator.generateValidationReport(validation);
+            const confirmacion = await Modal.confirm(
+                `${report}\n¿Desea descargar de todos modos?`,
+                'Advertencia de Validación'
+            );
             
-            if (!validation.isValid) {
-                const report = Validator.generateValidationReport(validation);
-                const confirmacion = await Modal.confirm(
-                    `${report}\n¿Desea descargar de todos modos?`,
-                    'Advertencia de Validación'
-                );
-                
-                if (!confirmacion) {
-                    return;
-                }
+            if (!confirmacion) {
+                NotificationSystem.info('Exportación cancelada', 2000);
+                return;
             }
+        }
+        
+        try {
+            const closeLoading = NotificationSystem.loading('Generando archivo Excel...');
+            
+            // Pequeño delay para que se vea el loading
+            await new Promise(resolve => setTimeout(resolve, 100));
             
             ExcelExporter.exportar(versiones);
-        });
-    }
+            
+            closeLoading();
+            NotificationSystem.success('Archivo Excel descargado exitosamente', 3000);
+        } catch (error) {
+            NotificationSystem.error('Error al exportar: ' + error.message, 4000);
+            console.error(error);
+        }
+    });
+}
 
     setupTablaEvents() {
         console.log('🎯 Configurando eventos de tabla...');
@@ -868,37 +896,97 @@ export class EventHandlers {
         console.log('✅ Eventos de tabla configurados');
     }
 
-    setupFilterEvents() {
-        const filterSearch = document.getElementById('filter-search');
-        filterSearch.addEventListener('input', (e) => {
-            this.renderer.setFilters({ search: e.target.value });
-        });
+setupFilterEvents() {
+    // Crear versiones debounced de las funciones de filtrado
+    const debouncedSearchFilter = Debouncer.debounce((value) => {
+        this.renderer.setFilters({ search: value });
+    }, 300);
+    
+    const debouncedResponsableFilter = Debouncer.debounce((value) => {
+        this.renderer.setFilters({ responsable: value });
+    }, 300);
 
-        const filterEstado = document.getElementById('filter-estado');
-        filterEstado.addEventListener('change', (e) => {
-            this.renderer.setFilters({ estado: e.target.value });
-        });
+    const filterSearch = document.getElementById('filter-search');
+    filterSearch.addEventListener('input', (e) => {
+        debouncedSearchFilter(e.target.value);
+    });
 
-        const filterResponsable = document.getElementById('filter-responsable');
-        filterResponsable.addEventListener('input', (e) => {
-            this.renderer.setFilters({ responsable: e.target.value });
-        });
+    const filterEstado = document.getElementById('filter-estado');
+    filterEstado.addEventListener('change', (e) => {
+        // Los selects no necesitan debounce porque son cambios únicos
+        this.renderer.setFilters({ estado: e.target.value });
+    });
 
-        const filterFechaDesde = document.getElementById('filter-fecha-desde');
-        filterFechaDesde.addEventListener('change', (e) => {
-            this.renderer.setFilters({ fechaDesde: e.target.value });
-        });
+    const filterResponsable = document.getElementById('filter-responsable');
+    filterResponsable.addEventListener('input', (e) => {
+        debouncedResponsableFilter(e.target.value);
+    });
 
-        const filterFechaHasta = document.getElementById('filter-fecha-hasta');
-        filterFechaHasta.addEventListener('change', (e) => {
-            this.renderer.setFilters({ fechaHasta: e.target.value });
-        });
+    const filterFechaDesde = document.getElementById('filter-fecha-desde');
+    filterFechaDesde.addEventListener('change', (e) => {
+        this.renderer.setFilters({ fechaDesde: e.target.value });
+    });
 
-        const btnClearFilters = document.getElementById('btn-clear-filters');
-        btnClearFilters.addEventListener('click', () => {
-            this.renderer.clearFilters();
-        });
+    const filterFechaHasta = document.getElementById('filter-fecha-hasta');
+    filterFechaHasta.addEventListener('change', (e) => {
+        this.renderer.setFilters({ fechaHasta: e.target.value });
+    });
 
-        console.log('✅ Eventos de filtros configurados');
-    }
+    const btnClearFilters = document.getElementById('btn-clear-filters');
+    btnClearFilters.addEventListener('click', () => {
+        this.renderer.clearFilters();
+    });
+
+    console.log('✅ Eventos de filtros configurados con debounce');
+}
+setupDetailFilterEvents() {
+    // Toggle para mostrar/ocultar filtros
+    const btnToggle = document.getElementById('btn-toggle-detail-search');
+    const filtersContent = document.querySelector('.detail-filters-content');
+    
+    btnToggle.addEventListener('click', () => {
+        const isCollapsed = filtersContent.classList.contains('detail-filters-collapsed');
+        
+        if (isCollapsed) {
+            filtersContent.classList.remove('detail-filters-collapsed');
+            btnToggle.classList.add('active');
+        } else {
+            filtersContent.classList.add('detail-filters-collapsed');
+            btnToggle.classList.remove('active');
+        }
+    });
+    
+    // Crear versiones debounced
+    const debouncedDetailSearch = Debouncer.debounce((value) => {
+        this.renderer.setDetailFilters({ search: value });
+    }, 300);
+    
+    const debouncedDetailResponsable = Debouncer.debounce((value) => {
+        this.renderer.setDetailFilters({ responsable: value });
+    }, 300);
+    
+    // Event listeners
+    const detailFilterSearch = document.getElementById('detail-filter-search');
+    detailFilterSearch.addEventListener('input', (e) => {
+        debouncedDetailSearch(e.target.value);
+    });
+    
+    const detailFilterEstado = document.getElementById('detail-filter-estado');
+    detailFilterEstado.addEventListener('change', (e) => {
+        this.renderer.setDetailFilters({ estado: e.target.value });
+    });
+    
+    const detailFilterResponsable = document.getElementById('detail-filter-responsable');
+    detailFilterResponsable.addEventListener('input', (e) => {
+        debouncedDetailResponsable(e.target.value);
+    });
+    
+    const btnClearDetailFilters = document.getElementById('btn-clear-detail-filters');
+    btnClearDetailFilters.addEventListener('click', () => {
+        this.renderer.clearDetailFilters();
+        NotificationSystem.info('Filtros limpiados', 2000);
+    });
+    
+    console.log('✅ Filtros de detalle configurados');
+}
 }

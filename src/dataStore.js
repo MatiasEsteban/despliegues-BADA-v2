@@ -559,6 +559,9 @@ export class DataStore {
     }
 
     replaceAll(nuevasVersiones) {
+        console.log('🔄 DIAGNÓSTICO - dataStore.replaceAll llamado');
+    console.log('  Versiones actuales antes de reemplazar:', this.versiones.length);
+    console.log('  Nuevas versiones a agregar:', nuevasVersiones.length);
         if (nuevasVersiones.length > 0) {
             this.nextVersionId = Math.max(...nuevasVersiones.map(v => v.id)) + 1;
             
@@ -586,9 +589,19 @@ export class DataStore {
             });
             this.nextCduId = maxCduId + 1;
         }
-        
+            // AGREGAR ESTO:
+    console.log('🔍 DIAGNÓSTICO - Antes de asignar:');
+    nuevasVersiones.forEach(v => {
+        console.log(`  Versión ${v.numero}: ${v.cdus.length} CDUs`);
+    });
         this.versiones = nuevasVersiones;
         this.notify();
+            // AGREGAR ESTO:
+    console.log('✅ DIAGNÓSTICO - DESPUÉS de notify:');
+    console.log('  Total versiones en dataStore:', this.versiones.length);
+    this.versiones.forEach(v => {
+        console.log(`  Versión ${v.numero}: ${v.cdus.length} CDUs`);
+    });
     }
 
     getUniqueStats() {

@@ -5,17 +5,23 @@ import { DOMBuilder } from './domBuilder.js';
 window.DOMBuilder = DOMBuilder;
 
 export class Renderer {
-    constructor(dataStore) {
+constructor(dataStore) {
     this.dataStore = dataStore;
     this.currentView = 'cards';
     this.currentVersionId = null;
-    this.isRendering = false; // AGREGAR ESTA LÍNEA
+    this.isRendering = false;
     this.filters = {
         search: '',
         estado: '',
         responsable: '',
         fechaDesde: '',
         fechaHasta: ''
+    };
+    // AGREGAR ESTO:
+    this.detailFilters = {
+        search: '',
+        estado: '',
+        responsable: ''
     };
 }
 
@@ -128,6 +134,11 @@ export class Renderer {
             const numB = parseInt(b.numero) || 0;
             return numB - numA;
         });
+            // AGREGAR ESTO:
+    console.log('🎨 RENDER CARDS - Versiones a renderizar:', sortedVersions.length);
+    sortedVersions.forEach(v => {
+        console.log(`  Renderizando Versión ${v.numero}: ${v.cdus.length} CDUs`);
+    });
         
         sortedVersions.forEach(version => {
             const card = DOMBuilder.crearTarjetaVersion(version, (vId) => {
@@ -161,6 +172,7 @@ export class Renderer {
 
     renderDetailView(versionId) {
         const version = this.dataStore.getAll().find(v => v.id === versionId);
+
         if (!version) {
             this.showCardsView();
             return;
@@ -185,6 +197,10 @@ export class Renderer {
         
         const tbody = document.getElementById('tabla-body');
         tbody.innerHTML = '';
+                // AGREGAR ESTO:
+        console.log('🎨 RENDER DETAIL - Versión:', version.numero);
+        console.log('  Total CDUs en version:', version.cdus.length);
+        console.log('  CDUs:', version.cdus.map(c => c.nombreCDU));
         
         if (version.cdus.length === 0) {
             this.showNoCdusMessage(tbody);
@@ -195,6 +211,17 @@ export class Renderer {
             const fila = DOMBuilder.crearFilaCDU(cdu);
             tbody.appendChild(fila);
         });
+        
+        // AGREGAR ESTAS LÍNEAS:
+        // Actualizar stats de filtros
+        document.getElementById('detail-filter-showing').textContent = version.cdus.length;
+        document.getElementById('detail-filter-total').textContent = version.cdus.length;
+        
+        // Aplicar filtros si existen
+        if (this.detailFilters.search || this.detailFilters.estado || this.detailFilters.responsable) {
+            this.applyDetailFilters();
+        }
+        
         
         setTimeout(() => {
             tbody.querySelectorAll('.campo-descripcion').forEach(textarea => {
@@ -346,6 +373,98 @@ export class Renderer {
             this.renderCardsView();
         }
     }
+    setDetailFilters(filters) {
+    this.detailFilters = { ...this.detailFilters, ...filters };
+    if (this.currentView === 'detail' && this.currentVersionId) {
+        this.applyDetailFilters();
+    }
+}
+
+clearDetailFilters() {
+    this.detailFilters = {
+        search: '',
+        estado: '',
+        responsable: ''
+    };
+    
+    document.getElementById('detail-filter-search').value = '';
+    document.getElementById('detail-filter-estado').value = '';
+    document.getElementById('detail-filter-responsable').value = '';
+    
+    if (this.currentView === 'detail' && this.currentVersionId) {
+        this.applyDetailFilters();
+    }
+}
+
+applyDetailFilters() {
+    const version = this.dataStore.getAll().find(v => v.id === this.currentVersionId);
+    if (!version) return;
+    
+    const tbody = document.getElementById('tabla-body');
+    const rows = tbody.querySelectorAll('tr');
+    
+    let visibleCount = 0;
+    const totalCount = version.cdus.length;
+    
+    const hasActiveFilters = this.detailFilters.search || 
+                             this.detailFilters.estado || 
+                             this.detailFilters.responsable;
+    
+    rows.forEach(row => {
+        const cduId = parseInt(row.dataset.cduId);
+        const cdu = version.cdus.find(c => c.id === cduId);
+        
+        if (!cdu) {
+            row.classList.add('filtered-out');
+            return;
+        }
+        
+        let matches = true;
+        
+        // Filtro de búsqueda general
+        if (this.detailFilters.search) {
+            const searchLower = this.detailFilters.search.toLowerCase();
+            const matchesSearch = 
+                cdu.nombreCDU.toLowerCase().includes(searchLower) ||
+                cdu.descripcionCDU.toLowerCase().includes(searchLower) ||
+                this.getResponsablesText(cdu).toLowerCase().includes(searchLower) ||
+                (cdu.observaciones && cdu.observaciones.some(obs => 
+                    obs.toLowerCase().includes(searchLower)
+                ));
+            
+            if (!matchesSearch) matches = false;
+        }
+        
+        // Filtro de estado
+        if (this.detailFilters.estado && cdu.estado !== this.detailFilters.estado) {
+            matches = false;
+        }
+        
+        // Filtro de responsable
+        if (this.detailFilters.responsable) {
+            const responsableLower = this.detailFilters.responsable.toLowerCase();
+            const responsablesText = this.getResponsablesText(cdu).toLowerCase();
+            if (!responsablesText.includes(responsableLower)) {
+                matches = false;
+            }
+        }
+        
+        if (matches) {
+            row.classList.remove('filtered-out');
+            if (hasActiveFilters) {
+                row.classList.add('filtered-match');
+                setTimeout(() => row.classList.remove('filtered-match'), 500);
+            }
+            visibleCount++;
+        } else {
+            row.classList.add('filtered-out');
+        }
+    });
+    
+    // Actualizar stats
+    document.getElementById('detail-filter-showing').textContent = visibleCount;
+    document.getElementById('detail-filter-total').textContent = totalCount;
+}
 
     updateStats() {
         const stats = this.dataStore.getUniqueStats();
