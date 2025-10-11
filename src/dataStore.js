@@ -7,6 +7,7 @@ export class DataStore {
         this.versiones = [];
         this.nextVersionId = 2;
         this.nextCduId = 3;
+        this.versionEnProduccionId = null;
         this.observers = [];
         
         // Sistema de cambios pendientes
@@ -264,18 +265,19 @@ export class DataStore {
         const latestNumber = this.getLatestVersionNumber();
         const newNumber = String(latestNumber + 1);
         
-        const cdusCopy = versionToCopy.cdus.map(cdu => ({
-            id: this.nextCduId++,
-            uuid: cdu.uuid,
-            nombreCDU: cdu.nombreCDU,
-            descripcionCDU: cdu.descripcionCDU,
-            estado: cdu.estado,
-            responsables: Array.isArray(cdu.responsables) 
-                ? cdu.responsables.map(r => ({...r}))
-                : (cdu.responsable ? [{ nombre: cdu.responsable, rol: 'DEV' }] : []),
-            observaciones: [...(cdu.observaciones || [])],
-            historial: []
-        }));
+const cdusCopy = versionToCopy.cdus.map(cdu => ({
+    id: this.nextCduId++,
+    uuid: cdu.uuid,
+    nombreCDU: cdu.nombreCDU,
+    descripcionCDU: cdu.descripcionCDU,
+    estado: cdu.estado,
+    versionBADA: cdu.versionBADA || 'V1', // NUEVO
+    responsables: Array.isArray(cdu.responsables) 
+        ? cdu.responsables.map(r => ({...r}))
+        : (cdu.responsable ? [{ nombre: cdu.responsable, rol: 'DEV' }] : []),
+    observaciones: [...(cdu.observaciones || [])],
+    historial: []
+}));
         
         const nuevaVersion = {
             id: this.nextVersionId++,
@@ -299,21 +301,22 @@ export class DataStore {
         const ultimaVersion = this.versiones[this.versiones.length - 1];
         
         const nuevoCdu = {
-            id: this.nextCduId++,
-            uuid: uuidv4(),
-            nombreCDU: '',
-            descripcionCDU: '',
-            estado: 'En Desarrollo',
-            responsables: [],
-            observaciones: [],
-            historial: [{
-                timestamp: new Date().toISOString(),
-                tipo: 'creacion',
-                campo: '',
-                valorAnterior: null,
-                valorNuevo: 'CDU Creado'
-            }]
-        };
+    id: this.nextCduId++,
+    uuid: uuidv4(),
+    nombreCDU: '',
+    descripcionCDU: '',
+    estado: 'En Desarrollo',
+    versionBADA: 'V1', // NUEVO
+    responsables: [],
+    observaciones: [],
+    historial: [{
+        timestamp: new Date().toISOString(),
+        tipo: 'creacion',
+        campo: '',
+        valorAnterior: null,
+        valorNuevo: 'CDU Creado'
+    }]
+};
         
         ultimaVersion.cdus.push(nuevoCdu);
         
@@ -336,22 +339,23 @@ export class DataStore {
         const version = this.versiones.find(v => v.id === versionId);
         if (!version) return null;
         
-        const nuevoCdu = {
-            id: this.nextCduId++,
-            uuid: uuidv4(),
-            nombreCDU: '',
-            descripcionCDU: '',
-            estado: 'En Desarrollo',
-            responsables: [],
-            observaciones: [],
-            historial: [{
-                timestamp: new Date().toISOString(),
-                tipo: 'creacion',
-                campo: '',
-                valorAnterior: null,
-                valorNuevo: 'CDU Creado'
-            }]
-        };
+const nuevoCdu = {
+    id: this.nextCduId++,
+    uuid: uuidv4(),
+    nombreCDU: '',
+    descripcionCDU: '',
+    estado: 'En Desarrollo',
+    versionBADA: 'V1', // NUEVO
+    responsables: [],
+    observaciones: [],
+    historial: [{
+        timestamp: new Date().toISOString(),
+        tipo: 'creacion',
+        campo: '',
+        valorAnterior: null,
+        valorNuevo: 'CDU Creado'
+    }]
+};
         
         version.cdus.push(nuevoCdu);
         
@@ -377,6 +381,19 @@ export class DataStore {
             this.notify();
         }
     }
+    setVersionEnProduccion(versionId) {
+    // Si es la misma versión, desmarcar
+    if (this.versionEnProduccionId === versionId) {
+        this.versionEnProduccionId = null;
+    } else {
+        this.versionEnProduccionId = versionId;
+    }
+    this.notify();
+}
+
+getVersionEnProduccionId() {
+    return this.versionEnProduccionId;
+}
 
     addComentarioCategoria(versionId, categoria, texto = '') {
         const version = this.versiones.find(v => v.id === versionId);
@@ -567,15 +584,20 @@ export class DataStore {
             
             let maxCduId = 0;
             nuevasVersiones.forEach(v => {
-                v.cdus.forEach(c => {
-                    if (c.id > maxCduId) maxCduId = c.id;
-                    
-                    if (c.responsable && !Array.isArray(c.responsables)) {
-                        c.responsables = [{ nombre: c.responsable, rol: 'DEV' }];
-                    } else if (!Array.isArray(c.responsables)) {
-                        c.responsables = [];
-                    }
-                });
+    v.cdus.forEach(c => {
+        if (c.id > maxCduId) maxCduId = c.id;
+        
+        // NUEVO: Retrocompatibilidad
+        if (!c.versionBADA) {
+            c.versionBADA = 'V1';
+        }
+        
+        if (c.responsable && !Array.isArray(c.responsables)) {
+            c.responsables = [{ nombre: c.responsable, rol: 'DEV' }];
+        } else if (!Array.isArray(c.responsables)) {
+            c.responsables = [];
+        }
+    });
                 
                 if (typeof v.comentarios === 'string') {
                     const oldComments = v.comentarios;
@@ -595,6 +617,12 @@ export class DataStore {
         console.log(`  Versión ${v.numero}: ${v.cdus.length} CDUs`);
     });
         this.versiones = nuevasVersiones;
+        if (this.versionEnProduccionId) {
+    const existe = this.versiones.find(v => v.id === this.versionEnProduccionId);
+    if (!existe) {
+        this.versionEnProduccionId = null;
+    }
+}
         this.notify();
             // AGREGAR ESTO:
     console.log('✅ DIAGNÓSTICO - DESPUÉS de notify:');

@@ -10,6 +10,7 @@ constructor(dataStore) {
     this.currentView = 'cards';
     this.currentVersionId = null;
     this.isRendering = false;
+    this.versionesVisibles = 5;
     this.filters = {
         search: '',
         estado: '',
@@ -30,6 +31,7 @@ constructor(dataStore) {
         document.getElementById('view-detail').classList.remove('active');
         this.currentView = 'cards';
         this.currentVersionId = null;
+        this.versionesVisibles = 5;
         this.renderCardsView();
     }
 
@@ -115,38 +117,67 @@ constructor(dataStore) {
         document.getElementById('filter-versions').textContent = filteredVersions.length;
     }
 
-    renderCardsView() {
-        const allVersions = this.dataStore.getAll();
-        const filteredVersions = this.applyFilters(allVersions);
-        
-        this.updateFilterStats(filteredVersions, allVersions);
-        
-        const grid = document.getElementById('versions-grid');
-        grid.innerHTML = '';
-        
-        if (filteredVersions.length === 0) {
-            this.showNoVersionsMessage(grid);
-            return;
-        }
-        
-        const sortedVersions = [...filteredVersions].sort((a, b) => {
-            const numA = parseInt(a.numero) || 0;
-            const numB = parseInt(b.numero) || 0;
-            return numB - numA;
-        });
-            // AGREGAR ESTO:
-    console.log('🎨 RENDER CARDS - Versiones a renderizar:', sortedVersions.length);
-    sortedVersions.forEach(v => {
-        console.log(`  Renderizando Versión ${v.numero}: ${v.cdus.length} CDUs`);
-    });
-        
-        sortedVersions.forEach(version => {
-            const card = DOMBuilder.crearTarjetaVersion(version, (vId) => {
-                this.showDetailView(vId);
-            });
-            grid.appendChild(card);
-        });
+renderCardsView() {
+    const allVersions = this.dataStore.getAll();
+    const filteredVersions = this.applyFilters(allVersions);
+    
+    this.updateFilterStats(filteredVersions, allVersions);
+    
+    const grid = document.getElementById('versions-grid');
+    grid.innerHTML = '';
+    
+    if (filteredVersions.length === 0) {
+        this.showNoVersionsMessage(grid);
+        this.updateLoadMoreButton(0, 0); // NUEVO
+        return;
     }
+    
+    const sortedVersions = [...filteredVersions].sort((a, b) => {
+        const numA = parseInt(a.numero) || 0;
+        const numB = parseInt(b.numero) || 0;
+        return numB - numA;
+    });
+    
+    console.log('🎨 RENDER CARDS - Versiones a renderizar:', sortedVersions.length);
+    
+    // NUEVO: Obtener versión en producción
+    const versionEnProduccionId = this.dataStore.getVersionEnProduccionId();
+    
+    // NUEVO: Limitar versiones a mostrar
+    const versionesToShow = sortedVersions.slice(0, this.versionesVisibles);
+    
+    versionesToShow.forEach(version => {
+        console.log(`  Renderizando Versión ${version.numero}: ${version.cdus.length} CDUs`);
+        const isEnProduccion = version.id === versionEnProduccionId;
+        const card = DOMBuilder.crearTarjetaVersion(version, (vId) => {
+            this.showDetailView(vId);
+        }, isEnProduccion);
+        grid.appendChild(card);
+    });
+    
+    // NUEVO: Actualizar botón "Cargar más"
+    this.updateLoadMoreButton(versionesToShow.length, sortedVersions.length);
+}
+updateLoadMoreButton(showing, total) {
+    const btnLoadMore = document.getElementById('btn-load-more-versions');
+    const loadMoreContainer = document.getElementById('load-more-container');
+    const countSpan = document.getElementById('versions-remaining-count');
+    
+    if (!btnLoadMore || !loadMoreContainer) return;
+    
+    const remaining = total - showing;
+    
+    if (remaining > 0) {
+        loadMoreContainer.style.display = 'flex';
+        countSpan.textContent = remaining;
+    } else {
+        loadMoreContainer.style.display = 'none';
+    }
+}
+cargarMasVersiones() {
+    this.versionesVisibles += 10;
+    this.renderCardsView();
+}
 
     showNoVersionsMessage(container) {
         const message = document.createElement('div');
@@ -161,7 +192,7 @@ constructor(dataStore) {
                 No hay versiones disponibles
             </div>
             <div style="font-size: 0.95rem; color: var(--text-secondary);">
-                Crea una nueva versión para comenzar
+                Crea una nueva versión o sube un archivo para comenzar
             </div>
         `;
         message.style.gridColumn = '1 / -1';
@@ -181,6 +212,13 @@ constructor(dataStore) {
         document.getElementById('detail-version-title').textContent = `Versión ${version.numero}`;
         document.getElementById('detail-version-date').value = version.fechaDespliegue || '';
         document.getElementById('detail-version-time').value = version.horaDespliegue || '';
+        const versionEnProduccionId = this.dataStore.getVersionEnProduccionId();
+const titleElement = document.getElementById('detail-version-title');
+if (version.id === versionEnProduccionId) {
+    titleElement.innerHTML = `Versión ${version.numero} <span class="badge-produccion-inline">EN PRODUCCIÓN</span>`;
+} else {
+    titleElement.textContent = `Versión ${version.numero}`;
+}
         
         // Mostrar comentarios categorizados
         const commentsDisplay = document.getElementById('version-comments-display');

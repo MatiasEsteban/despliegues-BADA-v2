@@ -180,6 +180,16 @@
                 <!-- Las tarjetas se generarán dinámicamente -->
             </div>
         </div>
+                    <div id="load-more-container" class="load-more-container" style="display: none;">
+                <button id="btn-load-more-versions" class="btn-load-more">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="7 13 12 18 17 13"></polyline>
+                        <polyline points="7 6 12 11 17 6"></polyline>
+                    </svg>
+                    Cargar <span id="versions-remaining-count">0</span> versiones más
+                </button>
+            </div>
+        </div>
 
         <!-- VISTA DE DETALLE DE VERSIÓN -->
         <div id="view-detail" class="view-container">
@@ -288,16 +298,17 @@
             <div class="table-container">
                 <div class="table-wrapper">
                     <table class="tabla-despliegues">
-                        <thead>
-                            <tr>
-                                <th>CDU</th>
-                                <th>Descripción</th>
-                                <th>Estado</th>
-                                <th>Responsables</th>
-                                <th>Observaciones</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
+<thead>
+    <tr>
+        <th>CDU</th>
+        <th>Descripción</th>
+        <th>Estado</th>
+        <th>Versión BADA</th>  <!-- NUEVO -->
+        <th>Responsables</th>
+        <th>Observaciones</th>
+        <th>Acciones</th>
+    </tr>
+</thead>
                         <tbody id="tabla-body">
                             <!-- Las filas se generan dinámicamente con JavaScript -->
                         </tbody>

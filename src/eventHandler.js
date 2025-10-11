@@ -263,6 +263,35 @@ export class EventHandlers {
         );
         this.renderer.fullRender();
     });
+    document.addEventListener('click', (e) => {
+    const btnMarcar = e.target.closest('.btn-marcar-produccion');
+    if (btnMarcar) {
+        e.stopPropagation(); // Evitar que se abra la versión
+        const versionId = parseInt(btnMarcar.dataset.versionId);
+        
+        const version = this.dataStore.getAll().find(v => v.id === versionId);
+        const versionEnProduccionId = this.dataStore.getVersionEnProduccionId();
+        
+        if (versionId === versionEnProduccionId) {
+            // Desmarcar
+            this.dataStore.setVersionEnProduccion(versionId);
+            NotificationSystem.info(`Versión ${version.numero} desmarcada de producción.`, 2000);
+        } else {
+            // Marcar nueva
+            this.dataStore.setVersionEnProduccion(versionId);
+            NotificationSystem.success(`Versión ${version.numero} marcada como EN PRODUCCIÓN.`, 3000);
+        }
+        
+        this.renderer.fullRender();
+    }
+});
+const btnLoadMore = document.getElementById('btn-load-more-versions');
+if (btnLoadMore) {
+    btnLoadMore.addEventListener('click', () => {
+        this.renderer.cargarMasVersiones();
+        NotificationSystem.info('Cargando más versiones...', 1500);
+    });
+}
     
     console.log('✅ Botones de versión configurados');
 }
@@ -329,10 +358,12 @@ export class EventHandlers {
             const file = e.target.files[0];
             if (!file) return;
 
-            try {
+try {
     const closeLoading = NotificationSystem.loading('Importando archivo Excel...');
     
-    const versiones = await ExcelImporter.importar(file);
+    const resultado = await ExcelImporter.importar(file);
+    const versiones = resultado.versiones;
+    const versionEnProduccionId = resultado.versionEnProduccionId;
     
     closeLoading();
     
@@ -364,6 +395,12 @@ export class EventHandlers {
 
     if (confirmacion) {
         this.dataStore.replaceAll(versiones);
+        
+        // NUEVO: Restaurar versión en producción
+        if (versionEnProduccionId) {
+            this.dataStore.versionEnProduccionId = versionEnProduccionId;
+        }
+        
         this.renderer.showCardsView();
         NotificationSystem.success(
             `Importación exitosa: ${versiones.length} versiones y ${totalCdusUnicos} CDUs únicos`,
@@ -413,12 +450,15 @@ setupDescargarButton() {
             
             ExcelExporter.exportar(versiones);
             
-            closeLoading();
-            NotificationSystem.success('Archivo Excel descargado exitosamente', 3000);
-        } catch (error) {
-            NotificationSystem.error('Error al exportar: ' + error.message, 4000);
-            console.error(error);
-        }
+    const versionEnProduccionId = this.dataStore.getVersionEnProduccionId();
+    ExcelExporter.exportar(versiones, versionEnProduccionId);
+    
+    closeLoading();
+    NotificationSystem.success('Archivo Excel descargado exitosamente', 3000);
+} catch (error) {
+    NotificationSystem.error('Error al exportar: ' + error.message, 4000);
+    console.error(error);
+}
     });
 }
 
@@ -653,6 +693,39 @@ setupDescargarButton() {
                 
                 this.dataStore.updateResponsable(cduId, respIndex, 'rol', valor);
             }
+            else if (e.target.dataset.campo === 'versionBADA') {
+    const cduId = parseInt(e.target.dataset.cduId);
+    const valor = e.target.value;
+    
+    let cduNombre = '';
+    let versionNumero = '';
+    let valorAnterior = '';
+    
+    for (const version of this.dataStore.getAll()) {
+        const cdu = version.cdus.find(c => c.id === cduId);
+        if (cdu) {
+            cduNombre = cdu.nombreCDU || 'Sin nombre';
+            versionNumero = version.numero;
+            valorAnterior = cdu.versionBADA || 'V1';
+            break;
+        }
+    }
+    
+    if (valorAnterior !== valor) {
+        this.dataStore.addPendingChange({
+            cduId,
+            campo: 'versionBADA',
+            valorAnterior,
+            valorNuevo: valor,
+            cduNombre,
+            versionNumero,
+            timestamp: new Date().toISOString(),
+            tipo: 'versionBADA'
+        });
+    }
+    
+    this.dataStore.updateCdu(cduId, 'versionBADA', valor);
+}
         });
 
         tbody.addEventListener('click', async (e) => {

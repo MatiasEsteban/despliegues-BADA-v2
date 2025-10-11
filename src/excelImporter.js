@@ -3,38 +3,52 @@
 import { v4 as uuidv4 } from 'uuid';
 
 export class ExcelImporter {
-    static async importar(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            
-            reader.onload = (e) => {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    
-                    let sheetName = 'Detalle Despliegues';
-                    if (!workbook.Sheets[sheetName]) {
-                        sheetName = workbook.SheetNames[0];
-                    }
-                    
-                    const worksheet = workbook.Sheets[sheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                    
-                    const versiones = this.transformarDatos(jsonData);
-                    
-                    resolve(versiones);
-                } catch (error) {
-                    reject(new Error('Error al leer el archivo Excel: ' + error.message));
+static async importar(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                let sheetName = 'Detalle Despliegues';
+                if (!workbook.Sheets[sheetName]) {
+                    sheetName = workbook.SheetNames[0];
                 }
-            };
-            
-            reader.onerror = () => {
-                reject(new Error('Error al leer el archivo'));
-            };
-            
-            reader.readAsArrayBuffer(file);
-        });
-    }
+                
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                
+                const versiones = this.transformarDatos(jsonData);
+                
+                // NUEVO: Detectar versión en producción desde Excel
+                let versionEnProduccionId = null;
+                for (const row of jsonData) {
+                    if (row['En Producción'] === 'SÍ' || row['En Produccion'] === 'SÍ') {
+                        const versionNum = String(row['Versión'] || row['Version'] || '').replace(/\./g, '').trim();
+                        const version = versiones.find(v => v.numero === versionNum);
+                        if (version) {
+                            versionEnProduccionId = version.id;
+                            break; // Solo la primera marcada
+                        }
+                    }
+                }
+                
+                // Retornar objeto con ambos datos
+                resolve({ versiones, versionEnProduccionId });
+            } catch (error) {
+                reject(new Error('Error al leer el archivo Excel: ' + error.message));
+            }
+        };
+        
+        reader.onerror = () => {
+            reject(new Error('Error al leer el archivo'));
+        };
+        
+        reader.readAsArrayBuffer(file);
+    });
+}
 
     static transformarDatos(jsonData) {
         const versionesMap = new Map();
@@ -111,16 +125,17 @@ export class ExcelImporter {
             const historial = this.parsearHistorial(historialText);
             
             const version = versionesMap.get(versionNum);
-            version.cdus.push({
-                id: cduIdCounter++,
-                uuid: uuid,
-                nombreCDU: nombreCDU,
-                descripcionCDU: row['Descripción CDU'] || row['Descripcion CDU'] || row['Descripción'] || '',
-                estado: this.normalizarEstado(row['Estado'] || 'En Desarrollo'),
-                responsables: responsables,
-                observaciones: observaciones,
-                historial: historial
-            });
+version.cdus.push({
+    id: cduIdCounter++,
+    uuid: uuid,
+    nombreCDU: nombreCDU,
+    descripcionCDU: row['Descripción CDU'] || row['Descripcion CDU'] || row['Descripción'] || '',
+    estado: this.normalizarEstado(row['Estado'] || 'En Desarrollo'),
+    versionBADA: row['Versión BADA'] || row['Version BADA'] || 'V1', // NUEVO
+    responsables: responsables,
+    observaciones: observaciones,
+    historial: historial
+});
         });
         
         let versionIdCounter = 1;
