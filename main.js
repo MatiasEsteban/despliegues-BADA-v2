@@ -1,6 +1,6 @@
 // main.js - Punto de entrada de la aplicación
 
-import { App } from './src/app.js';
+import { App } from './src/core/app.js';
 
 // Inicializar la aplicación cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {

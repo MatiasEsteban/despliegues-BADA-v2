@@ -1,6 +1,6 @@
 // renderer.js - Sistema dual de renderizado con comentarios categorizados
 
-import { DOMBuilder } from './domBuilder.js';
+import { DOMBuilder } from '../components/domBuilder.js';
 
 window.DOMBuilder = DOMBuilder;
 
