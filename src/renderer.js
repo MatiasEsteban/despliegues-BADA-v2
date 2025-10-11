@@ -11,6 +11,14 @@ constructor(dataStore) {
     this.currentVersionId = null;
     this.isRendering = false;
     this.versionesVisibles = 5;
+        this.virtualScroll = {
+        rowHeight: 120,        // Altura estimada de cada fila en px
+        visibleRows: 10,       // Filas visibles en viewport
+        bufferRows: 5,         // Buffer arriba y abajo
+        startIndex: 0,
+        endIndex: 20,          // visibleRows + (bufferRows * 2)
+        scrollTop: 0
+    };
     this.filters = {
         search: '',
         estado: '',
@@ -201,73 +209,69 @@ cargarMasVersiones() {
         container.appendChild(message);
     }
 
-    renderDetailView(versionId) {
-        const version = this.dataStore.getAll().find(v => v.id === versionId);
+renderDetailView(versionId) {
+    const version = this.dataStore.getAll().find(v => v.id === versionId);
 
-        if (!version) {
-            this.showCardsView();
-            return;
-        }
-        
-        document.getElementById('detail-version-title').textContent = `Versión ${version.numero}`;
-        document.getElementById('detail-version-date').value = version.fechaDespliegue || '';
-        document.getElementById('detail-version-time').value = version.horaDespliegue || '';
-        const versionEnProduccionId = this.dataStore.getVersionEnProduccionId();
-const titleElement = document.getElementById('detail-version-title');
-if (version.id === versionEnProduccionId) {
-    titleElement.innerHTML = `Versión ${version.numero} <span class="badge-produccion-inline">EN PRODUCCIÓN</span>`;
-} else {
-    titleElement.textContent = `Versión ${version.numero}`;
-}
-        
-        // Mostrar comentarios categorizados
-        const commentsDisplay = document.getElementById('version-comments-display');
-        const commentsContainer = document.getElementById('version-comments-container');
-        
-        const hasComentarios = this.tieneComentarios(version.comentarios);
-        
-        if (hasComentarios) {
-            commentsContainer.innerHTML = this.renderComentariosCategorizados(version.comentarios);
-            commentsDisplay.style.display = 'block';
-        } else {
-            commentsDisplay.style.display = 'none';
-        }
-        
+    if (!version) {
+        this.showCardsView();
+        return;
+    }
+    
+    document.getElementById('detail-version-title').textContent = `Versión ${version.numero}`;
+    document.getElementById('detail-version-date').value = version.fechaDespliegue || '';
+    document.getElementById('detail-version-time').value = version.horaDespliegue || '';
+    
+    const versionEnProduccionId = this.dataStore.getVersionEnProduccionId();
+    const titleElement = document.getElementById('detail-version-title');
+    if (version.id === versionEnProduccionId) {
+        titleElement.innerHTML = `Versión ${version.numero} <span class="badge-produccion-inline">EN PRODUCCIÓN</span>`;
+    } else {
+        titleElement.textContent = `Versión ${version.numero}`;
+    }
+    
+    // Mostrar comentarios categorizados
+    const commentsDisplay = document.getElementById('version-comments-display');
+    const commentsContainer = document.getElementById('version-comments-container');
+    
+    const hasComentarios = this.tieneComentarios(version.comentarios);
+    
+    if (hasComentarios) {
+        commentsContainer.innerHTML = this.renderComentariosCategorizados(version.comentarios);
+        commentsDisplay.style.display = 'block';
+    } else {
+        commentsDisplay.style.display = 'none';
+    }
+    
+    console.log('🎨 RENDER DETAIL - Versión:', version.numero);
+    console.log('  Total CDUs en version:', version.cdus.length);
+    
+    if (version.cdus.length === 0) {
         const tbody = document.getElementById('tabla-body');
         tbody.innerHTML = '';
-                // AGREGAR ESTO:
-        console.log('🎨 RENDER DETAIL - Versión:', version.numero);
-        console.log('  Total CDUs en version:', version.cdus.length);
-        console.log('  CDUs:', version.cdus.map(c => c.nombreCDU));
-        
-        if (version.cdus.length === 0) {
-            this.showNoCdusMessage(tbody);
-            return;
-        }
-        
-        version.cdus.forEach(cdu => {
-            const fila = DOMBuilder.crearFilaCDU(cdu);
-            tbody.appendChild(fila);
-        });
-        
-        // AGREGAR ESTAS LÍNEAS:
-        // Actualizar stats de filtros
-        document.getElementById('detail-filter-showing').textContent = version.cdus.length;
-        document.getElementById('detail-filter-total').textContent = version.cdus.length;
-        
-        // Aplicar filtros si existen
-        if (this.detailFilters.search || this.detailFilters.estado || this.detailFilters.responsable) {
-            this.applyDetailFilters();
-        }
-        
-        
-        setTimeout(() => {
-            tbody.querySelectorAll('.campo-descripcion').forEach(textarea => {
-                textarea.style.height = 'auto';
-                textarea.style.height = textarea.scrollHeight + 'px';
-            });
-        }, 50);
+        this.showNoCdusMessage(tbody);
+        return;
     }
+    
+    // NUEVO: Renderizar con Virtual Scrolling
+    this.renderVirtualCdus(version.cdus);
+    
+    // Actualizar stats de filtros
+    document.getElementById('detail-filter-showing').textContent = version.cdus.length;
+    document.getElementById('detail-filter-total').textContent = version.cdus.length;
+    
+    // Aplicar filtros si existen
+    if (this.detailFilters.search || this.detailFilters.estado || this.detailFilters.responsable) {
+        this.applyDetailFilters();
+    }
+    
+    setTimeout(() => {
+        const tbody = document.getElementById('tabla-body');
+        tbody.querySelectorAll('.campo-descripcion').forEach(textarea => {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        });
+    }, 50);
+}
 
     tieneComentarios(comentarios) {
         if (typeof comentarios === 'string') {
@@ -354,7 +358,7 @@ if (version.id === versionEnProduccionId) {
     showNoCdusMessage(tbody) {
         const tr = document.createElement('tr');
         const td = document.createElement('td');
-        td.colSpan = 6;
+        td.colSpan = 7;
         td.style.textAlign = 'center';
         td.style.padding = '3rem';
         td.style.color = 'var(--text-secondary)';
@@ -508,6 +512,132 @@ applyDetailFilters() {
         const stats = this.dataStore.getUniqueStats();
         DOMBuilder.actualizarEstadisticas(stats);
     }
+    // NUEVO: Renderizar CDUs con Virtual Scrolling
+renderVirtualCdus(cdus) {
+    const tableWrapper = document.querySelector('.table-wrapper');
+    const tbody = document.getElementById('tabla-body');
+    
+    // Remover listener anterior si existe
+    if (this.scrollListener) {
+        tableWrapper.removeEventListener('scroll', this.scrollListener);
+    }
+    
+    // Reset virtual scroll state
+    this.virtualScroll.startIndex = 0;
+    this.virtualScroll.endIndex = Math.min(20, cdus.length);
+    this.virtualScroll.scrollTop = 0;
+    
+    // Limpiar tbody
+    tbody.innerHTML = '';
+    
+    // Crear espaciador superior
+    const topSpacer = document.createElement('tr');
+    topSpacer.className = 'virtual-scroll-spacer';
+    topSpacer.id = 'top-spacer';
+    topSpacer.innerHTML = '<td colspan="7" style="height: 0; padding: 0; border: none;"></td>';
+    tbody.appendChild(topSpacer);
+    
+    // Renderizar CDUs visibles
+    const visibleCdus = cdus.slice(this.virtualScroll.startIndex, this.virtualScroll.endIndex);
+    visibleCdus.forEach(cdu => {
+        const fila = DOMBuilder.crearFilaCDU(cdu);
+        tbody.appendChild(fila);
+    });
+    
+    // Crear espaciador inferior
+    const bottomSpacer = document.createElement('tr');
+    bottomSpacer.className = 'virtual-scroll-spacer';
+    bottomSpacer.id = 'bottom-spacer';
+    bottomSpacer.innerHTML = '<td colspan="7" style="height: 0; padding: 0; border: none;"></td>';
+    tbody.appendChild(bottomSpacer);
+    
+    // Actualizar espaciadores
+    this.updateVirtualScrollSpacers(cdus.length);
+    
+    // Configurar scroll listener
+    this.scrollListener = this.createVirtualScrollHandler(cdus);
+    tableWrapper.addEventListener('scroll', this.scrollListener);
+    
+    console.log(`📜 Virtual Scroll: Renderizando ${visibleCdus.length} de ${cdus.length} CDUs`);
+}
+
+// NUEVO: Crear handler de scroll para virtual scrolling
+createVirtualScrollHandler(cdus) {
+    let ticking = false;
+    
+    return () => {
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                this.handleVirtualScroll(cdus);
+                ticking = false;
+            });
+            ticking = true;
+        }
+    };
+}
+
+// NUEVO: Manejar scroll virtual
+handleVirtualScroll(cdus) {
+    const tableWrapper = document.querySelector('.table-wrapper');
+    const scrollTop = tableWrapper.scrollTop;
+    
+    // Calcular nuevo rango de índices
+    const newStartIndex = Math.max(0, Math.floor(scrollTop / this.virtualScroll.rowHeight) - this.virtualScroll.bufferRows);
+    const newEndIndex = Math.min(
+        cdus.length,
+        newStartIndex + this.virtualScroll.visibleRows + (this.virtualScroll.bufferRows * 2)
+    );
+    
+    // Solo actualizar si hay cambio significativo
+    if (Math.abs(newStartIndex - this.virtualScroll.startIndex) < 3) {
+        return;
+    }
+    
+    this.virtualScroll.startIndex = newStartIndex;
+    this.virtualScroll.endIndex = newEndIndex;
+    this.virtualScroll.scrollTop = scrollTop;
+    
+    // Re-renderizar CDUs visibles
+    const tbody = document.getElementById('tabla-body');
+    const existingRows = Array.from(tbody.querySelectorAll('tr:not(.virtual-scroll-spacer)'));
+    
+    // Remover filas existentes
+    existingRows.forEach(row => row.remove());
+    
+    // Renderizar nuevo rango
+    const topSpacer = document.getElementById('top-spacer');
+    const visibleCdus = cdus.slice(newStartIndex, newEndIndex);
+    
+    visibleCdus.forEach(cdu => {
+        const fila = DOMBuilder.crearFilaCDU(cdu);
+        tbody.insertBefore(fila, document.getElementById('bottom-spacer'));
+    });
+    
+    // Actualizar espaciadores
+    this.updateVirtualScrollSpacers(cdus.length);
+    
+    // Re-ajustar textareas
+    setTimeout(() => {
+        tbody.querySelectorAll('.campo-descripcion').forEach(textarea => {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        });
+    }, 10);
+}
+
+// NUEVO: Actualizar altura de espaciadores
+updateVirtualScrollSpacers(totalCdus) {
+    const topSpacer = document.getElementById('top-spacer');
+    const bottomSpacer = document.getElementById('bottom-spacer');
+    
+    if (!topSpacer || !bottomSpacer) return;
+    
+    const topHeight = this.virtualScroll.startIndex * this.virtualScroll.rowHeight;
+    const bottomHeight = (totalCdus - this.virtualScroll.endIndex) * this.virtualScroll.rowHeight;
+    
+    topSpacer.querySelector('td').style.height = `${topHeight}px`;
+    bottomSpacer.querySelector('td').style.height = `${bottomHeight}px`;
+}
 
     init() {
         this.showCardsView();

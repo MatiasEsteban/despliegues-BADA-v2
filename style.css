@@ -751,6 +751,9 @@ h1 {
 
 .table-wrapper {
     overflow-x: auto;
+    overflow-y: auto;  /* MODIFICADO: permitir scroll vertical */
+    max-height: 600px;  /* NUEVO: altura máxima para activar scroll */
+    position: relative; /* NUEVO: para el virtual scroll */
 }
 
 .table-wrapper::-webkit-scrollbar {
@@ -2150,4 +2153,24 @@ h1 {
 
 .change-item-produccion .change-type-badge {
     background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+}
+/* =============== VIRTUAL SCROLLING =============== */
+.virtual-scroll-spacer {
+    pointer-events: none;
+}
+
+.virtual-scroll-spacer td {
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+/* Optimización de rendimiento para scroll */
+.table-wrapper {
+    will-change: scroll-position;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tabla-despliegues tbody tr {
+    contain: layout style;
 }
