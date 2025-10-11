@@ -20,23 +20,10 @@ static async importar(file) {
                 const worksheet = workbook.Sheets[sheetName];
                 const jsonData = XLSX.utils.sheet_to_json(worksheet);
                 
-                const versiones = this.transformarDatos(jsonData);
+                // transformarDatos ya retorna { versiones, versionEnProduccionId }
+                const resultado = this.transformarDatos(jsonData);
                 
-                // NUEVO: Detectar versión en producción desde Excel
-                let versionEnProduccionId = null;
-                for (const row of jsonData) {
-                    if (row['En Producción'] === 'SÍ' || row['En Produccion'] === 'SÍ') {
-                        const versionNum = String(row['Versión'] || row['Version'] || '').replace(/\./g, '').trim();
-                        const version = versiones.find(v => v.numero === versionNum);
-                        if (version) {
-                            versionEnProduccionId = version.id;
-                            break; // Solo la primera marcada
-                        }
-                    }
-                }
-                
-                // Retornar objeto con ambos datos
-                resolve({ versiones, versionEnProduccionId });
+                resolve(resultado);
             } catch (error) {
                 reject(new Error('Error al leer el archivo Excel: ' + error.message));
             }
@@ -158,8 +145,25 @@ version.cdus.push({
             console.log(`    - ${cdu.nombreCDU} (UUID: ${cdu.uuid})`);
         });
     });
+let versionEnProduccionNum = null;
+jsonData.forEach(row => {
+    const enProduccion = row['En Producción'] || row['En Produccion'];
+    if (enProduccion === 'SÍ' || enProduccion === 'SI') {
+        versionEnProduccionNum = String(row['Versión'] || row['Version'] || '').replace(/\./g, '').trim();
+    }
+});
+
+// Encontrar el ID correspondiente
+let versionEnProduccionId = null;
+if (versionEnProduccionNum) {
+    const versionEncontrada = versiones.find(v => v.numero === versionEnProduccionNum);
+    if (versionEncontrada) {
+        versionEnProduccionId = versionEncontrada.id;
+        console.log(`✅ Versión en producción detectada: ${versionEnProduccionNum} (ID: ${versionEnProduccionId})`);
+    }
+}
         
-        return versiones;
+        return { versiones, versionEnProduccionId };
     }
 
     static parsearLista(texto) {

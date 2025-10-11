@@ -263,23 +263,51 @@ export class EventHandlers {
         );
         this.renderer.fullRender();
     });
-    document.addEventListener('click', (e) => {
+document.addEventListener('click', (e) => {
     const btnMarcar = e.target.closest('.btn-marcar-produccion');
     if (btnMarcar) {
         e.stopPropagation(); // Evitar que se abra la versión
         const versionId = parseInt(btnMarcar.dataset.versionId);
         
         const version = this.dataStore.getAll().find(v => v.id === versionId);
-        const versionEnProduccionId = this.dataStore.getVersionEnProduccionId();
+        const versionEnProduccionIdAnterior = this.dataStore.getVersionEnProduccionId();
         
-        if (versionId === versionEnProduccionId) {
-            // Desmarcar
-            this.dataStore.setVersionEnProduccion(versionId);
-            NotificationSystem.info(`Versión ${version.numero} desmarcada de producción.`, 2000);
+        // Obtener nombre de versión anterior en producción
+        let versionAnteriorNombre = 'Ninguna';
+        if (versionEnProduccionIdAnterior) {
+            const versionAnterior = this.dataStore.getAll().find(v => v.id === versionEnProduccionIdAnterior);
+            if (versionAnterior) {
+                versionAnteriorNombre = versionAnterior.numero;
+            }
+        }
+        
+        // Aplicar temporalmente el cambio
+        const valorAnterior = this.dataStore.setVersionEnProduccionTemporal(versionId);
+        
+        // Determinar nueva versión en producción
+        const nuevaVersionEnProduccionId = this.dataStore.getVersionEnProduccionId();
+        let nuevaVersionNombre = 'Ninguna';
+        if (nuevaVersionEnProduccionId) {
+            const nuevaVersion = this.dataStore.getAll().find(v => v.id === nuevaVersionEnProduccionId);
+            if (nuevaVersion) {
+                nuevaVersionNombre = nuevaVersion.numero;
+            }
+        }
+        
+        // Agregar cambio pendiente
+        this.dataStore.addPendingChange({
+            tipo: 'version-produccion',
+            campo: 'version-en-produccion',
+            versionId: versionId,
+            valorAnterior: versionAnteriorNombre,
+            valorNuevo: nuevaVersionNombre,
+            timestamp: new Date().toISOString()
+        });
+        
+        if (versionId === versionEnProduccionIdAnterior) {
+            NotificationSystem.info(`Versión ${version.numero} desmarcada de producción (cambio pendiente).`, 2500);
         } else {
-            // Marcar nueva
-            this.dataStore.setVersionEnProduccion(versionId);
-            NotificationSystem.success(`Versión ${version.numero} marcada como EN PRODUCCIÓN.`, 3000);
+            NotificationSystem.success(`Versión ${version.numero} marcada como EN PRODUCCIÓN (cambio pendiente).`, 3000);
         }
         
         this.renderer.fullRender();
@@ -442,15 +470,15 @@ setupDescargarButton() {
             }
         }
         
-        try {
-            const closeLoading = NotificationSystem.loading('Generando archivo Excel...');
-            
-            // Pequeño delay para que se vea el loading
-            await new Promise(resolve => setTimeout(resolve, 100));
-            
-            ExcelExporter.exportar(versiones);
-            
+try {
+    const closeLoading = NotificationSystem.loading('Generando archivo Excel...');
+    
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Obtener ID de versión en producción
     const versionEnProduccionId = this.dataStore.getVersionEnProduccionId();
+    console.log('💾 Descargando con versión en producción ID:', versionEnProduccionId);
+    
     ExcelExporter.exportar(versiones, versionEnProduccionId);
     
     closeLoading();

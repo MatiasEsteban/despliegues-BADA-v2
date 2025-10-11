@@ -171,25 +171,28 @@ export class DataStore {
         return -1;
     }
 
-    applyPendingChanges() {
-        const appliedChanges = [...this.pendingChanges];
-        
-        // Los cambios ya están aplicados en versiones, solo limpiamos
-        this.pendingChanges = [];
-        this.snapshot = null;
-        
-        console.log('✅ Cambios confirmados, snapshot eliminado');
-        
-        this.notifyChangeObservers();
-        this.notify();
+applyPendingChanges() {
+    const appliedChanges = [...this.pendingChanges];
+    
+    // Los cambios ya están aplicados en versiones, solo limpiamos
+    this.pendingChanges = [];
+    this.snapshot = null;
+    
+    console.log('✅ Cambios confirmados, snapshot eliminado');
+    
+    this.notifyChangeObservers();
+    this.notify();
 
-        return appliedChanges;
-    }
+    return appliedChanges;
+}
 
     discardPendingChanges() {
         // Restaurar desde snapshot si existe
         if (this.snapshot) {
             this.versiones = JSON.parse(JSON.stringify(this.snapshot));
+                    if (this.snapshot.versionEnProduccionId !== undefined) {
+            this.versionEnProduccionId = this.snapshot.versionEnProduccionId;
+        }
             this.snapshot = null;
             console.log('↩️ Cambios revertidos desde snapshot');
         }
@@ -393,6 +396,29 @@ const nuevoCdu = {
 
 getVersionEnProduccionId() {
     return this.versionEnProduccionId;
+}
+setVersionEnProduccionTemporal(versionId) {
+    // Crear snapshot si es el primer cambio pendiente
+    if (this.pendingChanges.length === 0) {
+        this.snapshot = JSON.parse(JSON.stringify({
+            versiones: this.versiones,
+            versionEnProduccionId: this.versionEnProduccionId
+        }));
+        console.log('📸 Snapshot creado (incluye versión en producción)');
+    }
+    
+    // Aplicar temporalmente
+    const valorAnterior = this.versionEnProduccionId;
+    
+    if (this.versionEnProduccionId === versionId) {
+        this.versionEnProduccionId = null;
+    } else {
+        this.versionEnProduccionId = versionId;
+    }
+    
+    this.notify();
+    
+    return valorAnterior;
 }
 
     addComentarioCategoria(versionId, categoria, texto = '') {

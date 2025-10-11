@@ -474,6 +474,32 @@ newItem.innerHTML = `
                         </div>
                     `;
                 }
+                    if (change.tipo === 'version-produccion') {
+        return `
+            <div class="change-item change-item-produccion">
+                <div class="change-header">
+                    <span class="change-number">#${index + 1}</span>
+                    <span class="change-type-badge">PRODUCCIÓN</span>
+                </div>
+                <div class="change-details">
+                    <div class="change-cdu-name">
+                        <svg class="icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                        <strong>Cambio de Versión en Producción</strong>
+                    </div>
+                    <div class="change-estado">
+                        <span class="estado-old">${change.valorAnterior}</span>
+                        <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                        <span class="estado-new">⚡ ${change.valorNuevo}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
                 
                 // Para cambios de estado
                 const estadoIcon = this.getEstadoIconForSummary(change.valorNuevo);
