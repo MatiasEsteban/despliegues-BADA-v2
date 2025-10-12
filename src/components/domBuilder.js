@@ -1,40 +1,77 @@
-// domBuilder.js - Coordinador de componentes DOM (refactorizado)
+// domBuilder.js - Coordinador de componentes DOM (completamente modularizado)
 
 import { VersionCard } from './cards/VersionCard.js';
 import { CduRow } from './table/CduRow.js';
 import { EstadoSelect } from './estados/EstadoSelect.js';
 
 export class DOMBuilder {
-    // Delegar a VersionCard
+    // =============== DELEGACIÓN A COMPONENTES ===============
+    
+    /**
+     * Crea una tarjeta de versión
+     * @param {Object} version - Objeto de versión
+     * @param {Function} onClickCallback - Callback al hacer click
+     * @param {boolean} isEnProduccion - Si está en producción
+     * @returns {HTMLElement}
+     */
     static crearTarjetaVersion(version, onClickCallback, isEnProduccion = false) {
         return VersionCard.create(version, onClickCallback, isEnProduccion);
     }
 
-    // Delegar a CduRow
+    /**
+     * Crea una fila de CDU para la tabla
+     * @param {Object} cdu - Objeto CDU
+     * @returns {HTMLElement}
+     */
     static crearFilaCDU(cdu) {
         return CduRow.create(cdu);
     }
 
-    // Delegar a EstadoSelect
+    /**
+     * Obtiene el icono SVG de un estado
+     * @param {string} estado - Estado del CDU
+     * @returns {string} - SVG HTML
+     */
     static getEstadoIcon(estado) {
         return EstadoSelect.getEstadoIcon(estado);
     }
 
+    /**
+     * Obtiene la clase CSS de un estado
+     * @param {string} estado - Estado del CDU
+     * @returns {string} - Nombre de clase CSS
+     */
     static getEstadoClass(estado) {
         return EstadoSelect.getEstadoClass(estado);
     }
 
-    // Mantener getRolIcon aquí por compatibilidad (usado en tableEvents)
+    /**
+     * Obtiene el icono SVG de un rol
+     * @param {string} rol - Rol del responsable
+     * @returns {string} - SVG HTML
+     */
     static getRolIcon(rol) {
         return CduRow.getRolIcon(rol);
     }
 
-    // Método de actualización de estadísticas (sin cambios)
+    /**
+     * Actualiza las estadísticas globales en el UI
+     * @param {Object} stats - Objeto con las estadísticas
+     */
     static actualizarEstadisticas(stats) {
-        document.getElementById('stat-total').textContent = stats.total;
-        document.getElementById('stat-desarrollo').textContent = stats.desarrollo;
-        document.getElementById('stat-pendiente').textContent = stats.pendiente;
-        document.getElementById('stat-certificado').textContent = stats.certificado;
-        document.getElementById('stat-produccion').textContent = stats.produccion;
+        const elements = {
+            'stat-total': stats.total,
+            'stat-desarrollo': stats.desarrollo,
+            'stat-pendiente': stats.pendiente,
+            'stat-certificado': stats.certificado,
+            'stat-produccion': stats.produccion
+        };
+
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        });
     }
 }

@@ -30,9 +30,10 @@ export class DataStore {
         this.changeObservers.forEach(callback => callback(this.pendingChanges));
     }
 
-    notify() {
-        this.observers.forEach(callback => callback(this.versiones));
-    }
+notify(options = {}) {
+    const { fullRender = false } = options;
+    this.observers.forEach(callback => callback(this.versiones, { fullRender }));
+}
 
     getAll() {
         return this.versiones;
@@ -181,7 +182,7 @@ applyPendingChanges() {
     console.log('✅ Cambios confirmados, snapshot eliminado');
     
     this.notifyChangeObservers();
-    this.notify();
+this.notify({ fullRender: false });
 
     return appliedChanges;
 }
@@ -199,7 +200,7 @@ applyPendingChanges() {
         
         this.pendingChanges = [];
         this.notifyChangeObservers();
-        this.notify();
+    this.notify({ fullRender: false });
     }
 
     getLatestVersionNumber() {
@@ -257,7 +258,7 @@ applyPendingChanges() {
         };
         
         this.versiones.push(nuevaVersion);
-        this.notify();
+    this.notify({ fullRender: true });
         return nuevaVersion;
     }
 
@@ -292,7 +293,7 @@ const cdusCopy = versionToCopy.cdus.map(cdu => ({
         };
         
         this.versiones.push(nuevaVersion);
-        this.notify();
+    this.notify({ fullRender: true });
         return nuevaVersion;
     }
 
@@ -334,7 +335,7 @@ const cdusCopy = versionToCopy.cdus.map(cdu => ({
             tipo: 'creacion'
         });
         
-        this.notify();
+    this.notify({ fullRender: false });
         return nuevoCdu;
     }
 
@@ -373,7 +374,7 @@ const nuevoCdu = {
             tipo: 'creacion'
         });
         
-        this.notify();
+    this.notify({ fullRender: false });
         return nuevoCdu;
     }
 
@@ -381,7 +382,7 @@ const nuevoCdu = {
         const version = this.versiones.find(v => v.id === versionId);
         if (version) {
             version[campo] = valor;
-            this.notify();
+        this.notify({ fullRender: false });
         }
     }
     setVersionEnProduccion(versionId) {
@@ -391,7 +392,7 @@ const nuevoCdu = {
     } else {
         this.versionEnProduccionId = versionId;
     }
-    this.notify();
+this.notify({ fullRender: false });
 }
 
 getVersionEnProduccionId() {
@@ -416,7 +417,7 @@ setVersionEnProduccionTemporal(versionId) {
         this.versionEnProduccionId = versionId;
     }
     
-    this.notify();
+this.notify({ fullRender: false });
     
     return valorAnterior;
 }
@@ -437,7 +438,7 @@ setVersionEnProduccionTemporal(versionId) {
             }
             
             version.comentarios[categoria].push(texto);
-            this.notify();
+        this.notify({ fullRender: false });
         }
     }
 
@@ -445,7 +446,7 @@ setVersionEnProduccionTemporal(versionId) {
         const version = this.versiones.find(v => v.id === versionId);
         if (version && version.comentarios[categoria] && index < version.comentarios[categoria].length) {
             version.comentarios[categoria][index] = texto;
-            this.notify();
+        this.notify({ fullRender: false });
         }
     }
 
@@ -453,7 +454,7 @@ setVersionEnProduccionTemporal(versionId) {
         const version = this.versiones.find(v => v.id === versionId);
         if (version && version.comentarios[categoria] && index < version.comentarios[categoria].length) {
             version.comentarios[categoria].splice(index, 1);
-            this.notify();
+        this.notify({ fullRender: false });
         }
     }
 
@@ -471,7 +472,7 @@ setVersionEnProduccionTemporal(versionId) {
                     if (campo === 'descripcionCDU') tipo = 'descripcion';
                     
                     this.addHistorialEntry(cduId, tipo, valorAnterior, valor, campo);
-                    this.notify();
+                this.notify({ fullRender: false });
                 }
                 return;
             }
@@ -488,7 +489,7 @@ setVersionEnProduccionTemporal(versionId) {
                 cdu.responsables.push({ nombre, rol });
                 
                 this.addHistorialEntry(cduId, 'responsable', null, `Agregado: ${nombre || '(vacío)'} (${rol})`);
-                this.notify();
+            this.notify({ fullRender: false });
                 return;
             }
         }
@@ -513,7 +514,7 @@ setVersionEnProduccionTemporal(versionId) {
                             `${cdu.responsables[index].nombre || '(vacío)'} (${valor})`);
                     }
                     
-                    this.notify();
+                this.notify({ fullRender: false });
                 }
                 return;
             }
@@ -530,7 +531,7 @@ setVersionEnProduccionTemporal(versionId) {
                 this.addHistorialEntry(cduId, 'responsable', 
                     `${responsable.nombre || '(vacío)'} (${responsable.rol})`, 
                     'Eliminado');
-                this.notify();
+            this.notify({ fullRender: false });
                 return;
             }
         }
@@ -546,7 +547,7 @@ setVersionEnProduccionTemporal(versionId) {
                 cdu.observaciones.push(texto);
                 
                 this.addHistorialEntry(cduId, 'observacion', null, 'Nueva observación agregada');
-                this.notify();
+            this.notify({ fullRender: false });
                 return;
             }
         }
@@ -560,7 +561,7 @@ setVersionEnProduccionTemporal(versionId) {
                 
                 if (valorAnterior !== texto) {
                     cdu.observaciones[index] = texto;
-                    this.notify();
+                this.notify({ fullRender: false });
                 }
                 return;
             }
@@ -574,7 +575,7 @@ setVersionEnProduccionTemporal(versionId) {
                 cdu.observaciones.splice(index, 1);
                 
                 this.addHistorialEntry(cduId, 'observacion', null, 'Observación eliminada');
-                this.notify();
+            this.notify({ fullRender: false });
                 return;
             }
         }
@@ -582,7 +583,7 @@ setVersionEnProduccionTemporal(versionId) {
 
     deleteVersion(versionId) {
         this.versiones = this.versiones.filter(v => v.id !== versionId);
-        this.notify();
+    this.notify({ fullRender: false });
     }
 
     deleteCdu(cduId) {
@@ -595,7 +596,7 @@ setVersionEnProduccionTemporal(versionId) {
                     this.deleteVersion(version.id);
                 }
                 
-                this.notify();
+            this.notify({ fullRender: false });
                 return;
             }
         }
@@ -649,7 +650,7 @@ setVersionEnProduccionTemporal(versionId) {
         this.versionEnProduccionId = null;
     }
 }
-        this.notify();
+    this.notify({ fullRender: true });
             // AGREGAR ESTO:
     console.log('✅ DIAGNÓSTICO - DESPUÉS de notify:');
     console.log('  Total versiones en dataStore:', this.versiones.length);

@@ -1,38 +1,39 @@
 // renderer.js - Sistema dual de renderizado con comentarios categorizados
 
 import { DOMBuilder } from '../components/domBuilder.js';
+import { VirtualScroll } from '../components/table/VirtualScroll.js';
 
 window.DOMBuilder = DOMBuilder;
 
 export class Renderer {
-constructor(dataStore) {
-    this.dataStore = dataStore;
-    this.currentView = 'cards';
-    this.currentVersionId = null;
-    this.isRendering = false;
-    this.versionesVisibles = 5;
-        this.virtualScroll = {
-        rowHeight: 120,        // Altura estimada de cada fila en px
-        visibleRows: 10,       // Filas visibles en viewport
-        bufferRows: 5,         // Buffer arriba y abajo
-        startIndex: 0,
-        endIndex: 20,          // visibleRows + (bufferRows * 2)
-        scrollTop: 0
-    };
-    this.filters = {
-        search: '',
-        estado: '',
-        responsable: '',
-        fechaDesde: '',
-        fechaHasta: ''
-    };
-    // AGREGAR ESTO:
-    this.detailFilters = {
-        search: '',
-        estado: '',
-        responsable: ''
-    };
-}
+    constructor(dataStore) {
+        this.dataStore = dataStore;
+        this.currentView = 'cards';
+        this.currentVersionId = null;
+        this.isRendering = false;
+        this.versionesVisibles = 5;
+        
+        // NUEVO: Instancia de VirtualScroll
+        this.virtualScroll = new VirtualScroll({
+            rowHeight: 120,
+            visibleRows: 10,
+            bufferRows: 5
+        });
+        
+        this.filters = {
+            search: '',
+            estado: '',
+            responsable: '',
+            fechaDesde: '',
+            fechaHasta: ''
+        };
+        
+        this.detailFilters = {
+            search: '',
+            estado: '',
+            responsable: ''
+        };
+    }
 
     showCardsView() {
         document.getElementById('view-cards').classList.add('active');
@@ -125,67 +126,66 @@ constructor(dataStore) {
         document.getElementById('filter-versions').textContent = filteredVersions.length;
     }
 
-renderCardsView() {
-    const allVersions = this.dataStore.getAll();
-    const filteredVersions = this.applyFilters(allVersions);
-    
-    this.updateFilterStats(filteredVersions, allVersions);
-    
-    const grid = document.getElementById('versions-grid');
-    grid.innerHTML = '';
-    
-    if (filteredVersions.length === 0) {
-        this.showNoVersionsMessage(grid);
-        this.updateLoadMoreButton(0, 0); // NUEVO
-        return;
+    renderCardsView() {
+        const allVersions = this.dataStore.getAll();
+        const filteredVersions = this.applyFilters(allVersions);
+        
+        this.updateFilterStats(filteredVersions, allVersions);
+        
+        const grid = document.getElementById('versions-grid');
+        grid.innerHTML = '';
+        
+        if (filteredVersions.length === 0) {
+            this.showNoVersionsMessage(grid);
+            this.updateLoadMoreButton(0, 0);
+            return;
+        }
+        
+        const sortedVersions = [...filteredVersions].sort((a, b) => {
+            const numA = parseInt(a.numero) || 0;
+            const numB = parseInt(b.numero) || 0;
+            return numB - numA;
+        });
+        
+        console.log('🎨 RENDER CARDS - Versiones a renderizar:', sortedVersions.length);
+        
+        const versionEnProduccionId = this.dataStore.getVersionEnProduccionId();
+        
+        const versionesToShow = sortedVersions.slice(0, this.versionesVisibles);
+        
+        versionesToShow.forEach(version => {
+            console.log(`  Renderizando Versión ${version.numero}: ${version.cdus.length} CDUs`);
+            const isEnProduccion = version.id === versionEnProduccionId;
+            const card = DOMBuilder.crearTarjetaVersion(version, (vId) => {
+                this.showDetailView(vId);
+            }, isEnProduccion);
+            grid.appendChild(card);
+        });
+        
+        this.updateLoadMoreButton(versionesToShow.length, sortedVersions.length);
     }
-    
-    const sortedVersions = [...filteredVersions].sort((a, b) => {
-        const numA = parseInt(a.numero) || 0;
-        const numB = parseInt(b.numero) || 0;
-        return numB - numA;
-    });
-    
-    console.log('🎨 RENDER CARDS - Versiones a renderizar:', sortedVersions.length);
-    
-    // NUEVO: Obtener versión en producción
-    const versionEnProduccionId = this.dataStore.getVersionEnProduccionId();
-    
-    // NUEVO: Limitar versiones a mostrar
-    const versionesToShow = sortedVersions.slice(0, this.versionesVisibles);
-    
-    versionesToShow.forEach(version => {
-        console.log(`  Renderizando Versión ${version.numero}: ${version.cdus.length} CDUs`);
-        const isEnProduccion = version.id === versionEnProduccionId;
-        const card = DOMBuilder.crearTarjetaVersion(version, (vId) => {
-            this.showDetailView(vId);
-        }, isEnProduccion);
-        grid.appendChild(card);
-    });
-    
-    // NUEVO: Actualizar botón "Cargar más"
-    this.updateLoadMoreButton(versionesToShow.length, sortedVersions.length);
-}
-updateLoadMoreButton(showing, total) {
-    const btnLoadMore = document.getElementById('btn-load-more-versions');
-    const loadMoreContainer = document.getElementById('load-more-container');
-    const countSpan = document.getElementById('versions-remaining-count');
-    
-    if (!btnLoadMore || !loadMoreContainer) return;
-    
-    const remaining = total - showing;
-    
-    if (remaining > 0) {
-        loadMoreContainer.style.display = 'flex';
-        countSpan.textContent = remaining;
-    } else {
-        loadMoreContainer.style.display = 'none';
+
+    updateLoadMoreButton(showing, total) {
+        const btnLoadMore = document.getElementById('btn-load-more-versions');
+        const loadMoreContainer = document.getElementById('load-more-container');
+        const countSpan = document.getElementById('versions-remaining-count');
+        
+        if (!btnLoadMore || !loadMoreContainer) return;
+        
+        const remaining = total - showing;
+        
+        if (remaining > 0) {
+            loadMoreContainer.style.display = 'flex';
+            countSpan.textContent = remaining;
+        } else {
+            loadMoreContainer.style.display = 'none';
+        }
     }
-}
-cargarMasVersiones() {
-    this.versionesVisibles += 10;
-    this.renderCardsView();
-}
+
+    cargarMasVersiones() {
+        this.versionesVisibles += 10;
+        this.renderCardsView();
+    }
 
     showNoVersionsMessage(container) {
         const message = document.createElement('div');
@@ -209,69 +209,77 @@ cargarMasVersiones() {
         container.appendChild(message);
     }
 
-renderDetailView(versionId) {
-    const version = this.dataStore.getAll().find(v => v.id === versionId);
+    renderDetailView(versionId) {
+        const version = this.dataStore.getAll().find(v => v.id === versionId);
 
-    if (!version) {
-        this.showCardsView();
-        return;
-    }
-    
-    document.getElementById('detail-version-title').textContent = `Versión ${version.numero}`;
-    document.getElementById('detail-version-date').value = version.fechaDespliegue || '';
-    document.getElementById('detail-version-time').value = version.horaDespliegue || '';
-    
-    const versionEnProduccionId = this.dataStore.getVersionEnProduccionId();
-    const titleElement = document.getElementById('detail-version-title');
-    if (version.id === versionEnProduccionId) {
-        titleElement.innerHTML = `Versión ${version.numero} <span class="badge-produccion-inline">EN PRODUCCIÓN</span>`;
-    } else {
-        titleElement.textContent = `Versión ${version.numero}`;
-    }
-    
-    // Mostrar comentarios categorizados
-    const commentsDisplay = document.getElementById('version-comments-display');
-    const commentsContainer = document.getElementById('version-comments-container');
-    
-    const hasComentarios = this.tieneComentarios(version.comentarios);
-    
-    if (hasComentarios) {
-        commentsContainer.innerHTML = this.renderComentariosCategorizados(version.comentarios);
-        commentsDisplay.style.display = 'block';
-    } else {
-        commentsDisplay.style.display = 'none';
-    }
-    
-    console.log('🎨 RENDER DETAIL - Versión:', version.numero);
-    console.log('  Total CDUs en version:', version.cdus.length);
-    
-    if (version.cdus.length === 0) {
-        const tbody = document.getElementById('tabla-body');
-        tbody.innerHTML = '';
-        this.showNoCdusMessage(tbody);
-        return;
-    }
-    
-    // NUEVO: Renderizar con Virtual Scrolling
-    this.renderVirtualCdus(version.cdus);
-    
-    // Actualizar stats de filtros
-    document.getElementById('detail-filter-showing').textContent = version.cdus.length;
-    document.getElementById('detail-filter-total').textContent = version.cdus.length;
-    
-    // Aplicar filtros si existen
-    if (this.detailFilters.search || this.detailFilters.estado || this.detailFilters.responsable) {
-        this.applyDetailFilters();
-    }
-    
-    setTimeout(() => {
-        const tbody = document.getElementById('tabla-body');
-        tbody.querySelectorAll('.campo-descripcion').forEach(textarea => {
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
-        });
-    }, 50);
+        if (!version) {
+            this.showCardsView();
+            return;
+        }
+        
+        document.getElementById('detail-version-title').textContent = `Versión ${version.numero}`;
+        document.getElementById('detail-version-date').value = version.fechaDespliegue || '';
+        document.getElementById('detail-version-time').value = version.horaDespliegue || '';
+        
+        const versionEnProduccionId = this.dataStore.getVersionEnProduccionId();
+        const titleElement = document.getElementById('detail-version-title');
+        if (version.id === versionEnProduccionId) {
+            titleElement.innerHTML = `Versión ${version.numero} <span class="badge-produccion-inline">EN PRODUCCIÓN</span>`;
+        } else {
+            titleElement.textContent = `Versión ${version.numero}`;
+        }
+        
+        // Mostrar comentarios categorizados
+        const commentsDisplay = document.getElementById('version-comments-display');
+        const commentsContainer = document.getElementById('version-comments-container');
+        
+        const hasComentarios = this.tieneComentarios(version.comentarios);
+        
+        if (hasComentarios) {
+            commentsContainer.innerHTML = this.renderComentariosCategorizados(version.comentarios);
+            commentsDisplay.style.display = 'block';
+        } else {
+            commentsDisplay.style.display = 'none';
+        }
+        
+        console.log('🎨 RENDER DETAIL - Versión:', version.numero);
+        console.log('  Total CDUs en version:', version.cdus.length);
+        
+        if (version.cdus.length === 0) {
+            const tbody = document.getElementById('tabla-body');
+            tbody.innerHTML = '';
+            this.showNoCdusMessage(tbody);
+            return;
+        }
+        // MODIFICADO: Usar updateData si virtualScroll ya está activo
+if (this.virtualScroll.currentCdus.length > 0) {
+    console.log('🔄 Actualizando datos del virtual scroll existente');
+    this.virtualScroll.updateData(version.cdus);
+} else {
+    console.log('🆕 Renderizando virtual scroll por primera vez');
+    this.virtualScroll.render(version.cdus);
 }
+        
+        // MODIFICADO: Usar VirtualScroll
+        this.virtualScroll.render(version.cdus);
+        
+        // Actualizar stats de filtros
+        document.getElementById('detail-filter-showing').textContent = version.cdus.length;
+        document.getElementById('detail-filter-total').textContent = version.cdus.length;
+        
+        // Aplicar filtros si existen
+        if (this.detailFilters.search || this.detailFilters.estado || this.detailFilters.responsable) {
+            this.applyDetailFilters();
+        }
+        
+        setTimeout(() => {
+            const tbody = document.getElementById('tabla-body');
+            tbody.querySelectorAll('.campo-descripcion').forEach(textarea => {
+                textarea.style.height = 'auto';
+                textarea.style.height = textarea.scrollHeight + 'px';
+            });
+        }, 50);
+    }
 
     tieneComentarios(comentarios) {
         if (typeof comentarios === 'string') {
@@ -415,247 +423,145 @@ renderDetailView(versionId) {
             this.renderCardsView();
         }
     }
+
     setDetailFilters(filters) {
-    this.detailFilters = { ...this.detailFilters, ...filters };
-    if (this.currentView === 'detail' && this.currentVersionId) {
-        this.applyDetailFilters();
-    }
-}
-
-clearDetailFilters() {
-    this.detailFilters = {
-        search: '',
-        estado: '',
-        responsable: ''
-    };
-    
-    document.getElementById('detail-filter-search').value = '';
-    document.getElementById('detail-filter-estado').value = '';
-    document.getElementById('detail-filter-responsable').value = '';
-    
-    if (this.currentView === 'detail' && this.currentVersionId) {
-        this.applyDetailFilters();
-    }
-}
-
-applyDetailFilters() {
-    const version = this.dataStore.getAll().find(v => v.id === this.currentVersionId);
-    if (!version) return;
-    
-    const tbody = document.getElementById('tabla-body');
-    const rows = tbody.querySelectorAll('tr');
-    
-    let visibleCount = 0;
-    const totalCount = version.cdus.length;
-    
-    const hasActiveFilters = this.detailFilters.search || 
-                             this.detailFilters.estado || 
-                             this.detailFilters.responsable;
-    
-    rows.forEach(row => {
-        const cduId = parseInt(row.dataset.cduId);
-        const cdu = version.cdus.find(c => c.id === cduId);
-        
-        if (!cdu) {
-            row.classList.add('filtered-out');
-            return;
+        this.detailFilters = { ...this.detailFilters, ...filters };
+        if (this.currentView === 'detail' && this.currentVersionId) {
+            this.applyDetailFilters();
         }
+    }
+
+    clearDetailFilters() {
+        this.detailFilters = {
+            search: '',
+            estado: '',
+            responsable: ''
+        };
         
-        let matches = true;
+        document.getElementById('detail-filter-search').value = '';
+        document.getElementById('detail-filter-estado').value = '';
+        document.getElementById('detail-filter-responsable').value = '';
         
-        // Filtro de búsqueda general
-        if (this.detailFilters.search) {
-            const searchLower = this.detailFilters.search.toLowerCase();
-            const matchesSearch = 
-                cdu.nombreCDU.toLowerCase().includes(searchLower) ||
-                cdu.descripcionCDU.toLowerCase().includes(searchLower) ||
-                this.getResponsablesText(cdu).toLowerCase().includes(searchLower) ||
-                (cdu.observaciones && cdu.observaciones.some(obs => 
-                    obs.toLowerCase().includes(searchLower)
-                ));
+        if (this.currentView === 'detail' && this.currentVersionId) {
+            this.applyDetailFilters();
+        }
+    }
+
+    applyDetailFilters() {
+        const version = this.dataStore.getAll().find(v => v.id === this.currentVersionId);
+        if (!version) return;
+        
+        const tbody = document.getElementById('tabla-body');
+        const rows = tbody.querySelectorAll('tr');
+        
+        let visibleCount = 0;
+        const totalCount = version.cdus.length;
+        
+        const hasActiveFilters = this.detailFilters.search || 
+                                 this.detailFilters.estado || 
+                                 this.detailFilters.responsable;
+        
+        rows.forEach(row => {
+            const cduId = parseInt(row.dataset.cduId);
+            const cdu = version.cdus.find(c => c.id === cduId);
             
-            if (!matchesSearch) matches = false;
-        }
-        
-        // Filtro de estado
-        if (this.detailFilters.estado && cdu.estado !== this.detailFilters.estado) {
-            matches = false;
-        }
-        
-        // Filtro de responsable
-        if (this.detailFilters.responsable) {
-            const responsableLower = this.detailFilters.responsable.toLowerCase();
-            const responsablesText = this.getResponsablesText(cdu).toLowerCase();
-            if (!responsablesText.includes(responsableLower)) {
+            if (!cdu) {
+                row.classList.add('filtered-out');
+                return;
+            }
+            
+            let matches = true;
+            
+            // Filtro de búsqueda general
+            if (this.detailFilters.search) {
+                const searchLower = this.detailFilters.search.toLowerCase();
+                const matchesSearch = 
+                    cdu.nombreCDU.toLowerCase().includes(searchLower) ||
+                    cdu.descripcionCDU.toLowerCase().includes(searchLower) ||
+                    this.getResponsablesText(cdu).toLowerCase().includes(searchLower) ||
+                    (cdu.observaciones && cdu.observaciones.some(obs => 
+                        obs.toLowerCase().includes(searchLower)
+                    ));
+                
+                if (!matchesSearch) matches = false;
+            }
+            
+            // Filtro de estado
+            if (this.detailFilters.estado && cdu.estado !== this.detailFilters.estado) {
                 matches = false;
             }
-        }
-        
-        if (matches) {
-            row.classList.remove('filtered-out');
-            if (hasActiveFilters) {
-                row.classList.add('filtered-match');
-                setTimeout(() => row.classList.remove('filtered-match'), 500);
+            
+            // Filtro de responsable
+            if (this.detailFilters.responsable) {
+                const responsableLower = this.detailFilters.responsable.toLowerCase();
+                const responsablesText = this.getResponsablesText(cdu).toLowerCase();
+                if (!responsablesText.includes(responsableLower)) {
+                    matches = false;
+                }
             }
-            visibleCount++;
-        } else {
-            row.classList.add('filtered-out');
-        }
-    });
-    
-    // Actualizar stats
-    document.getElementById('detail-filter-showing').textContent = visibleCount;
-    document.getElementById('detail-filter-total').textContent = totalCount;
-}
+            
+            if (matches) {
+                row.classList.remove('filtered-out');
+                if (hasActiveFilters) {
+                    row.classList.add('filtered-match');
+                    setTimeout(() => row.classList.remove('filtered-match'), 500);
+                }
+                visibleCount++;
+            } else {
+                row.classList.add('filtered-out');
+            }
+        });
+        
+        // Actualizar stats
+        document.getElementById('detail-filter-showing').textContent = visibleCount;
+        document.getElementById('detail-filter-total').textContent = totalCount;
+    }
 
     updateStats() {
         const stats = this.dataStore.getUniqueStats();
         DOMBuilder.actualizarEstadisticas(stats);
     }
-    // NUEVO: Renderizar CDUs con Virtual Scrolling
-renderVirtualCdus(cdus) {
-    const tableWrapper = document.querySelector('.table-wrapper');
-    const tbody = document.getElementById('tabla-body');
-    
-    // Remover listener anterior si existe
-    if (this.scrollListener) {
-        tableWrapper.removeEventListener('scroll', this.scrollListener);
-    }
-    
-    // Reset virtual scroll state
-    this.virtualScroll.startIndex = 0;
-    this.virtualScroll.endIndex = Math.min(20, cdus.length);
-    this.virtualScroll.scrollTop = 0;
-    
-    // Limpiar tbody
-    tbody.innerHTML = '';
-    
-    // Crear espaciador superior
-    const topSpacer = document.createElement('tr');
-    topSpacer.className = 'virtual-scroll-spacer';
-    topSpacer.id = 'top-spacer';
-    topSpacer.innerHTML = '<td colspan="7" style="height: 0; padding: 0; border: none;"></td>';
-    tbody.appendChild(topSpacer);
-    
-    // Renderizar CDUs visibles
-    const visibleCdus = cdus.slice(this.virtualScroll.startIndex, this.virtualScroll.endIndex);
-    visibleCdus.forEach(cdu => {
-        const fila = DOMBuilder.crearFilaCDU(cdu);
-        tbody.appendChild(fila);
-    });
-    
-    // Crear espaciador inferior
-    const bottomSpacer = document.createElement('tr');
-    bottomSpacer.className = 'virtual-scroll-spacer';
-    bottomSpacer.id = 'bottom-spacer';
-    bottomSpacer.innerHTML = '<td colspan="7" style="height: 0; padding: 0; border: none;"></td>';
-    tbody.appendChild(bottomSpacer);
-    
-    // Actualizar espaciadores
-    this.updateVirtualScrollSpacers(cdus.length);
-    
-    // Configurar scroll listener
-    this.scrollListener = this.createVirtualScrollHandler(cdus);
-    tableWrapper.addEventListener('scroll', this.scrollListener);
-    
-    console.log(`📜 Virtual Scroll: Renderizando ${visibleCdus.length} de ${cdus.length} CDUs`);
-}
 
-// NUEVO: Crear handler de scroll para virtual scrolling
-createVirtualScrollHandler(cdus) {
-    let ticking = false;
+init() {
+    this.showCardsView();
+    this.updateStats();
     
-    return () => {
-        if (!ticking) {
-            window.requestAnimationFrame(() => {
-                this.handleVirtualScroll(cdus);
-                ticking = false;
-            });
-            ticking = true;
-        }
-    };
-}
-
-// NUEVO: Manejar scroll virtual
-handleVirtualScroll(cdus) {
-    const tableWrapper = document.querySelector('.table-wrapper');
-    const scrollTop = tableWrapper.scrollTop;
-    
-    // Calcular nuevo rango de índices
-    const newStartIndex = Math.max(0, Math.floor(scrollTop / this.virtualScroll.rowHeight) - this.virtualScroll.bufferRows);
-    const newEndIndex = Math.min(
-        cdus.length,
-        newStartIndex + this.virtualScroll.visibleRows + (this.virtualScroll.bufferRows * 2)
-    );
-    
-    // Solo actualizar si hay cambio significativo
-    if (Math.abs(newStartIndex - this.virtualScroll.startIndex) < 3) {
-        return;
-    }
-    
-    this.virtualScroll.startIndex = newStartIndex;
-    this.virtualScroll.endIndex = newEndIndex;
-    this.virtualScroll.scrollTop = scrollTop;
-    
-    // Re-renderizar CDUs visibles
-    const tbody = document.getElementById('tabla-body');
-    const existingRows = Array.from(tbody.querySelectorAll('tr:not(.virtual-scroll-spacer)'));
-    
-    // Remover filas existentes
-    existingRows.forEach(row => row.remove());
-    
-    // Renderizar nuevo rango
-    const topSpacer = document.getElementById('top-spacer');
-    const visibleCdus = cdus.slice(newStartIndex, newEndIndex);
-    
-    visibleCdus.forEach(cdu => {
-        const fila = DOMBuilder.crearFilaCDU(cdu);
-        tbody.insertBefore(fila, document.getElementById('bottom-spacer'));
-    });
-    
-    // Actualizar espaciadores
-    this.updateVirtualScrollSpacers(cdus.length);
-    
-    // Re-ajustar textareas
-    setTimeout(() => {
-        tbody.querySelectorAll('.campo-descripcion').forEach(textarea => {
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
-        });
-    }, 10);
-}
-
-// NUEVO: Actualizar altura de espaciadores
-updateVirtualScrollSpacers(totalCdus) {
-    const topSpacer = document.getElementById('top-spacer');
-    const bottomSpacer = document.getElementById('bottom-spacer');
-    
-    if (!topSpacer || !bottomSpacer) return;
-    
-    const topHeight = this.virtualScroll.startIndex * this.virtualScroll.rowHeight;
-    const bottomHeight = (totalCdus - this.virtualScroll.endIndex) * this.virtualScroll.rowHeight;
-    
-    topSpacer.querySelector('td').style.height = `${topHeight}px`;
-    bottomSpacer.querySelector('td').style.height = `${bottomHeight}px`;
-}
-
-    init() {
-        this.showCardsView();
+    this.dataStore.subscribe((versiones, options = {}) => {
         this.updateStats();
         
-        this.dataStore.subscribe(() => {
-            this.updateStats();
-        });
-    }
+        // Solo hacer fullRender si se solicita explícitamente
+        if (options.fullRender) {
+            console.log('🔄 fullRender solicitado por dataStore');
+            this.fullRender();
+        } else {
+            console.log('📊 Solo actualizando stats, sin fullRender');
+        }
+    });
+}
 
-    fullRender() {
+fullRender() {
     console.log('🎨 fullRender iniciado');
     this.isRendering = true;
     
     if (this.currentView === 'cards') {
         this.renderCardsView();
     } else if (this.currentView === 'detail' && this.currentVersionId) {
-        this.renderDetailView(this.currentVersionId);
+        // CAMBIO: No re-renderizar la tabla completa, solo actualizar stats
+        // El virtual scroll ya está funcionando, no lo rompamos
+        console.log('⚠️ Vista detalle: Manteniendo virtual scroll sin re-render');
+        
+        // Solo actualizar los metadatos de la versión si cambiaron
+        const version = this.dataStore.getAll().find(v => v.id === this.currentVersionId);
+        if (version) {
+            const titleElement = document.getElementById('detail-version-title');
+            const versionEnProduccionId = this.dataStore.getVersionEnProduccionId();
+            
+            if (version.id === versionEnProduccionId) {
+                titleElement.innerHTML = `Versión ${version.numero} <span class="badge-produccion-inline">EN PRODUCCIÓN</span>`;
+            } else {
+                titleElement.textContent = `Versión ${version.numero}`;
+            }
+        }
     }
     this.updateStats();
     
@@ -663,5 +569,4 @@ updateVirtualScrollSpacers(totalCdus) {
         this.isRendering = false;
         console.log('🎨 fullRender completado');
     }, 100);
-}
-}
+}}

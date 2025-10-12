@@ -54,23 +54,26 @@ export class TableEvents {
         observer.observe(tbody, { childList: true, subtree: true });
     }
 
-    handleBlur(e) {
-        const campo = e.target.dataset.campo;
-        if (!campo) return;
-        if (this.renderer.isRendering) return;
+handleBlur(e) {
+    const campo = e.target.dataset.campo;
+    if (!campo) return;
+    if (this.renderer.isRendering) return;
 
-        const valor = e.target.value;
-        
-        if (campo === 'observacion') {
-            this.handleObservacionBlur(e.target, valor);
-        } 
-        else if (campo === 'responsable-nombre') {
-            this.handleResponsableNombreBlur(e.target, valor);
-        }
-        else if (campo === 'nombreCDU' || campo === 'descripcionCDU') {
-            this.handleCduFieldBlur(e.target, campo, valor);
-        }
+    const valor = e.target.value;
+    
+    if (campo === 'observacion') {
+        this.handleObservacionBlur(e.target, valor);
+    } 
+    else if (campo === 'responsable-nombre') {
+        this.handleResponsableNombreBlur(e.target, valor);
     }
+    else if (campo === 'nombreCDU' || campo === 'descripcionCDU') {
+        this.handleCduFieldBlur(e.target, campo, valor);
+    }
+    
+    // NUEVO: NO llamar fullRender, el dataStore ya notificó
+    // El cambio ya está guardado, no necesitamos re-renderizar todo
+}
 
     handleObservacionBlur(target, valor) {
         const cduId = parseInt(target.dataset.cduId);
@@ -177,19 +180,22 @@ export class TableEvents {
         this.dataStore.updateCdu(cduId, campo, valor);
     }
 
-    handleChange(e) {
-        if (this.renderer.isRendering) return;
-        
-        if (e.target.classList.contains('campo-estado')) {
-            this.handleEstadoChange(e.target);
-        }
-        else if (e.target.dataset.campo === 'responsable-rol') {
-            this.handleRolChange(e.target);
-        }
-        else if (e.target.dataset.campo === 'versionBADA') {
-            this.handleVersionBADAChange(e.target);
-        }
+handleChange(e) {
+    if (this.renderer.isRendering) return;
+    
+    if (e.target.classList.contains('campo-estado')) {
+        this.handleEstadoChange(e.target);
+        // NO fullRender aquí
     }
+    else if (e.target.dataset.campo === 'responsable-rol') {
+        this.handleRolChange(e.target);
+        // NO fullRender aquí
+    }
+    else if (e.target.dataset.campo === 'versionBADA') {
+        this.handleVersionBADAChange(e.target);
+        // NO fullRender aquí
+    }
+}
 
     handleEstadoChange(target) {
         const cduId = parseInt(target.dataset.cduId);
@@ -415,48 +421,96 @@ export class TableEvents {
             });
             
             this.dataStore.deleteCdu(cduId);
-            this.renderer.fullRender();
+            // NO fullRender aquí, el dataStore ya notificó
         }
     }
 
-    handleAddResponsableClick(btn) {
-        const cduId = parseInt(btn.dataset.cduId);
-        
-        let cduNombre = '';
-        let versionNumero = '';
-        
-        for (const version of this.dataStore.getAll()) {
-            const cdu = version.cdus.find(c => c.id === cduId);
-            if (cdu) {
-                cduNombre = cdu.nombreCDU || 'Sin nombre';
-                versionNumero = version.numero;
-                break;
-            }
+handleAddResponsableClick(btn) {
+    const cduId = parseInt(btn.dataset.cduId);
+    
+    let cduNombre = '';
+    let versionNumero = '';
+    
+    for (const version of this.dataStore.getAll()) {
+        const cdu = version.cdus.find(c => c.id === cduId);
+        if (cdu) {
+            cduNombre = cdu.nombreCDU || 'Sin nombre';
+            versionNumero = version.numero;
+            break;
         }
-        
-        this.dataStore.addPendingChange({
-            cduId,
-            campo: 'responsable-agregado',
-            valorAnterior: null,
-            valorNuevo: 'Responsable agregado (DEV)',
-            cduNombre,
-            versionNumero,
-            timestamp: new Date().toISOString(),
-            tipo: 'responsable'
-        });
-        
-        this.dataStore.addResponsable(cduId, '', 'DEV');
-        this.renderer.fullRender();
-        
-        setTimeout(() => {
-            const container = document.querySelector(`[data-cdu-id="${cduId}"].responsables-container`);
-            if (container) {
-                const inputs = container.querySelectorAll('input[data-campo="responsable-nombre"]');
-                const lastInput = inputs[inputs.length - 1];
-                if (lastInput) lastInput.focus();
-            }
-        }, 100);
     }
+    
+    // 1. RENDERIZAR INMEDIATAMENTE (optimista)
+    const container = document.querySelector(`[data-cdu-id="${cduId}"].responsables-container`);
+    if (container) {
+        // Remover mensaje "vacío" si existe
+        const emptyMsg = container.querySelector('.responsables-empty');
+        if (emptyMsg) emptyMsg.remove();
+        
+        // Calcular nuevo índice
+        const existingItems = container.querySelectorAll('.responsable-item');
+        const newIndex = existingItems.length;
+        
+        // Crear nuevo item inmediatamente
+        const newItem = this.createResponsableItemQuick(cduId, '', 'DEV', newIndex);
+        
+        // Insertar ANTES del botón "+"
+        const btnAdd = container.querySelector('.btn-add');
+        container.insertBefore(newItem, btnAdd);
+        
+        // Focus inmediato en el input
+        const input = newItem.querySelector('input[data-campo="responsable-nombre"]');
+        if (input) {
+            setTimeout(() => input.focus(), 50);
+        }
+    }
+    
+    // 2. Actualizar dataStore en segundo plano (sin esperar render)
+    this.dataStore.addPendingChange({
+        cduId,
+        campo: 'responsable-agregado',
+        valorAnterior: null,
+        valorNuevo: 'Responsable agregado (DEV)',
+        cduNombre,
+        versionNumero,
+        timestamp: new Date().toISOString(),
+        tipo: 'responsable'
+    });
+    
+    this.dataStore.addResponsable(cduId, '', 'DEV');
+    // NO llamar fullRender - el DOM ya está actualizado
+}
+
+/**
+ * Crea un item de responsable rápidamente (para render inmediato)
+ */
+createResponsableItemQuick(cduId, nombre, rol, index) {
+    const item = document.createElement('div');
+    item.className = 'responsable-item';
+    item.dataset.index = index;
+    
+    // Importar CduRow para usar su método
+    const rolIcon = window.DOMBuilder.getRolIcon(rol);
+    
+    item.innerHTML = `
+        <div class="rol-select-container">
+            <div class="rol-display">
+                ${rolIcon}<span>${rol}</span>
+            </div>
+            <select class="responsable-rol-select" data-cdu-id="${cduId}" data-resp-index="${index}" data-campo="responsable-rol">
+                <option value="DEV" ${rol === 'DEV' ? 'selected' : ''}>DEV</option>
+                <option value="AF" ${rol === 'AF' ? 'selected' : ''}>AF</option>
+                <option value="UX" ${rol === 'UX' ? 'selected' : ''}>UX</option>
+                <option value="AN" ${rol === 'AN' ? 'selected' : ''}>AN</option>
+                <option value="QA" ${rol === 'QA' ? 'selected' : ''}>QA</option>
+            </select>
+        </div>
+        <input type="text" value="${nombre}" placeholder="Nombre..." data-cdu-id="${cduId}" data-resp-index="${index}" data-campo="responsable-nombre">
+        <button class="btn-responsable btn-remove" type="button" title="Eliminar responsable" data-cdu-id="${cduId}" data-resp-index="${index}" data-action="remove-responsable">×</button>
+    `;
+    
+    return item;
+}
 
     async handleRemoveResponsableClick(btn) {
         const cduId = parseInt(btn.dataset.cduId);
@@ -495,48 +549,81 @@ export class TableEvents {
             });
             
             this.dataStore.deleteResponsable(cduId, respIndex);
-            this.renderer.fullRender();
+            // NO fullRender aquí, el dataStore ya notificó
         }
     }
 
-    handleAddObservacionClick(btn) {
-        const cduId = parseInt(btn.dataset.cduId);
-        
-        let cduNombre = '';
-        let versionNumero = '';
-        
-        for (const version of this.dataStore.getAll()) {
-            const cdu = version.cdus.find(c => c.id === cduId);
-            if (cdu) {
-                cduNombre = cdu.nombreCDU || 'Sin nombre';
-                versionNumero = version.numero;
-                break;
-            }
+handleAddObservacionClick(btn) {
+    const cduId = parseInt(btn.dataset.cduId);
+    
+    let cduNombre = '';
+    let versionNumero = '';
+    
+    for (const version of this.dataStore.getAll()) {
+        const cdu = version.cdus.find(c => c.id === cduId);
+        if (cdu) {
+            cduNombre = cdu.nombreCDU || 'Sin nombre';
+            versionNumero = version.numero;
+            break;
         }
-        
-        this.dataStore.addPendingChange({
-            cduId,
-            campo: 'observacion-agregada',
-            valorAnterior: null,
-            valorNuevo: 'Observación agregada',
-            cduNombre,
-            versionNumero,
-            timestamp: new Date().toISOString(),
-            tipo: 'observacion'
-        });
-        
-        this.dataStore.addObservacion(cduId, '');
-        this.renderer.fullRender();
-        
-        setTimeout(() => {
-            const container = document.querySelector(`[data-cdu-id="${cduId}"].observaciones-container`);
-            if (container) {
-                const inputs = container.querySelectorAll('input[data-campo="observacion"]');
-                const lastInput = inputs[inputs.length - 1];
-                if (lastInput) lastInput.focus();
-            }
-        }, 100);
     }
+    
+    // 1. RENDERIZAR INMEDIATAMENTE (optimista)
+    const container = document.querySelector(`[data-cdu-id="${cduId}"].observaciones-container`);
+    if (container) {
+        // Remover mensaje "vacío" si existe
+        const emptyMsg = container.querySelector('.observaciones-empty');
+        if (emptyMsg) emptyMsg.remove();
+        
+        // Calcular nuevo índice
+        const existingItems = container.querySelectorAll('.observacion-item');
+        const newIndex = existingItems.length;
+        
+        // Crear nuevo item inmediatamente
+        const newItem = this.createObservacionItemQuick(cduId, '', newIndex);
+        
+        // Insertar ANTES del botón "+"
+        const btnAdd = container.querySelector('.btn-add');
+        container.insertBefore(newItem, btnAdd);
+        
+        // Focus inmediato en el input
+        const input = newItem.querySelector('input[data-campo="observacion"]');
+        if (input) {
+            setTimeout(() => input.focus(), 50);
+        }
+    }
+    
+    // 2. Actualizar dataStore en segundo plano
+    this.dataStore.addPendingChange({
+        cduId,
+        campo: 'observacion-agregada',
+        valorAnterior: null,
+        valorNuevo: 'Observación agregada',
+        cduNombre,
+        versionNumero,
+        timestamp: new Date().toISOString(),
+        tipo: 'observacion'
+    });
+    
+    this.dataStore.addObservacion(cduId, '');
+    // NO llamar fullRender - el DOM ya está actualizado
+}
+
+/**
+ * Crea un item de observación rápidamente (para render inmediato)
+ */
+createObservacionItemQuick(cduId, texto, index) {
+    const item = document.createElement('div');
+    item.className = 'observacion-item';
+    item.dataset.index = index;
+    
+    item.innerHTML = `
+        <input type="text" value="${texto}" placeholder="Observación..." data-cdu-id="${cduId}" data-obs-index="${index}" data-campo="observacion">
+        <button class="btn-observacion btn-remove" type="button" title="Eliminar observación" data-cdu-id="${cduId}" data-obs-index="${index}" data-action="remove-observacion">×</button>
+    `;
+    
+    return item;
+}
 
     async handleRemoveObservacionClick(btn) {
         const cduId = parseInt(btn.dataset.cduId);
@@ -575,7 +662,7 @@ export class TableEvents {
             });
             
             this.dataStore.deleteObservacion(cduId, obsIndex);
-            this.renderer.fullRender();
+            // NO fullRender aquí, el dataStore ya notificó
         }
     }
 }
