@@ -408,21 +408,29 @@ handleChange(e) {
             'Confirmar Eliminación'
         );
         
-        if (confirmacion) {
-            this.dataStore.addPendingChange({
-                cduId,
-                campo: 'cdu-eliminado',
-                valorAnterior: `CDU: ${cduNombre}`,
-                valorNuevo: null,
-                cduNombre,
-                versionNumero,
-                timestamp: new Date().toISOString(),
-                tipo: 'eliminacion'
-            });
-            
-            this.dataStore.deleteCdu(cduId);
-            // NO fullRender aquí, el dataStore ya notificó
-        }
+if (confirmacion) {
+    // 1. ELIMINAR FILA DEL DOM INMEDIATAMENTE (optimista)
+    const row = document.querySelector(`tr[data-cdu-id="${cduId}"]`);
+    if (row) {
+        row.style.opacity = '0';
+        row.style.transform = 'translateX(-20px)';
+        setTimeout(() => row.remove(), 300);
+    }
+    
+    // 2. Actualizar dataStore en segundo plano
+    this.dataStore.addPendingChange({
+        cduId,
+        campo: 'cdu-eliminado',
+        valorAnterior: `CDU: ${cduNombre}`,
+        valorNuevo: null,
+        cduNombre,
+        versionNumero,
+        timestamp: new Date().toISOString(),
+        tipo: 'eliminacion'
+    });
+    
+    this.dataStore.deleteCdu(cduId);
+}
     }
 
 handleAddResponsableClick(btn) {
@@ -535,22 +543,41 @@ createResponsableItemQuick(cduId, nombre, rol, index) {
             'Confirmar'
         );
         
-        if (confirmacion) {
-            this.dataStore.addPendingChange({
-                cduId,
-                campo: 'responsable-eliminado',
-                index: respIndex,
-                valorAnterior: respNombre,
-                valorNuevo: null,
-                cduNombre,
-                versionNumero,
-                timestamp: new Date().toISOString(),
-                tipo: 'responsable'
-            });
+if (confirmacion) {
+    // 1. ELIMINAR DEL DOM INMEDIATAMENTE (optimista)
+    const container = document.querySelector(`[data-cdu-id="${cduId}"].responsables-container`);
+    if (container) {
+        const item = container.querySelector(`[data-index="${respIndex}"]`);
+        if (item) {
+            item.remove();
             
-            this.dataStore.deleteResponsable(cduId, respIndex);
-            // NO fullRender aquí, el dataStore ya notificó
+            // Si no quedan más responsables, mostrar mensaje vacío
+            const remainingItems = container.querySelectorAll('.responsable-item');
+            if (remainingItems.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'responsables-empty';
+                empty.textContent = 'Sin responsables';
+                const btnAdd = container.querySelector('.btn-add');
+                container.insertBefore(empty, btnAdd);
+            }
         }
+    }
+    
+    // 2. Actualizar dataStore en segundo plano
+    this.dataStore.addPendingChange({
+        cduId,
+        campo: 'responsable-eliminado',
+        index: respIndex,
+        valorAnterior: respNombre,
+        valorNuevo: null,
+        cduNombre,
+        versionNumero,
+        timestamp: new Date().toISOString(),
+        tipo: 'responsable'
+    });
+    
+    this.dataStore.deleteResponsable(cduId, respIndex);
+}
     }
 
 handleAddObservacionClick(btn) {
@@ -648,21 +675,40 @@ createObservacionItemQuick(cduId, texto, index) {
             'Confirmar'
         );
         
-        if (confirmacion) {
-            this.dataStore.addPendingChange({
-                cduId,
-                campo: 'observacion-eliminada',
-                index: obsIndex,
-                valorAnterior: obsTexto,
-                valorNuevo: null,
-                cduNombre,
-                versionNumero,
-                timestamp: new Date().toISOString(),
-                tipo: 'observacion'
-            });
+if (confirmacion) {
+    // 1. ELIMINAR DEL DOM INMEDIATAMENTE (optimista)
+    const container = document.querySelector(`[data-cdu-id="${cduId}"].observaciones-container`);
+    if (container) {
+        const item = container.querySelector(`[data-index="${obsIndex}"]`);
+        if (item) {
+            item.remove();
             
-            this.dataStore.deleteObservacion(cduId, obsIndex);
-            // NO fullRender aquí, el dataStore ya notificó
+            // Si no quedan más observaciones, mostrar mensaje vacío
+            const remainingItems = container.querySelectorAll('.observacion-item');
+            if (remainingItems.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'observaciones-empty';
+                empty.textContent = 'Sin observaciones';
+                const btnAdd = container.querySelector('.btn-add');
+                container.insertBefore(empty, btnAdd);
+            }
         }
+    }
+    
+    // 2. Actualizar dataStore en segundo plano
+    this.dataStore.addPendingChange({
+        cduId,
+        campo: 'observacion-eliminada',
+        index: obsIndex,
+        valorAnterior: obsTexto,
+        valorNuevo: null,
+        cduNombre,
+        versionNumero,
+        timestamp: new Date().toISOString(),
+        tipo: 'observacion'
+    });
+    
+    this.dataStore.deleteObservacion(cduId, obsIndex);
+}
     }
 }

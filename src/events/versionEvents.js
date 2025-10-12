@@ -35,17 +35,62 @@ export class VersionEvents {
     }
 
     setupVersionButtons() {
-        const btnAgregar = document.getElementById('btn-agregar');
-        btnAgregar.addEventListener('click', () => {
-            if (!this.renderer.currentVersionId) return;
+const btnAgregar = document.getElementById('btn-agregar');
+btnAgregar.addEventListener('click', () => {
+    if (!this.renderer.currentVersionId) return;
+    
+    const version = this.dataStore.getAll().find(v => v.id === this.renderer.currentVersionId);
+    if (!version) return;
+    
+    // 1. Agregar CDU al dataStore
+    const nuevoCdu = this.dataStore.addCduToVersion(this.renderer.currentVersionId);
+    
+    if (!nuevoCdu) return;
+    
+    // 2. Expandir el rango del Virtual Scroll para incluir el nuevo CDU
+    if (this.renderer.virtualScroll) {
+        const newTotalCdus = version.cdus.length;
+        
+        // CRÍTICO: Expandir endIndex para incluir el nuevo CDU
+        this.renderer.virtualScroll.state.endIndex = newTotalCdus;
+        
+        // Actualizar datos y re-renderizar con el nuevo rango
+        this.renderer.virtualScroll.currentCdus = version.cdus;
+        
+        // Remover filas antiguas
+        const tbody = document.getElementById('tabla-body');
+        const existingRows = Array.from(tbody.querySelectorAll('tr:not(.virtual-scroll-spacer)'));
+        existingRows.forEach(row => row.remove());
+        
+        // Renderizar con el rango expandido
+        this.renderer.virtualScroll.renderVisibleRows();
+        this.renderer.virtualScroll.updateSpacers();
+        
+        // 3. Hacer scroll hasta el final para mostrar el nuevo CDU
+        setTimeout(() => {
+            const tableWrapper = document.querySelector('.table-wrapper');
+            if (tableWrapper) {
+                tableWrapper.scrollTo({
+                    top: tableWrapper.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }
             
-            const version = this.dataStore.getAll().find(v => v.id === this.renderer.currentVersionId);
-            if (!version) return;
-            
-            this.dataStore.addCduToVersion(this.renderer.currentVersionId);
-            NotificationSystem.success('CDU creado exitosamente', 2000);
-            this.renderer.fullRender();
-        });
+            // 4. Focus en el primer input del nuevo CDU
+            setTimeout(() => {
+                const newRow = tbody.querySelector(`tr[data-cdu-id="${nuevoCdu.id}"]`);
+                if (newRow) {
+                    const firstInput = newRow.querySelector('.campo-cdu');
+                    if (firstInput) {
+                        firstInput.focus();
+                    }
+                }
+            }, 400);
+        }, 100);
+    }
+    
+    NotificationSystem.success('CDU creado exitosamente', 2000);
+});
         
         const btnNuevaVersionLimpia = document.getElementById('btn-nueva-version-limpia');
         btnNuevaVersionLimpia.addEventListener('click', async () => {
