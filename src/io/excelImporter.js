@@ -36,6 +36,42 @@ static async importar(file) {
         reader.readAsArrayBuffer(file);
     });
 }
+static parseDateSafely(dateString) {
+    if (!dateString) return null;
+    
+    try {
+        // Intentar parseo directo
+        const direct = new Date(dateString);
+        if (!isNaN(direct.getTime())) {
+            return direct.toISOString();
+        }
+        
+        // Intentar formato DD/MM/YYYY HH:mm
+        const dmy = dateString.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s*(\d{1,2}):(\d{1,2})/);
+        if (dmy) {
+            const [, day, month, year, hour, minute] = dmy;
+            const date = new Date(year, month - 1, day, hour, minute);
+            if (!isNaN(date.getTime())) {
+                return date.toISOString();
+            }
+        }
+        
+        // Intentar formato DD-MM-YYYY
+        const dmyDash = dateString.match(/(\d{1,2})-(\d{1,2})-(\d{4})/);
+        if (dmyDash) {
+            const [, day, month, year] = dmyDash;
+            const date = new Date(year, month - 1, day);
+            if (!isNaN(date.getTime())) {
+                return date.toISOString();
+            }
+        }
+        
+        return null;
+    } catch (e) {
+        console.warn('⚠️ No se pudo parsear fecha:', dateString);
+        return null;
+    }
+}
 
     static transformarDatos(jsonData) {
         const versionesMap = new Map();
@@ -247,25 +283,29 @@ if (versionEnProduccionNum) {
         return mapeoRoles[rol.toLowerCase()] || 'DEV';
     }
 
-    static parsearHistorial(texto) {
-        if (!texto || texto.trim() === '') return [];
-        
-        const items = texto.split(' || ').map(item => {
-            const match = item.match(/\[(.*?)\]\s*(\w+):\s*(.*?)\s*→\s*(.*?)$/);
-            if (match) {
-                return {
-                    timestamp: new Date(match[1]).toISOString(),
-                    tipo: match[2],
-                    campo: '',
-                    valorAnterior: match[3],
-                    valorNuevo: match[4]
-                };
-            }
-            return null;
-        }).filter(item => item !== null);
-        
-        return items;
-    }
+static parsearHistorial(texto) {
+    if (!texto || texto.trim() === '') return [];
+    
+    const items = texto.split(' || ').map(item => {
+        const match = item.match(/\[(.*?)\]\s*(\w+):\s*(.*?)\s*→\s*(.*?)$/);
+        if (match) {
+            // CAMBIO: Usar método seguro
+            const timestamp = this.parseDateSafely(match[1]);
+            
+            // Si no se puede parsear, usar fecha actual como fallback
+            return {
+                timestamp: timestamp || new Date().toISOString(),
+                tipo: match[2],
+                campo: '',
+                valorAnterior: match[3],
+                valorNuevo: match[4]
+            };
+        }
+        return null;
+    }).filter(item => item !== null);
+    
+    return items;
+}
 
     static parsearObservaciones(texto) {
         if (!texto || texto.trim() === '') return [];
@@ -290,33 +330,41 @@ if (versionEnProduccionNum) {
         return items;
     }
 
-    static formatearFecha(fecha) {
-        if (!fecha) return '';
-        
-        if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-            return fecha;
-        }
-        
-        if (typeof fecha === 'number') {
+static formatearFecha(fecha) {
+    if (!fecha) return '';
+    
+    // Si ya está en formato YYYY-MM-DD, retornar directo
+    if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+        return fecha;
+    }
+    
+    // Si es número de Excel
+    if (typeof fecha === 'number') {
+        try {
             const excelDate = XLSX.SSF.parse_date_code(fecha);
             return `${excelDate.y}-${String(excelDate.m).padStart(2, '0')}-${String(excelDate.d).padStart(2, '0')}`;
-        }
-        
-        if (fecha instanceof Date) {
-            return fecha.toISOString().split('T')[0];
-        }
-        
-        try {
-            const parsedDate = new Date(fecha);
-            if (!isNaN(parsedDate.getTime())) {
-                return parsedDate.toISOString().split('T')[0];
-            }
         } catch (e) {
-            // Ignorar error
+            console.warn('⚠️ Error parseando fecha Excel:', fecha);
+            return '';
         }
-        
-        return '';
     }
+    
+    // Si es objeto Date
+    if (fecha instanceof Date) {
+        if (isNaN(fecha.getTime())) return '';
+        return fecha.toISOString().split('T')[0];
+    }
+    
+    // CAMBIO: Usar método seguro
+    const parsed = this.parseDateSafely(fecha);
+    if (parsed) {
+        return parsed.split('T')[0];
+    }
+    
+    // Fallback: retornar vacío en lugar de fallar
+    console.warn('⚠️ No se pudo formatear fecha:', fecha);
+    return '';
+}
 
     static normalizarEstado(estado) {
         const estadoLower = String(estado).toLowerCase().trim();
