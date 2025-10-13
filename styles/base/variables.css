@@ -2,16 +2,16 @@
 
 :root {
     /* === COLORES BASE === */
-    --bg-gradient-start: #4a5568;
+    --bg-gradient-start: #bacef1;
     --bg-gradient-end: #2d3748;
-    --bg-primary: #ffffff;
+    --bg-primary: #fdfdfd;
     --bg-secondary: #f7fafc;
     --text-primary: #1a202c;
     --text-secondary: #718096;
     --border-color: #e2e8f0;
     --input-border: #cbd5e0;
-    --accent-color: #4a5568;
-    --accent-hover: #2d3748;
+    --accent-color: #b6beca;
+    --accent-hover: #47566e;
     --shadow: rgba(0, 0, 0, 0.1);
     
     /* === ESTADOS: En Desarrollo === */
@@ -39,14 +39,14 @@
 [data-theme="dark"] {
     --bg-gradient-start: #1a202c;
     --bg-gradient-end: #0f1419;
-    --bg-primary: #1a202c;
-    --bg-secondary: #2d3748;
+    --bg-primary: #10131a;
+    --bg-secondary: #1a2333;
     --text-primary: #e2e8f0;
     --text-secondary: #a0aec0;
     --border-color: #4a5568;
     --input-border: #4a5568;
-    --accent-color: #4a5568;
-    --accent-hover: #718096;
+    --accent-color: #373f4d;
+    --accent-hover: #667386;
     --shadow: rgba(0, 0, 0, 0.3);
     
     /* Estados - tema oscuro */
