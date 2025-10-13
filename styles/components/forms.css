@@ -1,0 +1,65 @@
+/* forms.css - Campos de formulario */
+
+/* === INPUTS BASE === */
+#file-input {
+    display: none;
+}
+
+/* === INPUTS DE FECHA Y HORA === */
+.version-date-input,
+.version-time-input {
+    padding: 0.5rem 0.75rem;
+    border: 2px solid var(--input-border);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.version-date-input:hover,
+.version-time-input:hover {
+    border-color: var(--accent-color);
+    background: var(--bg-primary);
+}
+
+.version-date-input:focus,
+.version-time-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1);
+}
+
+.version-date-input {
+    min-width: 150px;
+}
+
+.version-time-input {
+    min-width: 100px;
+}
+
+/* === VALIDACIÓN DE CAMPOS === */
+.campo-invalido {
+    border-color: #f56565 !important;
+    animation: shake 0.3s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.validation-message {
+    position: absolute;
+    bottom: -20px;
+    left: 0;
+    font-size: 0.75rem;
+    color: #f56565;
+    background: var(--bg-primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px var(--shadow);
+    z-index: 10;
+}

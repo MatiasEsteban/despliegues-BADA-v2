@@ -1,0 +1,510 @@
+/* modals.css - Modales y overlays */
+
+/* === OVERLAY DE MODAL === */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    padding: 1rem;
+}
+
+.modal-overlay.modal-show {
+    opacity: 1;
+}
+
+/* === MODAL BASE === */
+.modal {
+    background: var(--bg-primary);
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 450px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    transform: scale(0.9);
+    opacity: 0;
+    transition: all 0.3s;
+}
+
+.modal-overlay.modal-show .modal {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* === ICONO Y CONTENIDO === */
+.modal-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 1.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-icon svg {
+    width: 32px;
+    height: 32px;
+}
+
+.modal-info .modal-icon { 
+    background: #e6f7ff; 
+    color: #3182ce; 
+}
+
+.modal-success .modal-icon { 
+    background: #e6ffed; 
+    color: #38a169; 
+}
+
+.modal-warning .modal-icon { 
+    background: #fff7e6; 
+    color: #dd6b20; 
+}
+
+.modal-error .modal-icon, 
+.modal-confirm .modal-icon { 
+    background: #ffe6e6; 
+    color: #f56565; 
+}
+
+.modal-content {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.modal-message {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    white-space: pre-line;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* === MODAL HISTORIAL === */
+.modal-historial,
+.modal-comentarios {
+    max-width: 600px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-historial-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.modal-historial-cdu {
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+}
+
+.modal-close-btn {
+    background: transparent;
+    border: none;
+    font-size: 2rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.modal-close-btn:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.modal-historial-content {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 50vh;
+    padding-right: 0.5rem;
+}
+
+.modal-historial-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-historial-content::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.modal-historial-content::-webkit-scrollbar-thumb {
+    background: var(--accent-color);
+    border-radius: 4px;
+}
+
+/* === HISTORIAL === */
+.historial-entry {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border-left: 4px solid var(--accent-color);
+}
+
+.historial-icon {
+    font-size: 1.5rem;
+}
+
+.historial-timestamp {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.historial-message {
+    color: var(--text-primary);
+}
+
+.historial-old {
+    color: var(--text-secondary);
+    text-decoration: line-through;
+}
+
+.historial-new {
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+.historial-empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* === MODAL COMENTARIOS === */
+.modal-comentarios-content {
+    margin-bottom: 1.5rem;
+}
+
+.comentarios-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.comentarios-textarea {
+    width: 100%;
+    min-height: 150px;
+    padding: 1rem;
+    border: 2px solid var(--input-border);
+    border-radius: 8px;
+    font-family: inherit;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    resize: vertical;
+}
+
+.comentarios-textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1);
+}
+
+/* === MODAL COMENTARIOS CATEGORIZADOS === */
+.modal-comentarios-categorized {
+    max-width: 700px;
+    max-height: 90vh;
+}
+
+.modal-comentarios-categorized-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.modal-comentarios-categorized-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-comentarios-categorized-content::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.modal-comentarios-categorized-content::-webkit-scrollbar-thumb {
+    background: var(--accent-color);
+    border-radius: 4px;
+}
+
+.comentario-categoria {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+}
+
+.comentario-categoria-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.comentario-categoria-titulo {
+    flex: 1;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.comentario-categoria-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.comentario-cat-item {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
+.comentario-cat-item input,
+.comentario-textarea {
+    flex: 1;
+    padding: 0.5rem;
+    border: 2px solid var(--input-border);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    max-width: none !important;
+    width: 100% !important;
+}
+
+.comentario-cat-item input:focus,
+.comentario-textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1);
+}
+
+.comentario-textarea {
+    resize: vertical;
+    min-height: 60px;
+    line-height: 1.5;
+    transition: all 0.2s;
+}
+
+.comentario-textarea::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+.comentario-cat-item .btn-remove {
+    margin-top: 0.5rem;
+}
+
+.comentario-empty {
+    color: var(--text-secondary);
+    font-style: italic;
+    font-size: 0.875rem;
+    padding: 0.5rem;
+    text-align: center;
+}
+
+.cat-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* === MODAL RESUMEN DE CAMBIOS === */
+.modal-changes-summary {
+    max-width: 700px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-changes-summary-info {
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    text-align: center;
+    color: var(--text-primary);
+}
+
+.modal-changes-summary-content {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 50vh;
+    padding-right: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.modal-changes-summary-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-changes-summary-content::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.modal-changes-summary-content::-webkit-scrollbar-thumb {
+    background: var(--accent-color);
+    border-radius: 4px;
+}
+
+.change-item {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1rem;
+    border-left: 4px solid #38a169;
+    transition: all 0.2s;
+}
+
+.change-item:hover {
+    background: var(--bg-primary);
+    box-shadow: 0 2px 8px var(--shadow);
+}
+
+.change-item-creation {
+    border-left-color: #805ad5 !important;
+    background: linear-gradient(135deg, rgba(128, 90, 213, 0.05) 0%, rgba(128, 90, 213, 0.02) 100%);
+}
+
+.change-item-produccion {
+    border-left-color: #10B981 !important;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%);
+}
+
+.change-header {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.change-number {
+    background: var(--accent-color);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.change-version {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.change-type-badge {
+    background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.change-item-produccion .change-type-badge {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+}
+
+.change-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.change-cdu-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-primary);
+}
+
+.change-creation-note {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    padding: 0.5rem;
+    background: var(--bg-primary);
+    border-radius: 6px;
+    border-left: 3px solid #805ad5;
+}
+
+.change-estado {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    background: var(--bg-primary);
+    border-radius: 6px;
+}
+
+.estado-old {
+    color: var(--text-secondary);
+    text-decoration: line-through;
+    font-size: 0.875rem;
+}
+
+.icon-arrow {
+    width: 16px;
+    height: 16px;
+    color: var(--accent-color);
+    flex-shrink: 0;
+}
+
+.estado-new {
+    color: #38a169;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}

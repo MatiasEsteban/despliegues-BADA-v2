@@ -1,0 +1,237 @@
+/* cards.css - Tarjetas de versión y estadísticas */
+
+/* === GRID DE VERSIONES === */
+.versions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* === TARJETAS DE VERSIÓN === */
+.version-card {
+    background: var(--bg-primary);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px var(--shadow);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid transparent;
+}
+
+.version-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px var(--shadow);
+    border-color: var(--accent-color);
+}
+
+.version-card.version-en-produccion {
+    border: 3px solid #10B981;
+    box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+}
+
+.version-card.version-en-produccion:hover {
+    box-shadow: 0 12px 24px rgba(16, 185, 129, 0.4);
+}
+
+/* === HEADER DE TARJETA === */
+.version-card-header {
+    background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
+    color: white;
+    padding: 1.5rem;
+    position: relative;
+}
+
+.version-card-number {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.version-card-cdus-count {
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+/* === BODY DE TARJETA === */
+.version-card-body {
+    padding: 1.5rem;
+}
+
+.version-card-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.version-card-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.version-card-stat-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: white;
+}
+
+.stat-desarrollo { 
+    background: #F97316; 
+}
+
+.stat-pendiente { 
+    background: #EAB308; 
+}
+
+.stat-certificado { 
+    background: #3B82F6; 
+}
+
+.stat-produccion { 
+    background: #10B981; 
+}
+
+.version-card-stat-label {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+.version-card-stat-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* === FOOTER DE TARJETA === */
+.version-card-footer {
+    padding: 1rem 1.5rem;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.version-card-date,
+.version-card-time {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* === ACCIONES DE TARJETAS === */
+.cards-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+/* === MENSAJE SIN VERSIONES === */
+.no-versions-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+/* === ESTADÍSTICAS GLOBALES === */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.stat-card {
+    background: var(--bg-primary);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px var(--shadow);
+    padding: 1.5rem;
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px var(--shadow);
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.stat-primary { 
+    color: #4a5568; 
+}
+
+.stat-success { 
+    color: #10B981; 
+}
+
+.stat-warning { 
+    color: #F97316; 
+}
+
+.stat-danger { 
+    color: #EAB308; 
+}
+
+.stat-info { 
+    color: #3B82F6; 
+}
+
+/* === BADGES === */
+.badge-produccion {
+    display: inline-block;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+    vertical-align: middle;
+}
+
+.badge-produccion-inline {
+    display: inline-block;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    margin-left: 1rem;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+    vertical-align: middle;
+}
+
+/* === CONTENEDOR CARGAR MÁS === */
+.load-more-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
