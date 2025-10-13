@@ -213,11 +213,7 @@ btnAgregar.addEventListener('click', async () => {
                 });
 
                 if (confirmacion) {
-                    this.dataStore.replaceAll(versiones);
-                    
-                    if (versionEnProduccionId) {
-                        this.dataStore.versionEnProduccionId = versionEnProduccionId;
-                    }
+this.dataStore.replaceAll(versiones, versionEnProduccionId);
                     
                     this.renderer.showCardsView();
                     NotificationSystem.success(
