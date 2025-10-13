@@ -805,6 +805,28 @@ h1 {
 .tabla-despliegues tbody tr:hover {
     background: var(--bg-secondary);
 }
+/* Después de las reglas existentes de .tabla-despliegues tbody tr */
+
+.tabla-despliegues tbody tr.removing {
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: all 0.2s ease-out;
+}
+
+.tabla-despliegues tbody tr.adding {
+    animation: slideInRow 0.3s ease-out;
+}
+
+@keyframes slideInRow {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
 
 .tabla-despliegues tbody td {
     padding: 0.75rem;

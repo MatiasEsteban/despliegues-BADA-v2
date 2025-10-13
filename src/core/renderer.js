@@ -280,6 +280,38 @@ if (this.virtualScroll.currentCdus.length > 0) {
             });
         }, 50);
     }
+    /**
+ * Actualiza solo la sección de comentarios sin tocar la tabla
+ */
+updateVersionComments() {
+    if (this.currentView !== 'detail' || !this.currentVersionId) return;
+    
+    const version = this.dataStore.getAll().find(v => v.id === this.currentVersionId);
+    if (!version) return;
+    
+    const commentsDisplay = document.getElementById('version-comments-display');
+    const commentsContainer = document.getElementById('version-comments-container');
+    
+    if (!commentsDisplay || !commentsContainer) return;
+    
+    const hasComentarios = this.tieneComentarios(version.comentarios);
+    
+    if (hasComentarios) {
+        commentsContainer.innerHTML = this.renderComentariosCategorizados(version.comentarios);
+        commentsDisplay.style.display = 'block';
+        
+        // Animación suave de actualización
+        commentsContainer.style.opacity = '0';
+        setTimeout(() => {
+            commentsContainer.style.transition = 'opacity 0.3s ease';
+            commentsContainer.style.opacity = '1';
+        }, 10);
+    } else {
+        commentsDisplay.style.display = 'none';
+    }
+    
+    console.log('✅ Comentarios de versión actualizados');
+}
 
     tieneComentarios(comentarios) {
         if (typeof comentarios === 'string') {

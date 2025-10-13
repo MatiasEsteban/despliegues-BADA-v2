@@ -35,8 +35,9 @@ export class VersionEvents {
     }
 
     setupVersionButtons() {
+
 const btnAgregar = document.getElementById('btn-agregar');
-btnAgregar.addEventListener('click', () => {
+btnAgregar.addEventListener('click', async () => {
     if (!this.renderer.currentVersionId) return;
     
     const version = this.dataStore.getAll().find(v => v.id === this.renderer.currentVersionId);
@@ -44,49 +45,41 @@ btnAgregar.addEventListener('click', () => {
     
     // 1. Agregar CDU al dataStore
     const nuevoCdu = this.dataStore.addCduToVersion(this.renderer.currentVersionId);
-    
     if (!nuevoCdu) return;
     
-    // 2. Expandir el rango del Virtual Scroll para incluir el nuevo CDU
+    // 2. Actualizar Virtual Scroll con los nuevos datos
     if (this.renderer.virtualScroll) {
+        // Expandir el rango para incluir todos los CDUs
         const newTotalCdus = version.cdus.length;
+        this.renderer.virtualScroll.state.endIndex = Math.min(
+            newTotalCdus,
+            this.renderer.virtualScroll.state.startIndex + 
+            this.renderer.virtualScroll.config.visibleRows + 
+            (this.renderer.virtualScroll.config.bufferRows * 2)
+        );
         
-        // CRÍTICO: Expandir endIndex para incluir el nuevo CDU
-        this.renderer.virtualScroll.state.endIndex = newTotalCdus;
+        // Actualizar datos
+        this.renderer.virtualScroll.updateData(version.cdus);
         
-        // Actualizar datos y re-renderizar con el nuevo rango
-        this.renderer.virtualScroll.currentCdus = version.cdus;
-        
-        // Remover filas antiguas
-        const tbody = document.getElementById('tabla-body');
-        const existingRows = Array.from(tbody.querySelectorAll('tr:not(.virtual-scroll-spacer)'));
-        existingRows.forEach(row => row.remove());
-        
-        // Renderizar con el rango expandido
-        this.renderer.virtualScroll.renderVisibleRows();
-        this.renderer.virtualScroll.updateSpacers();
-        
-        // 3. Hacer scroll hasta el final para mostrar el nuevo CDU
-        setTimeout(() => {
-            const tableWrapper = document.querySelector('.table-wrapper');
-            if (tableWrapper) {
-                tableWrapper.scrollTo({
-                    top: tableWrapper.scrollHeight,
-                    behavior: 'smooth'
-                });
-            }
+        // 3. Scroll suave al final
+        const tableWrapper = document.querySelector('.table-wrapper');
+        if (tableWrapper) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+            tableWrapper.scrollTo({
+                top: tableWrapper.scrollHeight,
+                behavior: 'smooth'
+            });
             
-            // 4. Focus en el primer input del nuevo CDU
+            // 4. Focus en el nuevo CDU después del scroll
             setTimeout(() => {
-                const newRow = tbody.querySelector(`tr[data-cdu-id="${nuevoCdu.id}"]`);
+                const newRow = document.querySelector(`tr[data-cdu-id="${nuevoCdu.id}"]`);
                 if (newRow) {
+                    newRow.classList.add('adding');
                     const firstInput = newRow.querySelector('.campo-cdu');
-                    if (firstInput) {
-                        firstInput.focus();
-                    }
+                    if (firstInput) firstInput.focus();
                 }
             }, 400);
-        }, 100);
+        }
     }
     
     NotificationSystem.success('CDU creado exitosamente', 2000);
@@ -285,42 +278,59 @@ btnAgregar.addEventListener('click', () => {
         });
     }
 
-    async handleSaveChanges() {
-        const pendingChanges = this.dataStore.getPendingChanges();
-        
-        if (pendingChanges.length === 0) {
-            NotificationSystem.warning('No hay cambios pendientes para guardar.');
-            return;
-        }
+async handleSaveChanges() {
+    const pendingChanges = this.dataStore.getPendingChanges();
+    
+    if (pendingChanges.length === 0) {
+        NotificationSystem.warning('No hay cambios pendientes para guardar.');
+        return;
+    }
 
-        const changesInfo = pendingChanges.map(change => {
-            return {
-                ...change,
-                versionNumero: change.versionNumero || 'N/A',
-                cduNombre: change.cduNombre || 'Sin nombre'
-            };
-        });
+    const changesInfo = pendingChanges.map(change => {
+        return {
+            ...change,
+            versionNumero: change.versionNumero || 'N/A',
+            cduNombre: change.cduNombre || 'Sin nombre'
+        };
+    });
 
-        try {
-            const confirmed = await Modal.showChangesSummary(changesInfo);
+    try {
+        const confirmed = await Modal.showChangesSummary(changesInfo);
 
-            if (confirmed) {
-                const appliedChanges = this.dataStore.applyPendingChanges();
+        if (confirmed) {
+            // CONFIRMAR: Aplicar cambios
+            const appliedChanges = this.dataStore.applyPendingChanges();
+            
+            NotificationSystem.success(
+                `Se guardaron ${appliedChanges.length} cambio${appliedChanges.length !== 1 ? 's' : ''} exitosamente.`,
+                3000
+            );
+
+            this.renderer.fullRender();
+        } else {
+            // CANCELAR: Descartar cambios y actualizar UI
+            this.dataStore.discardPendingChanges();
+            
+            NotificationSystem.info('Cambios cancelados.', 2000);
+            
+            // NUEVO: Actualizar UI según la vista actual
+            if (this.renderer.currentView === 'detail' && this.renderer.currentVersionId) {
+                // Si estamos en vista detalle, actualizar comentarios y tabla
+                this.renderer.updateVersionComments();
                 
-                NotificationSystem.success(
-                    `Se guardaron ${appliedChanges.length} cambio${appliedChanges.length !== 1 ? 's' : ''} exitosamente.`,
-                    3000
-                );
-
-                this.renderer.fullRender();
+                // También re-renderizar la tabla por si había cambios de CDUs
+                const version = this.dataStore.getAll().find(v => v.id === this.renderer.currentVersionId);
+                if (version && this.renderer.virtualScroll) {
+                    this.renderer.virtualScroll.updateData(version.cdus);
+                }
             } else {
-                this.dataStore.discardPendingChanges();
-                NotificationSystem.info('Cambios cancelados.', 2000);
+                // Si estamos en vista de tarjetas, hacer fullRender
                 this.renderer.fullRender();
             }
-        } catch (error) {
-            console.error('❌ Error en handleSaveChanges:', error);
-            NotificationSystem.error('Ocurrió un error al guardar los cambios: ' + error.message);
         }
+    } catch (error) {
+        console.error('❌ Error en handleSaveChanges:', error);
+        NotificationSystem.error('Ocurrió un error al guardar los cambios: ' + error.message);
     }
+}
 }

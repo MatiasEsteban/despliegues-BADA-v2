@@ -22,28 +22,36 @@ export class NavigationEvents {
         });
     }
 
-    setupEditCommentsButton() {
-        const btnEditComments = document.getElementById('btn-edit-version-comments');
-        btnEditComments.addEventListener('click', async () => {
-            if (!this.renderer.currentVersionId) return;
+setupEditCommentsButton() {
+    const btnEditComments = document.getElementById('btn-edit-version-comments');
+    btnEditComments.addEventListener('click', async () => {
+        if (!this.renderer.currentVersionId) return;
+        
+        const version = this.dataStore.getAll().find(v => v.id === this.renderer.currentVersionId);
+        if (!version) return;
+        
+        const comentariosAnteriores = JSON.parse(JSON.stringify(version.comentarios));
+        
+        const nuevosComentarios = await Modal.showComentariosVersion(
+            version.numero,
+            version.comentarios
+        );
+        
+        if (nuevosComentarios !== null) {
+            // Registrar cambios pendientes
+            this.registrarCambiosComentarios(version.id, comentariosAnteriores, nuevosComentarios, version.numero);
             
-            const version = this.dataStore.getAll().find(v => v.id === this.renderer.currentVersionId);
-            if (!version) return;
+            // Actualizar en dataStore
+            this.dataStore.updateVersion(this.renderer.currentVersionId, 'comentarios', nuevosComentarios);
             
-            const comentariosAnteriores = JSON.parse(JSON.stringify(version.comentarios));
+            // CAMBIO: En lugar de fullRender(), actualizar solo comentarios
+            this.renderer.updateVersionComments();
             
-            const nuevosComentarios = await Modal.showComentariosVersion(
-                version.numero,
-                version.comentarios
-            );
-            
-            if (nuevosComentarios !== null) {
-                this.registrarCambiosComentarios(version.id, comentariosAnteriores, nuevosComentarios, version.numero);
-                this.dataStore.updateVersion(this.renderer.currentVersionId, 'comentarios', nuevosComentarios);
-                this.renderer.fullRender();
-            }
-        });
-    }
+            // Actualizar stats globales
+            this.renderer.updateStats();
+        }
+    });
+}
 
     setupSearchToggle() {
         const btnToggle = document.getElementById('btn-toggle-search');

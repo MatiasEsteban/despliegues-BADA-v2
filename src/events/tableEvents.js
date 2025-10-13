@@ -388,50 +388,57 @@ handleChange(e) {
         }
     }
 
-    async handleEliminarClick(btn) {
-        const cduId = parseInt(btn.dataset.cduId);
-        
-        let cduNombre = '';
-        let versionNumero = '';
-        
-        for (const version of this.dataStore.getAll()) {
-            const cdu = version.cdus.find(c => c.id === cduId);
-            if (cdu) {
-                cduNombre = cdu.nombreCDU || 'Sin nombre';
-                versionNumero = version.numero;
-                break;
-            }
+async handleEliminarClick(btn) {
+    const cduId = parseInt(btn.dataset.cduId);
+    
+    let cduNombre = '';
+    let versionNumero = '';
+    
+    for (const version of this.dataStore.getAll()) {
+        const cdu = version.cdus.find(c => c.id === cduId);
+        if (cdu) {
+            cduNombre = cdu.nombreCDU || 'Sin nombre';
+            versionNumero = version.numero;
+            break;
+        }
+    }
+    
+    const confirmacion = await Modal.confirm(
+        '¿Está seguro de eliminar este CDU?',
+        'Confirmar Eliminación'
+    );
+    
+    if (confirmacion) {
+        // 1. Animación de salida rápida
+        const row = document.querySelector(`tr[data-cdu-id="${cduId}"]`);
+        if (row) {
+            row.classList.add('removing');
+            // Esperar solo la animación CSS (200ms)
+            await new Promise(resolve => setTimeout(resolve, 200));
+            row.remove();
         }
         
-        const confirmacion = await Modal.confirm(
-            '¿Está seguro de eliminar este CDU?',
-            'Confirmar Eliminación'
-        );
+        // 2. Actualizar dataStore
+        this.dataStore.addPendingChange({
+            cduId,
+            campo: 'cdu-eliminado',
+            valorAnterior: `CDU: ${cduNombre}`,
+            valorNuevo: null,
+            cduNombre,
+            versionNumero,
+            timestamp: new Date().toISOString(),
+            tipo: 'eliminacion'
+        });
         
-if (confirmacion) {
-    // 1. ELIMINAR FILA DEL DOM INMEDIATAMENTE (optimista)
-    const row = document.querySelector(`tr[data-cdu-id="${cduId}"]`);
-    if (row) {
-        row.style.opacity = '0';
-        row.style.transform = 'translateX(-20px)';
-        setTimeout(() => row.remove(), 300);
+        this.dataStore.deleteCdu(cduId);
+        
+        // 3. Actualizar Virtual Scroll si está activo
+        const version = this.dataStore.getAll().find(v => v.id === this.renderer.currentVersionId);
+        if (version && this.renderer.virtualScroll && this.renderer.virtualScroll.currentCdus.length > 0) {
+            this.renderer.virtualScroll.updateData(version.cdus);
+        }
     }
-    
-    // 2. Actualizar dataStore en segundo plano
-    this.dataStore.addPendingChange({
-        cduId,
-        campo: 'cdu-eliminado',
-        valorAnterior: `CDU: ${cduNombre}`,
-        valorNuevo: null,
-        cduNombre,
-        versionNumero,
-        timestamp: new Date().toISOString(),
-        tipo: 'eliminacion'
-    });
-    
-    this.dataStore.deleteCdu(cduId);
 }
-    }
 
 handleAddResponsableClick(btn) {
     const cduId = parseInt(btn.dataset.cduId);
