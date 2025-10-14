@@ -35,6 +35,7 @@ export class VersionEvents {
     }
 
     setupVersionButtons() {
+        
 
 const btnAgregar = document.getElementById('btn-agregar');
 btnAgregar.addEventListener('click', async () => {
@@ -81,6 +82,22 @@ btnAgregar.addEventListener('click', async () => {
             }, 400);
         }
     }
+    // Event listener para botón de información de despliegue
+document.addEventListener('click', async (e) => {
+    const btnInfo = e.target.closest('.btn-version-info');
+    if (btnInfo) {
+        e.stopPropagation(); // Evitar que se abra el detalle
+        const versionId = parseInt(btnInfo.dataset.versionId);
+        
+        const version = this.dataStore.getAll().find(v => v.id === versionId);
+        if (!version) return;
+        
+        const versionEnProduccionId = this.dataStore.getVersionEnProduccionId();
+        const isEnProduccion = version.id === versionEnProduccionId;
+        
+        await Modal.showDeploymentReport(version, isEnProduccion);
+    }
+});
     
     NotificationSystem.success('CDU creado exitosamente', 2000);
 });
@@ -157,6 +174,37 @@ btnAgregar.addEventListener('click', async () => {
                 this.renderer.fullRender();
             }
         });
+        // Event listener para botón de información de despliegue
+document.addEventListener('click', async (e) => {
+    const btnInfo = e.target.closest('.btn-version-info');
+    if (btnInfo) {
+        e.stopPropagation();
+        e.preventDefault();
+        
+        const versionId = parseInt(btnInfo.dataset.versionId);
+        console.log('🔍 Botón info clickeado, versionId:', versionId);
+        
+        const version = this.dataStore.getAll().find(v => v.id === versionId);
+        if (!version) {
+            console.error('❌ Versión no encontrada');
+            return;
+        }
+        
+        const versionEnProduccionId = this.dataStore.getVersionEnProduccionId();
+        const isEnProduccion = version.id === versionEnProduccionId;
+        
+        console.log('✅ Abriendo modal para versión:', version.numero);
+        
+        try {
+            // Importar dinámicamente el modal
+            const { DeploymentReportModal } = await import('../modals/DeploymentReportModal.js');
+            await DeploymentReportModal.show(version, isEnProduccion);
+        } catch (error) {
+            console.error('❌ Error al abrir modal:', error);
+            NotificationSystem.error('Error al abrir el reporte de despliegue');
+        }
+    }
+});
 
         const btnLoadMore = document.getElementById('btn-load-more-versions');
         if (btnLoadMore) {

@@ -29,6 +29,13 @@ export class VersionCard {
                             : '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>'}
                     </svg>
                 </button>
+                <button class="btn-version-info" data-version-id="${version.id}" title="Ver reporte de despliegue">
+    <svg class="icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+    </svg>
+</button>
             </div>
             <div class="version-card-body">
                 <div class="version-card-stats">
@@ -78,12 +85,14 @@ export class VersionCard {
             </div>
         `;
         
-        // Click en la tarjeta (excepto en el botón)
-        card.addEventListener('click', (e) => {
-            if (!e.target.closest('.btn-marcar-produccion')) {
-                onClickCallback(version.id);
-            }
-        });
+
+// Click en la tarjeta (excepto en los botones)
+card.addEventListener('click', (e) => {
+    if (!e.target.closest('.btn-marcar-produccion') && 
+        !e.target.closest('.btn-version-info')) {
+        onClickCallback(version.id);
+    }
+});
         
         return card;
     }

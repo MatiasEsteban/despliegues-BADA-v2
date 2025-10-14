@@ -364,7 +364,7 @@
     color: white;
 }
 
-/* === BOTÓN MARCAR PRODUCCIÓN === */
+/* === BOTONES EN TARJETAS DE VERSIÓN === */
 .btn-marcar-produccion {
     position: absolute;
     top: 1rem;
@@ -399,4 +399,36 @@
 
 .version-en-produccion .btn-marcar-produccion:hover {
     background: rgba(16, 185, 129, 0.5);
+}
+
+/* === BOTÓN INFO DE DESPLIEGUE === */
+.btn-version-info {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: rgba(59, 130, 246, 0.9); /* 👈 Azul sólido en lugar de transparente */
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4); /* 👈 Sombra azul */
+}
+
+.btn-version-info:hover {
+    background: rgba(37, 99, 235, 1); /* 👈 Azul más oscuro al hover */
+    border-color: white;
+    transform: scale(1.15) rotate(-8deg); /* 👈 Rotación diferente */
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.6);
+}
+
+.btn-version-info svg {
+    stroke: white;
+    stroke-width: 2.5; /* 👈 Líneas más gruesas */
 }

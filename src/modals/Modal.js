@@ -50,4 +50,11 @@ export class Modal {
     static showChangesSummary(changes) {
         return ChangesModal.show(changes);
     }
+    // Modal de reporte de despliegue
+static showDeploymentReport(version, isEnProduccion) {
+    // Importar el modal dinámicamente
+    return import('./DeploymentReportModal.js').then(module => {
+        return module.DeploymentReportModal.show(version, isEnProduccion);
+    });
+}
 }

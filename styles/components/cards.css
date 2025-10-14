@@ -39,6 +39,8 @@
     background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
     color: white;
     padding: 1.5rem;
+    padding-left: 3.5rem;
+    padding-right: 3.5rem;
     position: relative;
 }
 
