@@ -38,13 +38,17 @@
 }
 
 /* Anchos de columnas */
+
+/* Anchos de columnas */
 .tabla-despliegues th:nth-child(1) { width: 180px; }  /* CDU */
 .tabla-despliegues th:nth-child(2) { width: 250px; }  /* Descripción */
 .tabla-despliegues th:nth-child(3) { width: 200px; }  /* Estado */
-.tabla-despliegues th:nth-child(4) { width: 100px; }  /* Versión BADA */
-.tabla-despliegues th:nth-child(5) { width: 220px; }  /* Responsables */
-.tabla-despliegues th:nth-child(6) { width: 300px; }  /* Observaciones */
-.tabla-despliegues th:nth-child(7) { width: 100px; }  /* Acciones */
+.tabla-despliegues th:nth-child(4) { width: 80px; }   /* Versión BADA (reducido) */
+.tabla-despliegues th:nth-child(5) { width: 80px; }   /* Version de Miró (nuevo) */
+.tabla-despliegues th:nth-child(6) { width: 220px; }  /* Responsables */
+.tabla-despliegues th:nth-child(7) { width: 300px; }  /* Observaciones */
+.tabla-despliegues th:nth-child(8) { width: 100px; }  /* Acciones */
+
 
 /* === FILAS === */
 .tabla-despliegues tbody tr {

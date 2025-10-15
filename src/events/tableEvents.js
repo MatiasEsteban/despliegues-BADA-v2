@@ -82,14 +82,15 @@ export class TableEvents {
 
         const valor = e.target.value;
         
-        // Delegar según el tipo de campo
+
+// Delegar según el tipo de campo
         if (campo === 'observacion') {
             this.observacionHandlers.handleObservacionBlur(e.target, valor);
         } 
         else if (campo === 'responsable-nombre') {
             this.responsableHandlers.handleResponsableNombreBlur(e.target, valor);
         }
-        else if (campo === 'nombreCDU' || campo === 'descripcionCDU') {
+        else if (campo === 'nombreCDU' || campo === 'descripcionCDU' || campo === 'versionMiro') { // CAMPO AÑADIDO
             this.cduFieldHandlers.handleCduFieldBlur(e.target, campo, valor);
         }
     }

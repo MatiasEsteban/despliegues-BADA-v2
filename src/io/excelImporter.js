@@ -154,7 +154,8 @@ version.cdus.push({
     nombreCDU: nombreCDU,
     descripcionCDU: row['Descripción CDU'] || row['Descripcion CDU'] || row['Descripción'] || '',
     estado: this.normalizarEstado(row['Estado'] || 'En Desarrollo'),
-    versionBADA: row['Versión BADA'] || row['Version BADA'] || 'V1', // NUEVO
+    versionBADA: row['Versión BADA'] || row['Version BADA'] || 'V1',
+    versionMiro: row['Version de Miró'] || '', // NUEVA COLUMNA
     responsables: responsables,
     observaciones: observaciones,
     historial: historial

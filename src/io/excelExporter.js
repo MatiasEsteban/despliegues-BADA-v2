@@ -48,12 +48,13 @@ static exportar(versiones, versionEnProduccionId = null) {
                     .join(' || ');
             }
             
+
             datosExcel.push({
                 'UUID': cdu.uuid || '',
                 'Fecha Despliegue': version.fechaDespliegue || '',
                 'Hora': version.horaDespliegue || '',
                 'Versión': version.numero || '',
-                'En Producción': esProduccion, // MODIFICADO: usar variable
+                'En Producción': esProduccion,
                 'Mejoras/Bugfixes': comentariosFormateados.mejoras,
                 'Salidas a Producción': comentariosFormateados.salidas,
                 'Cambios en Caliente': comentariosFormateados.cambiosCaliente,
@@ -62,10 +63,12 @@ static exportar(versiones, versionEnProduccionId = null) {
                 'Descripción CDU': cdu.descripcionCDU || '',
                 'Estado': cdu.estado || '',
                 'Versión BADA': cdu.versionBADA || 'V1',
+                'Version de Miró': cdu.versionMiro || '', // NUEVA COLUMNA
                 'Responsables': responsablesTexto,
                 'Observaciones CDU': observacionesTexto,
                 'Historial': historialTexto
             });
+
         });
     });
 

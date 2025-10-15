@@ -32,6 +32,7 @@ export class CduStore {
             descripcionCDU: '',
             estado: 'En Desarrollo',
             versionBADA: 'V1',
+            versionMiro: '', // NUEVA PROPIEDAD
             responsables: [],
             observaciones: [],
             historial: [{
@@ -46,9 +47,6 @@ export class CduStore {
         return nuevoCdu;
     }
 
-    /**
-     * Duplica un CDU existente con nuevo ID
-     */
     duplicateCdu(cdu) {
         return {
             id: this.nextCduId++,
@@ -57,6 +55,7 @@ export class CduStore {
             descripcionCDU: cdu.descripcionCDU,
             estado: cdu.estado,
             versionBADA: cdu.versionBADA || 'V1',
+            versionMiro: cdu.versionMiro || '', // NUEVA PROPIEDAD
             responsables: Array.isArray(cdu.responsables) 
                 ? cdu.responsables.map(r => ({...r}))
                 : (cdu.responsable ? [{ nombre: cdu.responsable, rol: 'DEV' }] : []),

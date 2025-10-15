@@ -51,6 +51,7 @@ export class CduRow {
         selectVersionBADA.className = 'campo-version-bada';
         selectVersionBADA.dataset.cduId = cdu.id;
         selectVersionBADA.dataset.campo = 'versionBADA';
+        selectVersionBADA.maxLength = 4; // Límite de caracteres
 
         ['V1', 'V2'].forEach(version => {
             const option = document.createElement('option');
@@ -64,6 +65,14 @@ export class CduRow {
 
         tdVersionBADA.appendChild(selectVersionBADA);
         tr.appendChild(tdVersionBADA);
+
+        // ¡NUEVA COLUMNA! Version de Miró
+        const tdVersionMiro = document.createElement('td');
+        const inputVersionMiro = this.createInput('text', 'campo-version-miro', cdu.versionMiro, 'versionMiro', 'V__');
+        inputVersionMiro.dataset.cduId = cdu.id;
+        inputVersionMiro.maxLength = 3; // Límite de caracteres
+        tdVersionMiro.appendChild(inputVersionMiro);
+        tr.appendChild(tdVersionMiro);
         
         // Responsables con roles
         const tdResponsables = document.createElement('td');
