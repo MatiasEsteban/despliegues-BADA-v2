@@ -4,6 +4,7 @@ import { VersionStore } from './stores/VersionStore.js';
 import { CduStore } from './stores/CduStore.js';
 import { ChangeTracker } from './stores/ChangeTracker.js';
 import { StatsCalculator } from './stores/StatsCalculator.js';
+import { StorageManager } from './storageManager.js';
 
 export class DataStore {
     constructor() {
@@ -32,6 +33,12 @@ export class DataStore {
         this.observers.forEach(callback => {
             callback(this.versionStore.getAll(), { fullRender });
         });
+        
+        // ¡NUEVO! Guarda el estado cada vez que se notifica un cambio
+        // Solo guarda si no hay cambios pendientes para evitar guardar estados intermedios
+        if (!this.hasPendingChanges()) {
+            StorageManager.saveState(this);
+        }
     }
 
     // =============== ACCESO A DATOS ===============

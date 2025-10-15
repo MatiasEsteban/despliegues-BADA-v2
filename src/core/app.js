@@ -4,6 +4,7 @@
 import { DataStore } from './dataStore.js';
 import { EventCoordinator } from '../events/eventCoordinator.js';
 import { Renderer } from './renderer.js';
+import { StorageManager } from './storageManager.js';
 
 export class App {
     constructor() {
@@ -13,6 +14,9 @@ export class App {
     }
 
     init() {
+        // ¡NUEVO! Carga el estado desde localStorage ANTES de inicializar el resto
+        StorageManager.loadState(this.dataStore);
+        
         this.renderer.init();
         this.eventCoordinator.setupEventListeners();
     }
