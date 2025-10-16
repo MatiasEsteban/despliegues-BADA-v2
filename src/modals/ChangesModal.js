@@ -111,6 +111,85 @@ export class ChangesModal {
                 </div>
             `;
         }
+
+        // ¡NUEVO! Manejo específico para cambios en Responsables
+        if (change.tipo === 'responsable') {
+            let icon = '👤';
+            let content = '';
+            let title = 'Responsable';
+
+            switch (change.campo) {
+                case 'responsable-agregado':
+                    icon = '➕';
+                    title = 'Nuevo Responsable';
+                    content = `
+                        <div class="change-cdu-name">
+                             <svg class="icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            <strong>${change.cduNombre}</strong>
+                        </div>
+                        <div class="change-creation-note">${change.valorNuevo}</div>
+                    `;
+                    break;
+                case 'responsable-eliminado':
+                    icon = '➖';
+                    title = 'Responsable Eliminado';
+                    content = `
+                        <div class="change-cdu-name">
+                             <svg class="icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            <strong>${change.cduNombre}</strong>
+                        </div>
+                        <div class="change-estado">
+                            <span class="estado-old">Eliminado: ${change.valorAnterior}</span>
+                        </div>
+                    `;
+                    break;
+                case 'responsable-nombre':
+                case 'responsable-rol':
+                    const fieldName = change.campo === 'responsable-nombre' ? 'Nombre' : 'Rol';
+                    icon = change.campo === 'responsable-nombre' ? '✏️' : '🏷️';
+                    title = `Cambio de ${fieldName}`;
+                    content = `
+                        <div class="change-cdu-name">
+                             <svg class="icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            <strong>${change.cduNombre}</strong>
+                        </div>
+                        <div class="change-estado">
+                            <span>${fieldName}:&nbsp;</span>
+                            <span class="estado-old">${change.valorAnterior || 'vacío'}</span>
+                            <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                            <span class="estado-new">${change.valorNuevo}</span>
+                        </div>
+                    `;
+                    break;
+                default:
+                    content = `<div class="change-cdu-name">${change.cduNombre}</div><div>${change.campo}: ${change.valorNuevo}</div>`;
+            }
+
+            return `
+                <div class="change-item">
+                    <div class="change-header">
+                        <span class="change-number">#${index + 1}</span>
+                        <span class="change-version">Versión ${change.versionNumero}</span>
+                        <span class="change-type-badge">${icon} ${title}</span>
+                    </div>
+                    <div class="change-details">
+                        ${content}
+                    </div>
+                </div>
+            `;
+        }
         
         // Cambio normal
         const estadoIcon = this.getEstadoIconForSummary(change.valorNuevo);

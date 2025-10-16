@@ -1,60 +1,101 @@
-// Modal.js - Facade unificado para todos los modals
+// Modal.js - Utilidad para mostrar modales genéricos (alert, confirm)
 
-import { ConfirmModal } from './ConfirmModal.js';
-import { HistorialModal } from './HistorialModal.js';
-import { ComentariosModal } from './ComentariosModal.js';
-import { ChangesModal } from './ChangesModal.js';
 import { ModalBase } from './ModalBase.js';
 
-/**
- * Clase Facade que expone todos los modals con la misma interfaz que antes
- * Esto mantiene compatibilidad con el código existente
- */
 export class Modal {
-    // Métodos de confirmación simple
-    static show(options) {
-        return ModalBase.show(options);
+    /**
+     * Muestra un modal de alerta
+     * @param {string} message - Mensaje a mostrar
+     * @param {string} title - Título del modal
+     * @param {string} type - Tipo de alerta ('success', 'warning', 'error', 'info')
+     * @returns {Promise<void>}
+     */
+    static alert(message, title = 'Alerta', type = 'info') {
+        return new Promise((resolve) => {
+            const overlay = ModalBase.createOverlay();
+            const modal = ModalBase.createModal(type);
+            
+            const icon = this.getIconForType(type);
+            
+            modal.innerHTML = `
+                ${ModalBase.createHeader(title, `<span class="modal-icon-header">${icon}</span>`)}
+                <div class="modal-body-content">
+                    <div class="modal-content-container">
+                        <div class="modal-icon modal-${type}">${icon}</div>
+                        <p class="modal-message">${message}</p>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-primary modal-confirm">Aceptar</button>
+                </div>
+            `;
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            
+            requestAnimationFrame(() => {
+                overlay.classList.add('modal-show');
+            });
+            
+            ModalBase.setupCloseHandlers(modal, overlay, resolve);
+        });
     }
 
-    static confirm(message, title) {
-        return ConfirmModal.confirm(message, title);
+    /**
+     * Muestra un modal de confirmación
+     * @param {string} message - Mensaje a mostrar
+     * @param {string} confirmText - Texto del botón de confirmación
+     * @param {string} cancelText - Texto del botón de cancelación
+     * @param {string} title - Título del modal
+     * @param {string} type - Tipo de alerta ('success', 'warning', 'error', 'info')
+     * @returns {Promise<boolean>} - true si se confirma, false si se cancela
+     */
+    static confirm(message, confirmText = 'Confirmar', cancelText = 'Cancelar', title = 'Confirmación', type = 'warning') {
+        return new Promise((resolve) => {
+            const overlay = ModalBase.createOverlay();
+            const modal = ModalBase.createModal(type);
+            
+            const icon = this.getIconForType(type);
+            
+            modal.innerHTML = `
+                ${ModalBase.createHeader(title, `<span class="modal-icon-header">${icon}</span>`)}
+                <div class="modal-body-content">
+                    <div class="modal-content-container">
+                        <div class="modal-icon modal-${type}">${icon}</div>
+                        <p class="modal-message">${message}</p>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary modal-cancel">${cancelText}</button>
+                    <button class="btn btn-primary modal-confirm">${confirmText}</button>
+                </div>
+            `;
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            
+            requestAnimationFrame(() => {
+                overlay.classList.add('modal-show');
+            });
+            
+            ModalBase.setupCloseHandlers(modal, overlay, resolve);
+        });
     }
 
-    static alert(message, title) {
-        return ConfirmModal.alert(message, title);
+    /**
+     * Retorna el HTML del icono según el tipo de modal
+     */
+    static getIconForType(type) {
+        switch (type) {
+            case 'success':
+                return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+            case 'warning':
+                return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+            case 'error':
+                return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
+            case 'info':
+            default:
+                return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+        }
     }
-
-    static success(message, title) {
-        return ConfirmModal.success(message, title);
-    }
-
-    static error(message, title) {
-        return ConfirmModal.error(message, title);
-    }
-
-    static warning(message, title) {
-        return ConfirmModal.warning(message, title);
-    }
-
-    // Modal de historial
-    static showHistorial(cduNombre, historial) {
-        return HistorialModal.show(cduNombre, historial);
-    }
-
-    // Modal de comentarios
-    static showComentariosVersion(versionNumero, comentariosActuales) {
-        return ComentariosModal.show(versionNumero, comentariosActuales);
-    }
-
-    // Modal de resumen de cambios
-    static showChangesSummary(changes) {
-        return ChangesModal.show(changes);
-    }
-    // Modal de reporte de despliegue
-static showDeploymentReport(version, isEnProduccion) {
-    // Importar el modal dinámicamente
-    return import('./DeploymentReportModal.js').then(module => {
-        return module.DeploymentReportModal.show(version, isEnProduccion);
-    });
-}
 }

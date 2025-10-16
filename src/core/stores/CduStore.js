@@ -125,7 +125,7 @@ export class CduStore {
     /**
      * GESTIÓN DE RESPONSABLES
      */
-    addResponsable(cduId, nombre = '', rol = 'DEV') {
+    addResponsable(cduId, nombre = '', rol = {rol}) {
         const result = this.findCdu(cduId);
         if (!result) return false;
         

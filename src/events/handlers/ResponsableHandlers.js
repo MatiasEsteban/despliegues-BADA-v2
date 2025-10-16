@@ -152,7 +152,7 @@ export class ResponsableHandlers {
             cduId,
             campo: 'responsable-agregado',
             valorAnterior: null,
-            valorNuevo: 'Responsable agregado (DEV)',
+            valorNuevo: 'Se agregó un nuevo responsable', // MENSAJE CORREGIDO
             cduNombre,
             versionNumero,
             timestamp: new Date().toISOString(),

@@ -1,40 +1,40 @@
 /* modals.css - Modales y overlays */
 
-/* === OVERLAY DE MODAL === */
+/* Overlay general */
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     z-index: 1000;
     opacity: 0;
-    transition: opacity 0.3s ease;
-    padding: 1rem;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .modal-overlay.modal-show {
     opacity: 1;
+    visibility: visible;
 }
 
-/* === MODAL BASE === */
+/* Base para todos los modales */
 .modal {
     background: var(--bg-primary);
-    border-radius: 12px;
-    padding: 2rem;
-    max-width: 450px;
-    width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    max-width: 90vw;
+    max-height: 90vh; /* Para que los modales también sean responsivos en altura */
+    overflow: hidden; /* Asegura que el contenido interno no se desborde */
     transform: scale(0.9);
+    transition: transform 0.3s ease, opacity 0.3s ease;
     opacity: 0;
-    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
 }
 
 .modal-overlay.modal-show .modal {
@@ -42,767 +42,474 @@
     opacity: 1;
 }
 
-/* === ICONO Y CONTENIDO === */
-.modal-icon {
-    width: 60px;
-    height: 60px;
-    margin: 0 auto 1.5rem;
-    border-radius: 50%;
+/* Encabezados de modales */
+.modal-header {
     display: flex;
     align-items: center;
-    justify-content: center;
-}
-
-.modal-icon svg {
-    width: 32px;
-    height: 32px;
-}
-
-.modal-info .modal-icon { 
-    background: #e6f7ff; 
-    color: #3182ce; 
-}
-
-.modal-success .modal-icon { 
-    background: #e6ffed; 
-    color: #38a169; 
-}
-
-.modal-warning .modal-icon { 
-    background: #fff7e6; 
-    color: #dd6b20; 
-}
-
-.modal-error .modal-icon, 
-.modal-confirm .modal-icon { 
-    background: #ffe6e6; 
-    color: #f56565; 
-}
-
-.modal-content {
-    text-align: center;
-    margin-bottom: 1.5rem;
-}
-
-.modal-title {
-    font-size: 1.5rem;
-    color: var(--text-primary);
-    margin-bottom: 0.5rem;
-}
-
-.modal-message {
-    color: var(--text-secondary);
-    line-height: 1.6;
-    white-space: pre-line;
-}
-
-.modal-actions {
-    display: flex;
-    gap: 0.75rem;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-/* === MODAL HISTORIAL === */
-.modal-historial,
-.modal-comentarios {
-    max-width: 600px;
-    max-height: 85vh;
-    display: flex;
-    flex-direction: column;
-}
-
-.modal-historial-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid var(--border-color);
-}
-
-.modal-historial-cdu {
-    margin-bottom: 1rem;
-    padding: 0.5rem;
-    background: var(--bg-secondary);
-    border-radius: 6px;
-}
-
-.modal-close-btn {
-    background: transparent;
-    border: none;
-    font-size: 2rem;
-    color: var(--text-secondary);
-    cursor: pointer;
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    flex-shrink: 0;
-}
-
-.modal-close-btn:hover {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-}
-
-.modal-historial-content {
-    flex: 1;
-    overflow-y: auto;
-    max-height: 50vh;
-    padding-right: 0.5rem;
-}
-
-.modal-historial-content::-webkit-scrollbar {
-    width: 8px;
-}
-
-.modal-historial-content::-webkit-scrollbar-track {
-    background: var(--bg-secondary);
-    border-radius: 4px;
-}
-
-.modal-historial-content::-webkit-scrollbar-thumb {
-    background: var(--accent-color);
-    border-radius: 4px;
-}
-
-/* === HISTORIAL === */
-.historial-entry {
-    display: flex;
-    gap: 1rem;
-    padding: 1rem;
-    margin-bottom: 0.75rem;
-    background: var(--bg-secondary);
-    border-radius: 8px;
-    border-left: 4px solid var(--accent-color);
-}
-
-.historial-icon {
-    font-size: 1.5rem;
-}
-
-.historial-timestamp {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-}
-
-.historial-message {
-    color: var(--text-primary);
-}
-
-.historial-old {
-    color: var(--text-secondary);
-    text-decoration: line-through;
-}
-
-.historial-new {
-    color: var(--accent-color);
-    font-weight: 600;
-}
-
-.historial-empty {
-    text-align: center;
-    padding: 2rem;
-    color: var(--text-secondary);
-    font-style: italic;
-}
-
-/* === MODAL COMENTARIOS === */
-.modal-comentarios-content {
-    margin-bottom: 1.5rem;
-}
-
-.comentarios-label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.comentarios-textarea {
-    width: 100%;
-    min-height: 150px;
-    padding: 1rem;
-    border: 2px solid var(--input-border);
-    border-radius: 8px;
-    font-family: inherit;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    resize: vertical;
-}
-
-.comentarios-textarea:focus {
-    outline: none;
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1);
-}
-
-/* === MODAL COMENTARIOS CATEGORIZADOS === */
-.modal-comentarios-categorized {
-    max-width: 700px;
-    max-height: 90vh;
-}
-
-.modal-comentarios-categorized-content {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-    max-height: 60vh;
-    overflow-y: auto;
-    padding-right: 0.5rem;
-}
-
-.modal-comentarios-categorized-content::-webkit-scrollbar {
-    width: 8px;
-}
-
-.modal-comentarios-categorized-content::-webkit-scrollbar-track {
-    background: var(--bg-secondary);
-    border-radius: 4px;
-}
-
-.modal-comentarios-categorized-content::-webkit-scrollbar-thumb {
-    background: var(--accent-color);
-    border-radius: 4px;
-}
-
-.comentario-categoria {
-    background: var(--bg-secondary);
-    border-radius: 8px;
-    padding: 1rem;
-    border: 2px solid var(--border-color);
-}
-
-.comentario-categoria-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
+    padding: 1rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    position: relative;
+    gap: 1rem;
 }
 
-.comentario-categoria-titulo {
-    flex: 1;
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--text-primary);
     font-weight: 600;
-    color: var(--text-primary);
+    flex-grow: 1;
 }
 
-.comentario-categoria-items {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.comentario-cat-item {
-    display: flex;
-    gap: 0.5rem;
-    align-items: flex-start;
-}
-
-.comentario-cat-item input,
-.comentario-textarea {
-    flex: 1;
-    padding: 0.5rem;
-    border: 2px solid var(--input-border);
-    border-radius: 6px;
-    font-size: 0.875rem;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    max-width: none !important;
-    width: 100% !important;
-}
-
-.comentario-cat-item input:focus,
-.comentario-textarea:focus {
-    outline: none;
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1);
-}
-
-.comentario-textarea {
-    resize: vertical;
-    min-height: 60px;
-    line-height: 1.5;
-    transition: all 0.2s;
-}
-
-.comentario-textarea::placeholder {
-    color: var(--text-secondary);
-    opacity: 0.6;
-}
-
-.comentario-cat-item .btn-remove {
-    margin-top: 0.5rem;
-}
-
-.comentario-empty {
-    color: var(--text-secondary);
-    font-style: italic;
-    font-size: 0.875rem;
-    padding: 0.5rem;
-    text-align: center;
-}
-
-.cat-icon {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-}
-
-/* === MODAL RESUMEN DE CAMBIOS === */
-.modal-changes-summary {
-    max-width: 700px;
-    max-height: 85vh;
-    display: flex;
-    flex-direction: column;
-}
-
-.modal-changes-summary-info {
-    padding: 1rem;
-    background: var(--bg-secondary);
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    text-align: center;
-    color: var(--text-primary);
-}
-
-.modal-changes-summary-content {
-    flex: 1;
-    overflow-y: auto;
-    max-height: 50vh;
-    padding-right: 0.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.modal-changes-summary-content::-webkit-scrollbar {
-    width: 8px;
-}
-
-.modal-changes-summary-content::-webkit-scrollbar-track {
-    background: var(--bg-secondary);
-    border-radius: 4px;
-}
-
-.modal-changes-summary-content::-webkit-scrollbar-thumb {
-    background: var(--accent-color);
-    border-radius: 4px;
-}
-
-.change-item {
-    background: var(--bg-secondary);
-    border-radius: 8px;
-    padding: 1rem;
-    border-left: 4px solid #38a169;
-    transition: all 0.2s;
-}
-
-.change-item:hover {
-    background: var(--bg-primary);
-    box-shadow: 0 2px 8px var(--shadow);
-}
-
-.change-item-creation {
-    border-left-color: #805ad5 !important;
-    background: linear-gradient(135deg, rgba(128, 90, 213, 0.05) 0%, rgba(128, 90, 213, 0.02) 100%);
-}
-
-.change-item-produccion {
-    border-left-color: #10B981 !important;
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%);
-}
-
-.change-header {
-    display: flex;
-    gap: 0.75rem;
-    align-items: center;
-    margin-bottom: 0.75rem;
-}
-
-.change-number {
-    background: var(--accent-color);
-    color: white;
-    border-radius: 50%;
+.modal-header .modal-icon-header {
+    color: var(--accent-color);
     width: 24px;
     height: 24px;
+}
+
+
+/* Cuerpo genérico del modal (para texto, etc.) */
+.modal-body-content {
+    padding: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    overflow-y: auto; /* Permite scroll si el contenido es mucho */
+    flex-grow: 1; /* Permite que el cuerpo crezca */
+}
+
+/* Contenedor principal para alertas, confirmaciones, etc. */
+.modal-content-container {
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 600;
+    gap: 1.5rem;
+}
+
+.modal-icon {
     flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    font-weight: bold;
 }
 
-.change-version {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    font-weight: 500;
+/* Iconos de tipo de modal */
+.modal-success .modal-icon {
+    background: #e6ffed;
+    color: #48bb78;
 }
 
-.change-type-badge {
-    background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
-    color: white;
-    padding: 0.25rem 0.75rem;
+.modal-warning .modal-icon {
+    background: #fff8e1;
+    color: #ed8936;
+}
+
+.modal-error .modal-icon {
+    background: #ffe6e6;
+    color: #f56565;
+}
+
+.modal-info .modal-icon {
+    background: #ebf8ff;
+    color: #4299e1;
+}
+
+/* Mensajes dentro del modal */
+.modal-message {
+    color: var(--text-primary);
+    font-size: 1rem;
+    line-height: 1.5;
+    white-space: pre-wrap; /* Permite saltos de línea en el mensaje */
+}
+
+
+/* Estilos para el modal de REPORTE DE DESPLIEGUE */
+.modal.deployment-report {
+    max-width: fit-content; /* Se ajusta al contenido horizontalmente */
+    min-width: 600px; /* Ancho mínimo para que no sea muy estrecho */
+    max-height: 90vh; /* Altura máxima para todo el modal */
+    background: var(--bg-primary);
     border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-}
-
-.change-item-produccion .change-type-badge {
-    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-}
-
-.change-details {
+    box-shadow: 0 15px 30px var(--shadow);
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    overflow: hidden; /* Asegura que el scroll se maneje internamente */
 }
 
-.change-cdu-name {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text-primary);
-}
-
-.change-creation-note {
-    font-size: 0.875rem;
-    color: var(--text-primary);
-    padding: 0.5rem;
-    background: var(--bg-primary);
-    border-radius: 6px;
-    border-left: 3px solid #805ad5;
-}
-
-.change-estado {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem;
-    background: var(--bg-primary);
-    border-radius: 6px;
-}
-
-.estado-old {
-    color: var(--text-secondary);
-    text-decoration: line-through;
-    font-size: 0.875rem;
-}
-
-.icon-arrow {
-    width: 16px;
-    height: 16px;
-    color: var(--accent-color);
-    flex-shrink: 0;
-}
-
-.estado-new {
-    color: #38a169;
-    font-weight: 600;
-    font-size: 0.95rem;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-}
-/* === MODAL REPORTE DE DESPLIEGUE === */
-.modal-deployment-report {
-    max-width: 1750px;
-    width: 100%;
-    max-height: 1000px;
-    height: 88%;
-    padding: 0;
-    overflow: hidden;
-}
-
-/* === HEADER COMPACTO EN UNA LÍNEA === */
+/* Encabezado del reporte compacto */
 .deployment-report-header-compact {
-    background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
-    color: white;
-    padding: 1.25rem 2rem;
-    position: relative;
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 2rem;
-    flex-wrap: wrap;
-}
-
-.deployment-report-header-compact .modal-close-btn {
-    position: absolute;
-    top: 0.75rem;
-    right: 1rem;
-    color: white;
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.deployment-report-header-compact .modal-close-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-    color: white;
+    align-items: center;
+    background: var(--bg-secondary);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+    flex-shrink: 0; /* No permite que el encabezado se encoja */
 }
 
 .deployment-report-header-left {
     display: flex;
-    align-items: center;
-    gap: 1.5rem;
+    align-items: baseline;
+    gap: 0.75rem;
 }
 
 .deployment-report-subtitle {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     font-weight: 600;
-    letter-spacing: 1.5px;
-    opacity: 0.85;
-    white-space: nowrap;
 }
 
 .deployment-report-version-compact {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
     display: flex;
     align-items: center;
-    gap: 1rem;
-    font-size: 2rem;
-    font-weight: 700;
-    white-space: nowrap;
+    gap: 0.5rem;
 }
 
 .deployment-badge-produccion-compact {
-    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-    color: white;
-    font-size: 0.65rem;
-    font-weight: 700;
-    padding: 0.3rem 0.75rem;
-    border-radius: 12px;
-    letter-spacing: 0.5px;
-    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+    background: var(--estado-produccion-bg);
+    color: var(--estado-produccion-color);
+    padding: 0.2em 0.6em;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+    border: 1px solid var(--estado-produccion-border);
 }
 
 .deployment-report-header-center {
     display: flex;
     align-items: center;
     gap: 1rem;
-    font-size: 0.95rem;
-    opacity: 0.95;
-    flex: 1;
-    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    flex-shrink: 0;
 }
 
 .deployment-datetime-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    white-space: nowrap;
+    gap: 0.4rem;
+}
+
+.deployment-datetime-item .icon-deployment {
+    width: 18px;
+    height: 18px;
+    color: var(--accent-color);
 }
 
 .deployment-datetime-separator {
-    opacity: 0.6;
-}
-
-.icon-deployment {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
+    color: var(--border-color);
 }
 
 .deployment-report-header-right {
     display: flex;
-    align-items: left;
-    gap: 0.2rem;
-    font-size: 0.875rem;
-    padding-right: 3%;
-    opacity: 0.9;
-    white-space: nowrap;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+.deployment-report-header-right .icon-deployment {
+    width: 18px;
+    height: 18px;
+    color: var(--accent-color);
 }
 
-/* === BODY CON COLUMNAS ADAPTABLES === */
+
+/* === CUERPO DEL REPORTE === */
 .deployment-report-body {
-    padding: 1.25rem;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 0.5rem;
-    max-height: 100%;
-    height: 77%;
-    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex; /* Flexbox para las columnas */
+    gap: 1.5rem; /* Espacio entre columnas */
+    overflow-x: auto; /* Permite scroll horizontal si hay muchas columnas */
+    overflow-y: auto; /* Permite scroll vertical si el contenido de una columna es mucho */
+    flex-grow: 1; /* Permite que el cuerpo ocupe el espacio restante */
+    flex-shrink: 1; /* Permite que el cuerpo se encoja si es necesario */
+    max-height: calc(90vh - 120px); /* Ajusta esta altura máxima para dejar espacio al header y footer */
+    /* El 120px es una estimación. Calcula la altura real de tu header + footer */
 }
 
-.deployment-report-body::-webkit-scrollbar {
-    width: 8px;
-}
-
-.deployment-report-body::-webkit-scrollbar-track {
-    background: var(--bg-secondary);
-    border-radius: 4px;
-}
-
-.deployment-report-body::-webkit-scrollbar-thumb {
-    background: var(--accent-color);
-    border-radius: 4px;
-}
-
-/* === COLUMNAS DE CATEGORÍAS === */
 .deployment-report-column {
+    flex: 0 0 auto; /* Importante: No crecer ni encoger, y ancho automático */
+    min-width: 280px; /* Ancho mínimo para cada columna */
     background: var(--bg-secondary);
-    border-radius: 12px;
-    border: 2px solid var(--border-color);
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
     display: flex;
     flex-direction: column;
-    height: 100%;
-    max-height: 100%;
-    transition: all 0.3s ease;
-}
-
-.deployment-report-column:hover {
-    border-color: var(--accent-color);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
+    /* max-height: 100%; */ /* Descomentar si las columnas individuales necesitan su propio scroll */
+    /* overflow-y: auto; */ /* Descomentar si las columnas individuales necesitan su propio scroll */
 }
 
 .deployment-report-column-header {
-    background: var(--bg-primary);
-    padding: 1rem 1.25rem;
-    border-bottom: 2px solid var(--border-color);
-    flex-shrink: 0;
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px dashed var(--border-color);
+    flex-shrink: 0;
 }
 
 .deployment-report-column-title {
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
-    flex: 1;
-    line-height: 1.3;
 }
 
 .deployment-item-count {
     background: var(--accent-color);
     color: white;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 700;
-    padding: 0.25rem 0.6rem;
-    border-radius: 12px;
-    min-width: 26px;
-    text-align: center;
-    flex-shrink: 0;
+    padding: 0.2em 0.6em;
+    border-radius: 9999px;
 }
 
-/* === LISTA CON SCROLL VERTICAL === */
 .deployment-report-column-list {
     list-style: none;
-    padding: 1.25rem;
+    padding: 0;
     margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    overflow-y: auto;
-    flex: 1;
-}
-
-.deployment-report-column-list::-webkit-scrollbar {
-    width: 6px;
-}
-
-.deployment-report-column-list::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.deployment-report-column-list::-webkit-scrollbar-thumb {
-    background: var(--accent-color);
-    border-radius: 3px;
-}
-
-.deployment-report-column-list::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-hover);
+    flex-grow: 1; /* Permite que la lista crezca y ocupe el espacio */
+    overflow-y: auto; /* Scroll individual si la lista es muy larga */
 }
 
 .deployment-report-item {
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
+    padding: 0.5rem 0;
+    font-size: 0.9rem;
     color: var(--text-primary);
-    line-height: 1.5;
-    transition: all 0.2s ease;
-    padding: 0.5rem;
-    border-radius: 6px;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    hyphens: auto;
-}
-
-.deployment-report-item:hover {
-    background: var(--bg-primary);
-    transform: translateX(3px);
-}
-
-.deployment-report-item span {
-    flex: 1;
-    min-width: 0;
 }
 
 .deployment-check-icon {
+    min-width: 18px; /* Asegura que el icono no se encoja */
+    height: 18px;
+    color: #22c55e; /* Verde de éxito */
+    flex-shrink: 0; /* Asegura que el icono no se encoja */
+    margin-top: 0.2em; /* Alineación con el texto */
+}
+
+
+/* === FOOTER DEL MODAL === */
+.modal-actions {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    flex-shrink: 0; /* No permite que el footer se encoja */
+}
+
+/* Estilos para el botón de cerrar del modal */
+.modal-close-btn {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0.2em 0.5em;
+    border-radius: 50%;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.modal-close-btn:hover {
+    background: var(--border-color);
+    color: var(--text-primary);
+}
+
+
+/* Estilos para el modal de resumen de cambios */
+.modal.changes-summary {
+    max-width: 700px;
+    min-width: 400px;
+}
+
+.modal-changes-summary-info {
+    padding: 0.5rem 1.5rem;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.modal-changes-summary-content {
+    padding: 1.5rem;
+    overflow-y: auto; /* Habilita el scroll si hay muchos cambios */
+    flex-grow: 1;
+}
+
+.change-item {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: var(--bg-primary);
+}
+
+.change-item:last-child {
+    margin-bottom: 0;
+}
+
+.change-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px dashed var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.change-number {
+    background: var(--accent-color);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.2em 0.6em;
+    border-radius: 9999px;
+    margin-right: 0.75rem;
+}
+
+.change-version {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-right: auto; /* Empuja el badge a la derecha */
+}
+
+.change-type-badge {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    padding: 0.2em 0.6em;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid var(--input-border);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.change-type-badge svg {
+    width: 16px;
+    height: 16px;
+    color: var(--accent-color);
+}
+
+.change-details {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.change-cdu-name {
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.change-cdu-name svg {
     width: 18px;
     height: 18px;
+    color: var(--accent-color);
     flex-shrink: 0;
-    stroke: #10B981;
-    margin-top: 2px;
 }
 
-.modal-deployment-report .modal-actions {
-    padding: 1.5rem 2rem;
-    border-top: 1px solid var(--border-color);
+
+.change-estado {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
 }
 
-/* Responsivo */
-@media (max-width: 1024px) {
-    .deployment-report-body {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .deployment-report-header-compact {
-        gap: 1rem;
-    }
-    
-    .deployment-report-header-center {
-        order: 3;
-        flex-basis: 100%;
-        justify-content: flex-start;
-    }
+.change-estado .estado-old {
+    color: var(--text-secondary);
+    text-decoration: line-through;
 }
 
-@media (max-width: 768px) {
-    .modal-deployment-report {
-        width: 98vw;
-    }
-    
-    .deployment-report-header-compact {
-        flex-direction: column;
-        align-items: flex-start;
-        padding-right: 3rem;
-    }
-    
-    .deployment-report-header-left,
-    .deployment-report-header-center,
-    .deployment-report-header-right {
-        width: 100%;
-        justify-content: flex-start;
-    }
-    
-    .deployment-report-version-compact {
-        font-size: 1.75rem;
-    }
-    
-    .deployment-report-body {
-        grid-template-columns: 1fr;
-        padding: 1rem;
-    }
-    
-    .deployment-report-column {
-        max-height: 300px;
-    }
+.change-estado .estado-new {
+    font-weight: 600;
+    color: var(--accent-color);
+    display: flex;
+    align-items: center;
+}
+
+.change-estado .icon-arrow {
+    width: 16px;
+    height: 16px;
+    color: var(--text-secondary);
+}
+
+.change-item-creation {
+    background: var(--estado-produccion-bg);
+    border-color: var(--estado-produccion-border);
+}
+.change-item-creation .change-type-badge {
+    background: #d1fae5;
+    color: #047857;
+    border-color: #6ee7b7;
+}
+
+.change-item-creation .change-cdu-name {
+    color: #047857;
+}
+
+.change-item-creation .change-cdu-name svg {
+    color: #047857;
+}
+
+
+.change-creation-note {
+    font-style: italic;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+.change-item-produccion {
+    background: #e0f2fe;
+    border-color: #93c5fd;
+}
+.change-item-produccion .change-type-badge {
+    background: #bfdbfe;
+    color: #1e40af;
+    border-color: #93c5fd;
+}
+.change-item-produccion .change-cdu-name {
+    color: #1e40af;
+}
+.change-item-produccion .change-cdu-name svg {
+    color: #1e40af;
+}
+
+.change-item-produccion .estado-old {
+    color: #60a5fa;
+}
+
+.change-item-produccion .estado-new {
+    color: #2563eb;
+    font-weight: bold;
 }

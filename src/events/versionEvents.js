@@ -212,7 +212,7 @@ export class VersionEvents {
             try {
                 const closeLoading = NotificationSystem.loading('Importando archivo Excel...');
                 
-                const resultado = await ExcelImporter.importar(file);
+                const resultado = await ExcelImporter.importExcel(file);
                 const versiones = resultado.versiones;
                 const versionEnProduccionId = resultado.versionEnProduccionId;
                 
