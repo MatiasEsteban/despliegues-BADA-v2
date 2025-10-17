@@ -479,73 +479,70 @@ updateVersionComments() {
         }
     }
 
+// Reemplaza esta función en: src/core/renderer.js
+
     applyDetailFilters() {
         const version = this.dataStore.getAll().find(v => v.id === this.currentVersionId);
         if (!version) return;
         
-        const tbody = document.getElementById('tabla-body');
-        const rows = tbody.querySelectorAll('tr');
-        
-        let visibleCount = 0;
         const totalCount = version.cdus.length;
-        
         const hasActiveFilters = this.detailFilters.search || 
                                  this.detailFilters.estado || 
                                  this.detailFilters.responsable;
         
-        rows.forEach(row => {
-            const cduId = parseInt(row.dataset.cduId);
-            const cdu = version.cdus.find(c => c.id === cduId);
+        let filteredCdus;
+
+        if (!hasActiveFilters) {
+            // Si no hay filtros, usa la lista completa
+            filteredCdus = version.cdus;
+        } else {
+            // Si hay filtros, filtra el arreglo de datos
+            const searchLower = this.detailFilters.search.toLowerCase();
+            const estadoFilter = this.detailFilters.estado;
+            const responsableLower = this.detailFilters.responsable.toLowerCase();
+
+            filteredCdus = version.cdus.filter(cdu => {
+                let matches = true;
             
-            if (!cdu) {
-                row.classList.add('filtered-out');
-                return;
-            }
-            
-            let matches = true;
-            
-            // Filtro de búsqueda general
-            if (this.detailFilters.search) {
-                const searchLower = this.detailFilters.search.toLowerCase();
-                const matchesSearch = 
-                    cdu.nombreCDU.toLowerCase().includes(searchLower) ||
-                    cdu.descripcionCDU.toLowerCase().includes(searchLower) ||
-                    this.getResponsablesText(cdu).toLowerCase().includes(searchLower) ||
-                    (cdu.observaciones && cdu.observaciones.some(obs => 
-                        obs.toLowerCase().includes(searchLower)
-                    ));
+                // 1. Filtro de búsqueda general (Texto)
+                if (this.detailFilters.search) {
+                    const matchesSearch = 
+                        cdu.nombreCDU.toLowerCase().includes(searchLower) ||
+                        cdu.descripcionCDU.toLowerCase().includes(searchLower) ||
+                        this.getResponsablesText(cdu).toLowerCase().includes(searchLower) ||
+                        (cdu.observaciones && Array.isArray(cdu.observaciones) && cdu.observaciones.some(obs => 
+                            typeof obs === 'string' && obs.toLowerCase().includes(searchLower)
+                        ));
+                    
+                    if (!matchesSearch) {
+                        matches = false;
+                    }
+                }
                 
-                if (!matchesSearch) matches = false;
-            }
-            
-            // Filtro de estado
-            if (this.detailFilters.estado && cdu.estado !== this.detailFilters.estado) {
-                matches = false;
-            }
-            
-            // Filtro de responsable
-            if (this.detailFilters.responsable) {
-                const responsableLower = this.detailFilters.responsable.toLowerCase();
-                const responsablesText = this.getResponsablesText(cdu).toLowerCase();
-                if (!responsablesText.includes(responsableLower)) {
+                // 2. Filtro de estado (Usa 'matches' para ser acumulativo)
+                if (matches && estadoFilter && cdu.estado !== estadoFilter) {
                     matches = false;
                 }
-            }
-            
-            if (matches) {
-                row.classList.remove('filtered-out');
-                if (hasActiveFilters) {
-                    row.classList.add('filtered-match');
-                    setTimeout(() => row.classList.remove('filtered-match'), 500);
+                
+                // 3. Filtro de responsable (Usa 'matches' para ser acumulativo)
+                if (matches && this.detailFilters.responsable) {
+                    const responsablesText = this.getResponsablesText(cdu).toLowerCase();
+                    if (!responsablesText.includes(responsableLower)) {
+                        matches = false;
+                    }
                 }
-                visibleCount++;
-            } else {
-                row.classList.add('filtered-out');
-            }
-        });
+                
+                return matches;
+            });
+        }
         
-        // Actualizar stats
-        document.getElementById('detail-filter-showing').textContent = visibleCount;
+        // 4. Pasa los datos filtrados al VirtualScroll para que se re-dibuje
+        if (this.virtualScroll) {
+            this.virtualScroll.updateData(filteredCdus);
+        }
+        
+        // 5. Actualizar estadísticas
+        document.getElementById('detail-filter-showing').textContent = filteredCdus.length;
         document.getElementById('detail-filter-total').textContent = totalCount;
     }
 
