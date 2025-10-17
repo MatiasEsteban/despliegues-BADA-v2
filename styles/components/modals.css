@@ -68,6 +68,11 @@
     width: 24px;
     height: 24px;
 }
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
 
 
 /* Cuerpo genérico del modal (para texto, etc.) */
@@ -131,7 +136,7 @@
 /* Estilos para el modal de REPORTE DE DESPLIEGUE */
 .modal.deployment-report {
     max-width: fit-content; /* Se ajusta al contenido horizontalmente */
-    min-width: 600px; /* Ancho mínimo para que no sea muy estrecho */
+    min-width: 850px; /* Ancho mínimo para que no sea muy estrecho */
     max-height: 90vh; /* Altura máxima para todo el modal */
     background: var(--bg-primary);
     border-radius: 12px;
@@ -152,6 +157,7 @@
     padding: 1rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
     position: relative;
+    padding: 2%;
     flex-shrink: 0; /* No permite que el encabezado se encoja */
 }
 
@@ -159,6 +165,8 @@
     display: flex;
     align-items: baseline;
     gap: 0.75rem;
+    padding: 2%;
+    
 }
 
 .deployment-report-subtitle {
@@ -216,9 +224,10 @@
 
 .deployment-report-header-right {
     display: flex;
-    align-items: center;
+    align-items: right;
     gap: 0.4rem;
     color: var(--text-secondary);
+    padding-right: 4%;
     font-size: 0.9rem;
     flex-shrink: 0;
 }

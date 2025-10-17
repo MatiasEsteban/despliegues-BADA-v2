@@ -24,10 +24,10 @@ export class DeploymentReportModal {
             modal.innerHTML = `
                 <div class="deployment-report-header-compact">
                     <div class="deployment-report-header-left">
-                        <div class="deployment-report-subtitle">REPORTE DE DESPLIEGUE</div>
+                        <div class="deployment-report-subtitle">INFO DESPLIEGUE</div>
                         <div class="deployment-report-version-compact">
                             V${version.numero}
-                            ${isEnProduccion ? '<span class="deployment-badge-produccion-compact">PRODUCCIÓN</span>' : ''}
+                            ${isEnProduccion ? '<span class="deployment-badge-produccion-compact">PROD</span>' : ''}
                         </div>
                     </div>
                     <div class="deployment-report-header-center">
@@ -54,7 +54,7 @@ export class DeploymentReportModal {
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>
                         </svg>
-                        <span>Mesa WhatsApp</span>
+                        <span>WhatsApp</span>
                     </div>
                     <button class="modal-close-btn" title="Cerrar">×</button>
                 </div>

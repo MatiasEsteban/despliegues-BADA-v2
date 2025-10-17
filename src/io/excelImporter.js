@@ -1,62 +1,35 @@
-// excelImporter.js - Importación de datos desde Excel
+// excelImporter.js - Importación de datos desde Excel (VERSIÓN CORREGIDA)
 
-import * as XLSX from 'xlsx'; // Mantenemos la importación de xlsx, asumiendo que lo necesitas
-import { Modal } from '../modals/Modal.js';
-import { NotificationSystem } from '../utils/notifications.js';
+import * as XLSX from 'xlsx';
+import { v4 as uuidv4 } from 'uuid'; // Importar UUID para CDUs sin ID
 
 export class ExcelImporter {
-    constructor(dataStore, renderer) {
-        this.dataStore = dataStore;
-        this.renderer = renderer;
-    }
 
-    async importExcel(file) {
+    /**
+     * Método estático principal para importar.
+     * Lee y procesa el archivo Excel.
+     */
+    static async importExcel(file) {
         try {
-            const data = await this.readExcelFile(file);
-            const { versiones, cduCount } = this.processExcelData(data);
+            // 1. Leer el archivo
+            const json = await this.readExcelFile(file);
+            
+            // 2. Procesar los datos
+            const processedData = this.processExcelData(json);
 
-            if (versiones.length === 0) {
-                NotificationSystem.warning('El archivo Excel no contiene datos de versiones o CDUs válidos.');
-                return;
-            }
-
-            // --- ESTE ES EL CAMBIO CLAVE ---
-            // Construimos el mensaje como un string que contiene HTML.
-            // Modal.confirm() lo interpretará correctamente.
-            const messageHtml = `
-                <p>Se encontraron:</p>
-                <ul>
-                    <li>${versiones.length} versiones</li>
-                    <li>${cduCount} CDUs únicos</li>
-                </ul>
-                <p>¿Desea reemplazar los datos actuales?</p>
-            `;
-
-            const confirmed = await Modal.confirm(
-                messageHtml, // Pasamos el string HTML aquí
-                'Sí, reemplazar',
-                'No, cancelar',
-                'Confirmar Importación',
-                'warning'
-            );
-            // --- FIN DEL CAMBIO CLAVE ---
-
-            if (confirmed) {
-                this.dataStore.reset();
-                versiones.forEach(version => this.dataStore.addVersion(version));
-                this.renderer.renderAll();
-                NotificationSystem.success('Datos importados correctamente.');
-            } else {
-                NotificationSystem.info('Importación cancelada.');
-            }
+            // 3. Devolver los datos
+            return processedData;
 
         } catch (error) {
-            console.error('Error al cargar el archivo:', error);
-            NotificationSystem.error(`Error al cargar el archivo: ${error.message}`);
+            console.error('Error en ExcelImporter.importExcel:', error);
+            throw error; // Relanzar el error
         }
     }
 
-    readExcelFile(file) {
+    /**
+     * Lee la hoja 'Detalle Despliegues' del archivo Excel.
+     */
+    static readExcelFile(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
 
@@ -64,10 +37,16 @@ export class ExcelImporter {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const json = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    const wsDetalle = workbook.Sheets['Detalle Despliegues'];
+                    
+                    if (!wsDetalle) {
+                        throw new Error("No se encontró la hoja 'Detalle Despliegues'.");
+                    }
+
+                    const json = XLSX.utils.sheet_to_json(wsDetalle);
                     resolve(json);
+
                 } catch (error) {
                     reject(new Error('No se pudo leer el archivo Excel. Asegúrate de que sea un formato válido.'));
                 }
@@ -81,15 +60,24 @@ export class ExcelImporter {
         });
     }
 
-    processExcelData(json) {
+    /**
+     * Procesa el JSON del Excel y lo transforma en la estructura de datos de la app.
+     */
+    static processExcelData(json) {
         const versionesMap = new Map();
-        let cduIdCounter = 1;
+        let versionEnProduccionId = null;
+        let nextCduId = 1;
+        let nextVersionId = 1;
 
         json.forEach(row => {
-            const versionNumero = row['Versión'] || 'V_Desconocida';
-            if (!versionesMap.has(versionNumero)) {
-                versionesMap.set(versionNumero, {
-                    id: versionesMap.size + 1,
+            const versionNumero = String(row['Versión'] || 'V_Desconocida');
+            let version = versionesMap.get(versionNumero);
+
+            // Si la versión no existe, crearla
+            if (!version) {
+                const newId = nextVersionId++;
+                version = {
+                    id: newId,
                     numero: versionNumero,
                     fechaDespliegue: row['Fecha Despliegue'] || '',
                     horaDespliegue: row['Hora'] || '',
@@ -100,44 +88,59 @@ export class ExcelImporter {
                         observaciones: this.parseExcelStringToArray(row['Observaciones Versión'])
                     },
                     cdus: []
-                });
+                };
+                versionesMap.set(versionNumero, version);
             }
 
-            const version = versionesMap.get(versionNumero);
+            // Detectar la versión en producción (el exporter usa 'SÍ')
+            if (row['En Producción'] === 'SÍ' && versionEnProduccionId === null) {
+                versionEnProduccionId = version.id; 
+            }
 
+            // Procesar el CDU (si existe en esta fila)
             const nombreCDU = row['Nombre CDU'] || '';
             if (nombreCDU) {
-                // Parsear responsables
+                // Formato de Responsables: "Nombre (Rol) || Nombre (Rol)"
                 const responsablesTexto = row['Responsables'] || '';
-                const responsables = responsablesTexto.split(';').filter(r => r.trim() !== '').map(r => {
-                    const parts = r.split(':');
+                const responsables = responsablesTexto.split(' || ').filter(r => r.trim() !== '').map(r => {
+                    const match = r.match(/^(.*?)\s\((.*?)\)$/);
+                    if (match) {
+                        return { nombre: match[1].trim(), rol: match[2].trim() };
+                    }
+                    return { nombre: r.trim(), rol: 'DEV' }; // Fallback
+                });
+
+                // Formato de Observaciones: "Obs 1 || Obs 2"
+                const observacionesTexto = row['Observaciones CDU'] || '';
+                const observaciones = observacionesTexto.split(' || ').filter(o => o.trim() !== '');
+
+                // Formato de Historial: "[Fecha] Tipo: ... || [Fecha] Tipo: ..."
+                const historialTexto = row['Historial'] || '';
+                const historial = historialTexto.split(' || ').filter(h => h.trim() !== '').map(h_str => {
+                    const match = h_str.match(/\[(.*?)\] (.*?): (.*?) → (.*)/);
+                    if(match) {
+                        return {
+                            timestamp: match[1],
+                            tipo: match[2],
+                            valorAnterior: match[3],
+                            valorNuevo: match[4]
+                        };
+                    }
                     return {
-                        nombre: parts[0].trim(),
-                        rol: parts[1] ? parts[1].trim() : 'DEV' // Por defecto a DEV
+                        timestamp: new Date().toISOString(),
+                        tipo: 'importacion',
+                        valorAnterior: null,
+                        valorNuevo: h_str
                     };
                 });
 
-                // Parsear observaciones
-                const observacionesTexto = row['Observaciones CDU'] || '';
-                const observaciones = observacionesTexto.split(';').filter(o => o.trim() !== '');
-
-                // Parsear historial (ejemplo simplificado)
-                const historialTexto = row['Historial'] || '';
-                const historial = historialTexto.split(';').filter(h => h.trim() !== '').map(h => ({
-                    timestamp: new Date().toISOString(), // Usar fecha actual para el historial importado
-                    tipo: 'importacion',
-                    campo: 'historial',
-                    valorAnterior: null,
-                    valorNuevo: h
-                }));
-
                 version.cdus.push({
-                    id: cduIdCounter++,
-                    uuid: row['UUID'] || null, // Mantener UUID si viene del Excel
+                    id: nextCduId++,
+                    uuid: row['UUID'] || uuidv4(),
                     nombreCDU: nombreCDU,
-                    descripcionCDU: row['Descripción CDU'] || row['Descripcion CDU'] || row['Descripción'] || '',
+                    descripcionCDU: row['Descripción CDU'] || '',
                     estado: this.normalizarEstado(row['Estado'] || 'En Desarrollo'),
-                    versionBADA: row['Versión BADA'] || row['Version BADA'] || 'V1',
+                    versionBADA: row['Versión BADA'] || 'V1',
                     versionMiro: row['Version de Miró'] || '',
                     responsables: responsables,
                     observaciones: observaciones,
@@ -146,13 +149,19 @@ export class ExcelImporter {
             }
         });
 
+        const versiones = Array.from(versionesMap.values());
+
         return {
-            versiones: Array.from(versionesMap.values()),
-            cduCount: cduIdCounter - 1
+            versiones: versiones,
+            versionEnProduccionId: versionEnProduccionId
+            // Nota: versionEvents.js calcula cduCount por sí mismo
         };
     }
 
-    normalizarEstado(estado) {
+    /**
+     * Normaliza los diferentes textos de estado.
+     */
+    static normalizarEstado(estado) {
         switch (estado.toLowerCase().trim()) {
             case 'en desarrollo': return 'En Desarrollo';
             case 'pendiente':
@@ -164,8 +173,11 @@ export class ExcelImporter {
         }
     }
 
-    parseExcelStringToArray(str) {
+    /**
+     * Parsea un string del Excel (separado por '||') a un array.
+     */
+    static parseExcelStringToArray(str) {
         if (!str) return [];
-        return String(str).split(';').map(s => s.trim()).filter(s => s !== '');
+        return String(str).split(' || ').map(s => s.trim()).filter(s => s !== '');
     }
 }

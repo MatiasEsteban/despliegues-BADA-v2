@@ -92,10 +92,10 @@ export class ModalBase {
     static createHeader(title, iconSvg) {
         return `
             <div class="modal-historial-header">
-                <h3 class="modal-title">
+                <h2 class="modal-title">
                     ${iconSvg}
                     ${title}
-                </h3>
+                </h2>
                 <button class="modal-close-btn" title="Cerrar">×</button>
             </div>
         `;

@@ -133,4 +133,9 @@
     left: 0.5rem;
     color: var(--accent-color);
     font-weight: bold;
+}.comentario-display-header .cat-icon {
+    width: 20px;  /* Ajusta este tamaño si lo prefieres */
+    height: 20px;
+    flex-shrink: 0; /* Evita que el icono se encoja */
+    color: var(--accent-hover); /* Dale un color consistente */
 }

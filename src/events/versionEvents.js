@@ -10,6 +10,7 @@ export class VersionEvents {
     constructor(dataStore, renderer) {
         this.dataStore = dataStore;
         this.renderer = renderer;
+       
     }
 
     setup() {
@@ -197,7 +198,7 @@ export class VersionEvents {
         }
     }
 
-    setupCargarButton() {
+setupCargarButton() {
         const btnCargar = document.getElementById('btn-cargar');
         const fileInput = document.getElementById('file-input');
 
@@ -212,6 +213,8 @@ export class VersionEvents {
             try {
                 const closeLoading = NotificationSystem.loading('Importando archivo Excel...');
                 
+                // Esta línea fallaba porque ExcelImporter.importExcel no existía o era incorrecto
+                // Ahora la vamos a arreglar en el Paso 3
                 const resultado = await ExcelImporter.importExcel(file);
                 const versiones = resultado.versiones;
                 const versionEnProduccionId = resultado.versionEnProduccionId;
@@ -234,15 +237,24 @@ export class VersionEvents {
 
                 const totalCdusUnicos = uuidsUnicos.size;
 
-                const confirmacion = await Modal.show({
-                    title: 'Confirmar Importación',
-                    message: `Se encontraron:\n• ${versiones.length} versiones\n• ${totalCdusUnicos} CDUs únicos\n\n¿Desea reemplazar los datos actuales?`,
-                    type: 'warning',
-                    confirmText: 'Sí, reemplazar',
-                    cancelText: 'Cancelar'
-                });
+                // Este es el modal correcto, que usa \n (texto plano)
+// Este es el bloque CORREGIDO que usa Modal.confirm
+const message = `Se encontraron:\n• ${versiones.length} versiones\n• ${totalCdusUnicos} CDUs únicos\n\n¿Desea reemplazar los datos actuales?`;
+const confirmText = 'Sí, reemplazar';
+const cancelText = 'Cancelar';
+const title = 'Confirmar Importación';
+const type = 'warning'; // 'warning' es el tipo correcto para el estilo
+
+const confirmacion = await Modal.confirm(
+    message,
+    confirmText,
+    cancelText,
+    title,
+    type
+);
 
                 if (confirmacion) {
+                    // Esta es la lógica de actualización correcta
                     this.dataStore.replaceAll(versiones, versionEnProduccionId);
                     
                     this.renderer.showCardsView();
