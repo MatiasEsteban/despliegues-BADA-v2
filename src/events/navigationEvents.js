@@ -1,6 +1,7 @@
 // navigationEvents.js - Eventos de navegación entre vistas
 
 import { Modal } from '../modals/Modal.js';
+import { ComentariosModal } from '../modals/ComentariosModal.js';
 
 export class NavigationEvents {
     constructor(dataStore, renderer) {
@@ -32,7 +33,7 @@ setupEditCommentsButton() {
         
         const comentariosAnteriores = JSON.parse(JSON.stringify(version.comentarios));
         
-        const nuevosComentarios = await Modal.showComentariosVersion(
+        const nuevosComentarios = await ComentariosModal.show(
             version.numero,
             version.comentarios
         );

@@ -1,6 +1,8 @@
 // handlers/CduActionHandlers.js - Manejadores de acciones de CDU
 
 import { Modal } from '../../modals/Modal.js';
+import { HistorialModal } from '../../modals/HistorialModal.js';
+
 
 export class CduActionHandlers {
     constructor(dataStore, renderer) {
@@ -23,7 +25,7 @@ export class CduActionHandlers {
         }
         
         if (cdu) {
-            await Modal.showHistorial(cdu.nombreCDU, cdu.historial || []);
+            await HistorialModal.show(cdu.nombreCDU, cdu.historial || []);
         }
     }
 

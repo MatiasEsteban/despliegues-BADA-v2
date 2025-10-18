@@ -4,6 +4,7 @@ import { ExcelExporter } from '../io/excelExporter.js';
 import { ExcelImporter } from '../io/excelImporter.js';
 import { Modal } from '../modals/Modal.js';
 import { Validator } from '../utils/validator.js';
+import { ChangesModal } from '../modals/ChangesModal.js';
 import { NotificationSystem } from '../utils/notifications.js';
 
 export class VersionEvents {
@@ -333,7 +334,7 @@ const confirmacion = await Modal.confirm(
         });
 
         try {
-            const confirmed = await Modal.showChangesSummary(changesInfo);
+            const confirmed = await ChangesModal.show(changesInfo);
 
             if (confirmed) {
                 // CONFIRMAR: Aplicar cambios
