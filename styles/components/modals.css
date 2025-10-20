@@ -462,7 +462,7 @@
 
 .change-estado .estado-new {
     font-weight: 600;
-    color: var(--accent-color);
+    color: rgb(49, 196, 49);
     display: flex;
     align-items: center;
 }
@@ -525,9 +525,9 @@
 /* === ESTILOS PARA COMENTARIOSMODAL (Añadir al final) === */
 
 /* Define el tamaño del modal y el contenedor de scroll */
-.modal.comentarios-categorized {
-    max-width: 85%;
-    /*width: 95%;*/
+.modal-comentarios-categorized {
+    max-width: 900px !important;
+    width: 51%;
     max-height: 80vh;
     display: flex;
     flex-direction: column;
