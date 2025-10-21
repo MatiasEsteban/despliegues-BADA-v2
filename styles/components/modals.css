@@ -253,9 +253,9 @@
 }
 
 .deployment-report-column {
-    flex: 1 1 0  auto; /* Importante: No crecer ni encoger, y ancho automático */
-    min-width: 0; /* Ancho mínimo para cada columna */
-    width: 100px;
+flex: 0 0 auto; /* 👈 No crecer, no encoger, tamaño automático */
+    min-width: 280px; /* 👈 Ancho mínimo garantizado (antes era 0) */
+    max-width: 400px; /* 👈 Ancho máximo para que no se hagan muy anchas */
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 8px;
