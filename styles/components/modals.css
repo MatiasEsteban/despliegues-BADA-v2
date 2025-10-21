@@ -242,9 +242,10 @@
 .deployment-report-body {
     padding: 1.5rem;
     display: flex; /* Flexbox para las columnas */
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem; /* Espacio entre columnas */
     overflow-x: auto; /* Permite scroll horizontal si hay muchas columnas */
-    overflow-y: auto; /* Permite scroll vertical si el contenido de una columna es mucho */
+    overflow-y: hidden; /* Permite scroll vertical si el contenido de una columna es mucho */
     flex-grow: 1; /* Permite que el cuerpo ocupe el espacio restante */
     flex-shrink: 1; /* Permite que el cuerpo se encoja si es necesario */
     max-height: calc(90vh - 120px); /* Ajusta esta altura máxima para dejar espacio al header y footer */
@@ -252,16 +253,18 @@
 }
 
 .deployment-report-column {
-    flex: 0 0 auto; /* Importante: No crecer ni encoger, y ancho automático */
-    min-width: 280px; /* Ancho mínimo para cada columna */
+    flex: 1 1 0  auto; /* Importante: No crecer ni encoger, y ancho automático */
+    min-width: 0; /* Ancho mínimo para cada columna */
+    width: 100px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 1rem;
     display: flex;
     flex-direction: column;
+    min-height: 0;
     /* max-height: 100%; */ /* Descomentar si las columnas individuales necesitan su propio scroll */
-    /* overflow-y: auto; */ /* Descomentar si las columnas individuales necesitan su propio scroll */
+    overflow-y: auto;  /* Descomentar si las columnas individuales necesitan su propio scroll */
 }
 
 .deployment-report-column-header {
