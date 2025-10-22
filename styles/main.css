@@ -17,5 +17,11 @@
 @import './components/cards.css';
 @import './components/table.css';
 @import './components/filters.css';
-@import './components/modals.css';
 @import './components/notifications.css';
+
+/* === MODALS (Refactorizados) === */
+@import './components/modals/modal-base.css';
+@import './components/modals/modal-deployment-report.css';
+@import './components/modals/modal-changes-summary.css';
+@import './components/modals/modal-comentarios.css';
+@import './components/modals/modal-historial.css';
