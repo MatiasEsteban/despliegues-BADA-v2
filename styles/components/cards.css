@@ -16,7 +16,7 @@
     overflow: hidden;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 2px solid transparent;
+    border: 1px solid #474747 ;
 }
 
 .version-card:hover {
@@ -26,7 +26,7 @@
 }
 
 .version-card.version-en-produccion {
-    border: 3px solid #10B981;
+    border: 3px solid #49aa19;
     box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
 }
 
@@ -36,8 +36,8 @@
 
 /* === HEADER DE TARJETA === */
 .version-card-header {
-    background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
-    color: white;
+background: var(--bg-secondary);
+    color: var(--text-primary);
     padding: 1.5rem;
     padding-left: 3.5rem;
     padding-right: 3.5rem;
@@ -203,8 +203,8 @@
 /* === BADGES === */
 .badge-produccion {
     display: inline-block;
-    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-    color: white;
+    background: white;
+    color: rgb(30, 228, 63);
     font-size: 0.65rem;
     font-weight: 700;
     padding: 0.25rem 0.5rem;
