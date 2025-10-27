@@ -25,3 +25,5 @@
 @import './components/modals/modal-changes-summary.css';
 @import './components/modals/modal-comentarios.css';
 @import './components/modals/modal-historial.css';
+@import './components/view-toggle.css';
+@import './components/list-view.css';

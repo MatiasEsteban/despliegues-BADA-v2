@@ -3,6 +3,7 @@
 import { VersionCard } from './cards/VersionCard.js';
 import { CduRow } from './table/CduRow.js';
 import { EstadoSelect } from './estados/EstadoSelect.js';
+import { VersionListRow } from './list/VersionListRow.js';
 
 export class DOMBuilder {
     // =============== DELEGACIÓN A COMPONENTES ===============
@@ -25,6 +26,16 @@ export class DOMBuilder {
      */
     static crearFilaCDU(cdu) {
         return CduRow.create(cdu);
+    }
+    /**
+     * Crea una fila de versión para la vista de lista
+     * @param {Object} version - Objeto de versión
+     * @param {boolean} isEnProduccion - Si está en producción
+     * @param {Function} onClickCallback - Callback al hacer click
+     * @returns {HTMLElement}
+     */
+    static crearFilaVersionLista(version, isEnProduccion, onClickCallback) {
+        return VersionListRow.create(version, isEnProduccion, onClickCallback);
     }
 
     /**

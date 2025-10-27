@@ -18,7 +18,7 @@ export class VersionCard {
         card.innerHTML = `
             <div class="version-card-header">
                 <div class="version-card-number">
-                    Versión ${version.numero}
+                    V${version.numero}
                     ${isEnProduccion ? '<span class="badge-produccion">EN PRODUCCIÓN</span>' : ''}
                 </div>
                 <div class="version-card-cdus-count">${version.cdus.length} CDU${version.cdus.length !== 1 ? 's' : ''}</div>

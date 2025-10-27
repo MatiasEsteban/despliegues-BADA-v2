@@ -13,6 +13,8 @@ export class NavigationEvents {
         this.setupBackButton();
         this.setupEditCommentsButton();
         this.setupSearchToggle();
+        this.setupViewToggle(); // NUEVA LLAMADA
+        this.setupPaginationEvents(); // NUEVA LLAMADA
         console.log('✅ Eventos de navegación configurados');
     }
 
@@ -67,6 +69,52 @@ setupEditCommentsButton() {
             } else {
                 filtersSection.classList.add('filters-collapsed');
                 btnToggle.classList.remove('active');
+            }
+        });
+    }
+    setupViewToggle() {
+        // Usamos delegación en un contenedor superior, p.ej. 'cards-actions'
+        const actionsContainer = document.querySelector('.cards-actions');
+        if (!actionsContainer) return;
+
+        actionsContainer.addEventListener('click', (e) => {
+            const btnGrid = e.target.closest('#btn-view-grid');
+            const btnList = e.target.closest('#btn-view-list');
+
+            if (!btnGrid && !btnList) return;
+
+            const btnGridEl = document.getElementById('btn-view-grid');
+            const btnListEl = document.getElementById('btn-view-list');
+
+            if (btnGrid && !btnGridEl.classList.contains('active')) {
+                this.renderer.cardViewMode = 'grid';
+                btnGridEl.classList.add('active');
+                btnListEl.classList.remove('active');
+                this.renderer.renderCardsView(); // Re-render
+            } else if (btnList && !btnListEl.classList.contains('active')) {
+                this.renderer.cardViewMode = 'list';
+                btnListEl.classList.add('active');
+                btnGridEl.classList.remove('active');
+                this.renderer.renderCardsView(); // Re-render
+            }
+        });
+    }
+
+    /**
+     * ¡NUEVO! Configura los botones de paginación.
+     */
+    setupPaginationEvents() {
+        const listContainer = document.getElementById('versions-list-container');
+        if (!listContainer) return;
+        
+        listContainer.addEventListener('click', (e) => {
+            const pageBtn = e.target.closest('.pagination-btn[data-page]');
+            
+            if (pageBtn && !pageBtn.disabled) {
+                const page = parseInt(pageBtn.dataset.page);
+                if (!isNaN(page)) {
+                    this.renderer.changeListPage(page);
+                }
             }
         });
     }

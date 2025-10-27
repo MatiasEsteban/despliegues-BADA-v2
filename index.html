@@ -5,29 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control de Despliegues - BADA</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='swirlGradient' x1='50%25' y1='0%25' x2='50%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%2300C8FF;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23007BFF;stop-opacity:1' /%3E%3C/linearGradient%3E%3Cfilter id='glow' x='-50%25' y='-50%25' width='200%25' height='200%25'%3E%3CfeGaussianBlur stdDeviation='4' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M50,10 C30,10 20,30 20,50 C20,70 30,90 50,90 C70,90 80,70 80,50 C80,30 70,10 50,10 Z M50,15 C65,15 75,35 75,50 C75,65 65,85 50,85 C35,85 25,65 25,50 C25,35 35,15 50,15 Z M50,20 C40,20 30,40 30,50 C30,60 40,80 50,80 C60,80 70,60 70,50 C70,40 60,20 50,20 Z M50,25 C55,25 65,45 65,50 C65,55 55,75 50,75 C45,75 35,55 35,50 C35,45 45,25 50,25 Z M50,30 C45,30 40,40 40,50 C40,60 45,70 50,70 C55,70 60,60 60,50 C60,40 55,30 50,30 Z M50,38 C53,38 57,47 57,50 C57,53 53,62 50,62 C47,62 43,53 43,50 C43,47 47,38 50,38 Z' fill='url(%23swirlGradient)' filter='url(%23glow)' transform='rotate(-20 50 50)' /%3E%3C/svg%3E">
-<link rel="stylesheet" href="./styles/main.css">
+    <link rel="stylesheet" href="./styles/main.css">
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <header class="header">
             <div class="header-content">
                 <div class="header-info">
                     <svg class="icon-large" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-                        <defs>
-                            <linearGradient id="swirlGradient" x1="50%" y1="0%" x2="50%" y2="100%">
-                                <stop offset="0%" style="stop-color:#00C8FF;stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:#007BFF;stop-opacity:1" />
-                            </linearGradient>
-                            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                                <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-                                <feMerge>
-                                    <feMergeNode in="coloredBlur"/>
-                                    <feMergeNode in="SourceGraphic"/>
-                                </feMerge>
-                            </filter>
-                        </defs>
-                        <path 
+                       <path
                             d="M50,10 C30,10 20,30 20,50 C20,70 30,90 50,90 C70,90 80,70 80,50 C80,30 70,10 50,10 Z M50,15 C65,15 75,35 75,50 C75,65 65,85 50,85 C35,85 25,65 25,50 C25,35 35,15 50,15 Z M50,20 C40,20 30,40 30,50 C30,60 40,80 50,80 C60,80 70,60 70,50 C70,40 60,20 50,20 Z M50,25 C55,25 65,45 65,50 C65,55 55,75 50,75 C45,75 35,55 35,50 C35,45 45,25 50,25 Z M50,30 C45,30 40,40 40,50 C40,60 45,70 50,70 C55,70 60,60 60,50 C60,40 55,30 50,30 Z M50,38 C53,38 57,47 57,50 C57,53 53,62 50,62 C47,62 43,53 43,50 C43,47 47,38 50,38 Z"
                             fill="url(#swirlGradient)"
                             filter="url(#glow)"
@@ -39,15 +25,15 @@
                         <p>Herramienta: BADA</p>
                     </div>
                 </div>
-                
+
                 <div class="header-actions">
                     <button id="btn-theme-toggle" class="theme-toggle" title="Cambiar tema">
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                         </svg>
                     </button>
-                    
-                    <input type="file" id="file-input" accept=".xlsx,.xls" />
+
+                    <input type="file" id="file-input" accept=".xlsx,.xls" style="display: none;" />
                     <button id="btn-cargar" class="btn btn-info">
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -56,7 +42,7 @@
                         </svg>
                         Cargar Excel
                     </button>
-                    
+
                     <button id="btn-descargar" class="btn btn-success">
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -69,9 +55,7 @@
             </div>
         </header>
 
-        <!-- VISTA DE TARJETAS DE VERSIONES -->
         <div id="view-cards" class="view-container active">
-            <!-- Botón de Búsqueda Avanzada -->
             <div class="search-toggle-container">
                 <button id="btn-toggle-search" class="btn btn-search-toggle">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -85,7 +69,6 @@
                 </button>
             </div>
 
-            <!-- Sección de Filtros -->
             <section class="filters-section filters-collapsed">
                 <div class="filters-header">
                     <div class="filters-title">
@@ -102,13 +85,13 @@
                         Limpiar Filtros
                     </button>
                 </div>
-                
+
                 <div class="filters-grid">
                     <div class="filter-group">
                         <label class="filter-label" for="filter-search">Búsqueda General</label>
                         <input type="text" id="filter-search" class="filter-input" placeholder="Buscar en versión, CDU, descripción...">
                     </div>
-                    
+
                     <div class="filter-group">
                         <label class="filter-label" for="filter-estado">Estado</label>
                         <select id="filter-estado" class="filter-select">
@@ -119,23 +102,23 @@
                             <option value="En Produccion">En Producción</option>
                         </select>
                     </div>
-                    
+
                     <div class="filter-group">
                         <label class="filter-label" for="filter-responsable">Responsable</label>
                         <input type="text" id="filter-responsable" class="filter-input" placeholder="Filtrar por responsable...">
                     </div>
-                    
+
                     <div class="filter-group">
                         <label class="filter-label" for="filter-fecha-desde">Fecha Desde</label>
                         <input type="date" id="filter-fecha-desde" class="filter-input">
                     </div>
-                    
+
                     <div class="filter-group">
                         <label class="filter-label" for="filter-fecha-hasta">Fecha Hasta</label>
                         <input type="date" id="filter-fecha-hasta" class="filter-input">
                     </div>
                 </div>
-                
+
                 <div class="filters-stats">
                     <div class="filter-stat">
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -156,10 +139,30 @@
                 </div>
             </section>
 
-            <!-- Acciones Superiores -->
             <div class="cards-actions">
+                <div class="view-toggle-group">
+                    <button id="btn-view-grid" class="btn-view-toggle active" title="Vista de tarjetas">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                    </button>
+                    <button id="btn-view-list" class="btn-view-toggle" title="Vista de lista">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="8" y1="6" x2="21" y2="6"></line>
+                            <line x1="8" y1="12" x2="21" y2="12"></line>
+                            <line x1="8" y1="18" x2="21" y2="18"></line>
+                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+
                 <button id="btn-nueva-version-limpia" class="btn btn-secondary">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                         <line x1="12" y1="8" x2="12" y2="16"></line>
                         <line x1="8" y1="12" x2="16" y2="12"></line>
@@ -175,14 +178,18 @@
                 </button>
             </div>
 
-            <!-- Grid de Tarjetas -->
             <div id="versions-grid" class="versions-grid">
-                <!-- Las tarjetas se generarán dinámicamente -->
+                </div>
+
+            <div id="versions-list-container" style="display: none;">
+                <div id="versions-list">
+                    </div>
+                <div id="list-pagination" class="pagination-container">
+                    </div>
             </div>
 
-            <!-- Botón Cargar Más Versiones (DENTRO de view-cards) -->
             <div id="load-more-container" class="load-more-container" style="display: none;">
-                <button id="btn-load-more-versions" class="btn-load-more">
+                 <button id="btn-load-more-versions" class="btn-load-more">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="7 13 12 18 17 13"></polyline>
                         <polyline points="7 6 12 11 17 6"></polyline>
@@ -190,12 +197,8 @@
                     Cargar <span id="versions-remaining-count">0</span> versiones más
                 </button>
             </div>
-        </div>
-        <!-- FIN VISTA DE TARJETAS -->
 
-        <!-- VISTA DE DETALLE DE VERSIÓN -->
-        <div id="view-detail" class="view-container">
-            <!-- Filtros en Vista de Detalle -->
+        </div> <div id="view-detail" class="view-container">
             <div class="detail-filters-section">
                 <div class="detail-filters-toggle">
                     <button id="btn-toggle-detail-search" class="btn-detail-search-toggle">
@@ -209,14 +212,14 @@
                         </svg>
                     </button>
                 </div>
-                
+
                 <div class="detail-filters-content detail-filters-collapsed">
                     <div class="detail-filters-grid">
                         <div class="filter-group">
                             <label class="filter-label" for="detail-filter-search">Buscar en CDUs</label>
                             <input type="text" id="detail-filter-search" class="filter-input" placeholder="Nombre, descripción, responsable...">
                         </div>
-                        
+
                         <div class="filter-group">
                             <label class="filter-label" for="detail-filter-estado">Estado</label>
                             <select id="detail-filter-estado" class="filter-select">
@@ -227,13 +230,13 @@
                                 <option value="En Produccion">En Producción</option>
                             </select>
                         </div>
-                        
+
                         <div class="filter-group">
                             <label class="filter-label" for="detail-filter-responsable">Responsable</label>
                             <input type="text" id="detail-filter-responsable" class="filter-input" placeholder="Filtrar por responsable...">
                         </div>
                     </div>
-                    
+
                     <div class="detail-filters-actions">
                         <button id="btn-clear-detail-filters" class="btn btn-clear-filters">
                             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -249,7 +252,6 @@
                 </div>
             </div>
 
-            <!-- Header de Versión -->
             <div class="version-detail-header">
                 <button id="btn-back-to-cards" class="btn btn-back">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -258,7 +260,7 @@
                     </svg>
                     Volver a Versiones
                 </button>
-                
+
                 <div class="version-detail-info">
                     <h2 id="detail-version-title">Versión</h2>
                     <div class="version-detail-meta">
@@ -290,14 +292,11 @@
                 </button>
             </div>
 
-            <!-- Comentarios de Versión (si existen) -->
             <div id="version-comments-display" class="version-comments-display" style="display: none;">
                 <div id="version-comments-container" class="version-comments-container">
-                    <!-- Los comentarios categorizados se renderizan aquí -->
-                </div>
+                    </div>
             </div>
 
-            <!-- Tabla de CDUs -->
             <div class="table-container">
                 <div class="table-wrapper">
                     <table class="tabla-despliegues">
@@ -307,18 +306,16 @@
                                 <th>Descripción</th>
                                 <th>Estado</th>
                                 <th>Versión BADA</th>
-                                <th>Versión Miró</th>
-                                <th>Responsables</th>
+                                <th>Versión Miró</th> <th>Responsables</th>
                                 <th>Observaciones</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="tabla-body">
-                            <!-- Las filas se generan dinámicamente con JavaScript -->
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
-                
+
                 <div class="table-footer">
                     <button id="btn-agregar" class="btn btn-primary">
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -329,11 +326,7 @@
                     </button>
                 </div>
             </div>
-        </div>
-        <!-- FIN VISTA DE DETALLE -->
-
-        <!-- Estadísticas (siempre visible) -->
-        <div class="stats-grid">
+        </div> <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-label">Total CDUs</div>
                 <div class="stat-value stat-primary" id="stat-total">0</div>
@@ -355,10 +348,7 @@
                 <div class="stat-value stat-success" id="stat-produccion">0</div>
             </div>
         </div>
-    </div>
-
-    <!-- Scripts externos -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script type="module" src="main.js"></script>
+    </div> <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script type="module" src="./main.js"></script>
 </body>
 </html>

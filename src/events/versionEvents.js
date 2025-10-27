@@ -19,6 +19,7 @@ export class VersionEvents {
         this.setupVersionButtons();
         this.setupCargarButton();
         this.setupDescargarButton();
+        this.setupListActionButtons();
         console.log('✅ Eventos de versión configurados');
     }
 
@@ -316,6 +317,180 @@ const confirmacion = await Modal.confirm(
             }
         });
     }
+    /**
+     * ¡NUEVO! Configura listeners para los botones de acción en la vista de lista
+     * Se usa delegación de eventos en el contenedor de la lista.
+     */
+setupListActionButtons() {
+        const listContainer = document.getElementById('versions-list-container');
+        if (!listContainer) {
+            console.error("Error: No se encontró #versions-list-container para adjuntar listeners de botones de lista.");
+            return;
+        }
+
+        listContainer.addEventListener('click', async (e) => {
+            const duplicateBtn = e.target.closest('[data-action="duplicate-version-list"]');
+            const deleteBtn = e.target.closest('[data-action="delete-version-list"]');
+            const infoBtn = e.target.closest('.btn-version-info');
+            const markProdBtn = e.target.closest('.btn-marcar-produccion');
+
+            // --- Lógica para Duplicar ---
+            if (duplicateBtn) {
+                e.stopPropagation();
+                const versionId = parseInt(duplicateBtn.dataset.versionId);
+                if (isNaN(versionId)) return;
+                console.log(`Duplicando versión ${versionId} desde lista`);
+                const versionOriginal = this.dataStore.getAll().find(v => v.id === versionId);
+                if (!versionOriginal) return;
+
+                try { // Añadir try...catch por si falla la duplicación o el renderizado
+                    const nuevaVersion = this.dataStore.duplicateVersion(versionId);
+                    if (nuevaVersion) {
+                        NotificationSystem.success(
+                            `Versión ${nuevaVersion.numero} creada como copia de ${versionOriginal.numero}.`,
+                            4000
+                        );
+                        this.renderer.renderCardsView(); // Re-renderizar
+                    } else {
+                         NotificationSystem.error('No se pudo duplicar la versión.');
+                    }
+                } catch (error) {
+                     console.error("Error al duplicar versión o renderizar:", error);
+                     NotificationSystem.error('Error al duplicar la versión.');
+                }
+            }
+            // --- Lógica para Eliminar ---
+            else if (deleteBtn) {
+                e.stopPropagation();
+                const versionId = parseInt(deleteBtn.dataset.versionId);
+                if (isNaN(versionId)) return;
+                console.log(`Intentando eliminar versión ${versionId} desde lista`);
+                const versionAEliminar = this.dataStore.getAll().find(v => v.id === versionId);
+                if (!versionAEliminar) return;
+
+                const confirmacion = await Modal.confirm(
+                    `¿Está seguro de eliminar la Versión ${versionAEliminar.numero}? Esta acción no se puede deshacer.`,
+                    'Confirmar Eliminación', 'Cancelar', 'Eliminar Versión', 'error'
+                );
+
+                if (confirmacion) {
+                    // ¡CAMBIO! Envolver eliminación y renderizado en try...catch
+                    try {
+                        console.log("-> Intentando eliminar datos...");
+                        const deleted = this.dataStore.deleteVersion(versionId); // Intenta eliminar
+
+                        if (deleted) {
+                            console.log("-> Datos eliminados. Intentando re-renderizar...");
+                            // Forzar reseteo de página por si acaso, ANTES de renderizar
+                            this.renderer.listCurrentPage = 1;
+                            this.renderer.renderCardsView(); // Intenta re-renderizar
+                            console.log("-> Renderizado post-eliminación completado.");
+                            // Notificación de éxito SOLO si todo funcionó
+                            NotificationSystem.success(`Versión ${versionAEliminar.numero} eliminada correctamente.`);
+                        } else {
+                            // Esto no debería pasar si la confirmación fue positiva y la versión existía
+                            console.warn("deleteVersion devolvió false inesperadamente.");
+                            NotificationSystem.error('No se pudo eliminar la versión (error inesperado en datos).');
+                        }
+                    } catch (renderError) {
+                        // Si falla la eliminación O el renderizado posterior
+                        console.error("Error durante eliminación o re-renderizado:", renderError);
+                        NotificationSystem.error('Error al actualizar la vista después de eliminar.');
+                        // Opcional: intentar un fullRender más forzado si el render normal falla
+                        // try { this.renderer.fullRender(); } catch(e){}
+                    }
+                } else {
+                    NotificationSystem.info('Eliminación cancelada.');
+                }
+            }
+            // --- Lógica para Info ---
+            else if (infoBtn) {
+                 e.stopPropagation();
+                 const versionId = parseInt(infoBtn.dataset.versionId);
+                 if (!isNaN(versionId)) {
+                     console.log(`Click en Info para versión ${versionId} desde lista`);
+                     this.handleInfoClick(versionId); // Llamar manejador
+                 }
+            }
+            // --- Lógica para Marcar Producción ---
+            else if (markProdBtn) {
+                  e.stopPropagation();
+                  const versionId = parseInt(markProdBtn.dataset.versionId);
+                  if (!isNaN(versionId)) {
+                      console.log(`Click en MarcarProd para versión ${versionId} desde lista`);
+                      this.handleMarkProdClick(versionId); // Llamar manejador
+                  }
+            }
+        });
+    }
+
+     // --- Funciones auxiliares opcionales para Info y MarcarProd (si quieres centralizar) ---
+     async handleInfoClick(versionId) {
+         console.log('🔍 Botón info clickeado (manejador auxiliar), versionId:', versionId);
+         const version = this.dataStore.getAll().find(v => v.id === versionId);
+         if (!version) {
+             console.error('❌ Versión no encontrada');
+             NotificationSystem.error('No se encontró la información de la versión.');
+             return;
+         }
+         const versionEnProduccionId = this.dataStore.getVersionEnProduccionId();
+         const isEnProduccion = version.id === versionEnProduccionId;
+         try {
+             const { DeploymentReportModal } = await import('../modals/DeploymentReportModal.js');
+             await DeploymentReportModal.show(version, isEnProduccion);
+         } catch (error) {
+             console.error('❌ Error al abrir modal de reporte:', error);
+             NotificationSystem.error('Error al abrir el reporte de despliegue');
+         }
+     }
+
+      handleMarkProdClick(versionId) {
+          const version = this.dataStore.getAll().find(v => v.id === versionId);
+          if(!version) return;
+
+          const versionEnProduccionIdAnterior = this.dataStore.getVersionEnProduccionId();
+          let versionAnteriorNombre = 'Ninguna';
+          if (versionEnProduccionIdAnterior) {
+              const versionAnterior = this.dataStore.getAll().find(v => v.id === versionEnProduccionIdAnterior);
+              if (versionAnterior) versionAnteriorNombre = versionAnterior.numero;
+          }
+
+          // Aplicar temporalmente y obtener valor anterior real
+          const valorAnteriorRealId = this.dataStore.setVersionEnProduccionTemporal(versionId);
+
+          const nuevaVersionEnProduccionId = this.dataStore.getVersionEnProduccionId();
+          let nuevaVersionNombre = 'Ninguna';
+          if (nuevaVersionEnProduccionId) {
+              const nuevaVersion = this.dataStore.getAll().find(v => v.id === nuevaVersionEnProduccionId);
+              if (nuevaVersion) nuevaVersionNombre = nuevaVersion.numero;
+          }
+
+          // Usar nombre de la versión anterior real para el registro del cambio
+           let valorAnteriorNombreParaRegistro = 'Ninguna';
+           if(valorAnteriorRealId) {
+                const va = this.dataStore.getAll().find(v => v.id === valorAnteriorRealId);
+                if(va) valorAnteriorNombreParaRegistro = va.numero;
+           }
+
+
+          this.dataStore.addPendingChange({
+              tipo: 'version-produccion',
+              campo: 'version-en-produccion',
+              versionId: versionId, // Podría ser null si se desmarca
+              valorAnterior: valorAnteriorNombreParaRegistro, // Nombre de la versión que ESTABA en prod
+              valorNuevo: nuevaVersionNombre, // Nombre de la versión que AHORA está en prod (o ninguna)
+              timestamp: new Date().toISOString()
+          });
+
+          if (versionId === versionEnProduccionIdAnterior) { // Se está desmarcando
+              NotificationSystem.info(`Versión ${version.numero} desmarcada de producción (cambio pendiente).`, 2500);
+          } else { // Se está marcando
+              NotificationSystem.success(`Versión ${version.numero} marcada como EN PRODUCCIÓN (cambio pendiente).`, 3000);
+          }
+
+          // Re-renderizar la vista actual (grid o list) para reflejar el cambio pendiente visualmente
+          this.renderer.renderCardsView();
+      }
 
     async handleSaveChanges() {
         const pendingChanges = this.dataStore.getPendingChanges();
