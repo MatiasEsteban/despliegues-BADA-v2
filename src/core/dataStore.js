@@ -87,10 +87,19 @@ export class DataStore {
         }
     }
 
-    deleteVersion(versionId) {
-        if (this.versionStore.deleteVersion(versionId)) {
-            this.notify({ fullRender: false });
+deleteVersion(versionId) {
+        // Llama a VersionStore para eliminar y guarda el resultado (true/false)
+        const deleted = this.versionStore.deleteVersion(versionId); 
+        
+        // Si se eliminó correctamente, notifica a los observers
+        if (deleted) {
+            // CAMBIO IMPORTANTE: Usar fullRender: true para asegurar que la UI se actualice completamente
+            // al eliminar un elemento, especialmente en la vista de lista/grid.
+            this.notify({ fullRender: true }); 
         }
+        
+        // Devuelve el resultado de la operación
+        return deleted; 
     }
 
     setVersionEnProduccion(versionId) {
