@@ -22,7 +22,7 @@
 
 /* === VARIANTES DE BOTONES === */
 .btn-success { 
-    background: #38a169; 
+    background: var(--bg-secondary); 
     color: white; 
 }
 .btn-success:hover { 
@@ -38,8 +38,9 @@
 }
 
 .btn-secondary { 
-    background: #718096; 
+    background: var(--bg-secondary); 
     color: white; 
+    border: 1px solid var(--border-color);
 }
 .btn-secondary:hover { 
     background: #4a5568; 
@@ -50,15 +51,16 @@
     color: white; 
 }
 .btn-purple:hover { 
-    background: #798de4; 
+    background: #3c7ccf; 
 }
 
 .btn-info { 
-    background: #4e44d4; 
-    color: white; 
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid whitesmoke; 
 }
 .btn-info:hover { 
-    background: #2c5282; 
+    background: #2c538256; 
 }
 
 .btn-danger {

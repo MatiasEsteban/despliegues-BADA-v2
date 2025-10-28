@@ -227,13 +227,13 @@
 }
 /* Botón Duplicar */
 .version-list-cell-prod .btn-duplicar-version {
-    background: transparent;
-    border-color: #663399; /* Morado */
-    color: #663399;
+    background: #0056cf8f;;
+    border-color: #1668dc;; /* Morado */
+    color: white;
 }
 .version-list-cell-prod .btn-duplicar-version:hover {
-    background: #663399;
-    border-color: #663399;
+    background: #0056cf;;
+    border-color: #0056cf;;
     color: white;
 }
 /* Botón Eliminar */
