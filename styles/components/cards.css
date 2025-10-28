@@ -1,9 +1,9 @@
-/* cards.css - Tarjetas de versión y estadísticas */
+/* styles/components/cards.css */
 
 /* === GRID DE VERSIONES === */
 .versions-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); /* Ancho mínimo un poco mayor */
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
@@ -16,17 +16,19 @@
     overflow: hidden;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid #474747 ;
+    border: 1px solid var(--border-color) ; /* Borde base más sutil */
+    display: flex; /* Para controlar el footer */
+    flex-direction: column; /* Apilar header, body, footer */
 }
 
 .version-card:hover {
     transform: translateY(-8px);
     box-shadow: 0 12px 24px var(--shadow);
-    border-color: var(--accent-color);
+    border-color: var(--accent-hover); /* Usar accent-hover para borde hover */
 }
 
 .version-card.version-en-produccion {
-    border: 3px solid #49aa19;
+    border: 3px solid var(--estado-produccion-border); /* Usar variable de borde */
     box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
 }
 
@@ -36,99 +38,137 @@
 
 /* === HEADER DE TARJETA === */
 .version-card-header {
-background: var(--bg-secondary);
+    background: var(--bg-secondary);
     color: var(--text-primary);
-    padding: 1.5rem;
-    padding-left: 3.5rem;
-    padding-right: 3.5rem;
+    padding: 1rem 1.5rem; /* Padding base */
+    padding-left: 3.5rem; /* Espacio para botón info */
+    padding-right: 3.5rem; /* Espacio para botón prod */
     position: relative;
+    border-bottom: 1px solid var(--border-color); /* Separador sutil */
 }
 
 .version-card-number {
-    font-size: 2rem;
+    font-size: 1.75rem; /* Un poco más pequeño */
     font-weight: 700;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.1rem; /* Menos espacio */
+    white-space: nowrap; /* Evitar wrap del número */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* Mover badge al lado del número */
+.version-card-number .badge-produccion {
+     margin-left: 0.75rem;
+     vertical-align: middle; /* Alinear mejor */
 }
 
+
 .version-card-cdus-count {
-    font-size: 0.875rem;
-    opacity: 0.9;
+    font-size: 0.8rem; /* Más pequeño */
+    opacity: 0.8;
+    color: var(--text-secondary);
 }
 
 /* === BODY DE TARJETA === */
 .version-card-body {
-    padding: 1.5rem;
+    padding: 1.25rem 1.5rem; /* Padding ajustado */
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; /* Espacio entre detalles */
+    flex-grow: 1; /* Ocupa espacio disponible */
 }
 
-.version-card-stats {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-}
-
-.version-card-stat {
+/* Nuevos estilos para los detalles */
+.version-card-detail {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.version-card-detail svg.icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--accent-hover);
+}
+
+.version-card-detail strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Separador */
+hr.card-separator {
+    border: none;
+    border-top: 1px dashed var(--border-color);
+    margin: 0.5rem 0; /* Espacio alrededor */
+}
+
+/* === ESTADÍSTICAS (Restaurado y ajustado) === */
+.version-card-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4 columnas */
+    gap: 0.75rem; /* Espacio entre iconos */
+    margin-top: 0.5rem; /* Espacio sobre las stats */
+}
+
+.version-card-stat {
+    display: flex;
+    flex-direction: column; /* Apilar icono y etiqueta */
+    align-items: center; /* Centrar horizontalmente */
+    text-align: center;
 }
 
 .version-card-stat-icon {
-    width: 20px;
-    height: 20px;
+    width: 28px; /* Iconos un poco más grandes */
+    height: 28px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75rem;
+    font-size: 0.8rem; /* Tamaño número */
     font-weight: bold;
     color: white;
+    margin-bottom: 0.3rem; /* Espacio bajo el icono */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Sombra sutil */
 }
 
-.stat-desarrollo { 
-    background: #F97316; 
-}
-
-.stat-pendiente { 
-    background: #EAB308; 
-}
-
-.stat-certificado { 
-    background: #3B82F6; 
-}
-
-.stat-produccion { 
-    background: #10B981; 
-}
+/* Clases de color para los iconos */
+.stat-desarrollo { background: #F97316; }
+.stat-pendiente { background: #EAB308; }
+.stat-certificado { background: #3B82F6; }
+.stat-produccion { background: #10B981; }
 
 .version-card-stat-label {
+    font-size: 0.7rem; /* Etiqueta más pequeña */
     color: var(--text-secondary);
-    font-size: 0.75rem;
-}
-
-.version-card-stat-value {
-    font-weight: 600;
-    color: var(--text-primary);
+    line-height: 1.2;
 }
 
 /* === FOOTER DE TARJETA === */
 .version-card-footer {
-    padding: 1rem 1.5rem;
+    padding: 0.75rem 1.5rem; /* Menos padding vertical */
     background: var(--bg-secondary);
     border-top: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.875rem;
+    font-size: 0.8rem; /* Más pequeño */
     color: var(--text-secondary);
+    flex-shrink: 0; /* No encoger el footer */
 }
 
 .version-card-date,
 .version-card-time {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem; /* Menos gap */
+}
+.version-card-date svg.icon,
+.version-card-time svg.icon {
+    width: 14px; /* Iconos más pequeños en footer */
+    height: 14px;
 }
 
 /* === ACCIONES DE TARJETAS === */
@@ -148,7 +188,7 @@ background: var(--bg-secondary);
 }
 
 /* === ESTADÍSTICAS GLOBALES === */
-.stats-grid {
+/* .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
@@ -198,7 +238,7 @@ background: var(--bg-secondary);
 
 .stat-info { 
     color: #3B82F6; 
-}
+} */
 
 /* === BADGES === */
 .badge-produccion {
@@ -217,7 +257,7 @@ background: var(--bg-secondary);
 
 .badge-produccion-inline {
     display: inline-block;
-    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    background: linear-gradient(135deg, #49aa19 0%, #059624 100%);
     color: white;
     font-size: 0.75rem;
     font-weight: 700;

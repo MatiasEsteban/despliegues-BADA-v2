@@ -31,8 +31,8 @@
     
     /* === ESTADOS: En Producción === */
     --estado-produccion-bg: #ECFDF5;
-    --estado-produccion-color: #065F46;
-    --estado-produccion-border: #10B981;
+    --estado-produccion-color: #49aa19;
+    --estado-produccion-border: #49aa19;
 }
 
 /* === TEMA OSCURO === */
@@ -62,7 +62,7 @@
     --estado-certificado-color: #DBEAFE;
     --estado-certificado-border: #3B82F6;
     
-    --estado-produccion-bg: #064E3B;
+    --estado-produccion-bg: #196617;
     --estado-produccion-color: #D1FAE5;
-    --estado-produccion-border: #10B981;
+    --estado-produccion-border: #49aa19;
 }

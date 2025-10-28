@@ -69,7 +69,7 @@ export class DOMBuilder {
      * Actualiza las estadísticas globales en el UI
      * @param {Object} stats - Objeto con las estadísticas
      */
-    static actualizarEstadisticas(stats) {
+/*     static actualizarEstadisticas(stats) {
         const elements = {
             'stat-total': stats.total,
             'stat-desarrollo': stats.desarrollo,
@@ -84,5 +84,5 @@ export class DOMBuilder {
                 element.textContent = value;
             }
         });
-    }
+    } */
 }
