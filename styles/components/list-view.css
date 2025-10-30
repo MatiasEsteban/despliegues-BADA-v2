@@ -17,6 +17,7 @@
 .versions-list-table thead {
     background: var(--bg-secondary);
     border-bottom: 2px solid var(--border-color);
+    text-align: center;
 }
 
 .versions-list-table th {
@@ -270,10 +271,10 @@
     cursor: pointer;
     transition: all 0.2s ease;
 }
-.pagination-btn:hover:not(:disabled) { /* Evitar hover en disabled */
-    background: var(--accent-hover);
-    color: white;
-    border-color: var(--accent-hover);
+.pagination-btn:hover:not(:disabled) { 
+    background: transparent; 
+    color: #1668dc;
+    border: 1px solid #1668dc;
 }
 .pagination-btn.active {
     background: var(--accent-color);

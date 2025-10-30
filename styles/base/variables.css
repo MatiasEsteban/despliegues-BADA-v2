@@ -37,15 +37,15 @@
 
 /* === TEMA OSCURO === */
 [data-theme="dark"] {
-    --bg-gradient-start: #161616;
-    --bg-gradient-end: #080808;
-    --bg-primary: #131313;
-    --bg-secondary: #1d1d1d;
+    --bg-gradient-start: #1d1d1d;
+    --bg-gradient-end: #050505;
+    --bg-primary: #050505;
+    --bg-secondary: #0f0f0f;
     --text-primary: #e2e8f0;
     --text-secondary: #e8edf3;
     --border-color: #65676b;
     --input-border: #5c5c5c;
-    --accent-color: #1a1a1a;
+    --accent-color: #0c0c0c;
     --accent-hover: #4d545f;
     --shadow: rgba(0, 0, 0, 0.3);
     

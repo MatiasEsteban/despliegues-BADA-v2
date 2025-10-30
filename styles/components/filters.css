@@ -74,10 +74,10 @@
 }
 
 .filter-input:focus,
-.filter-select:focus {
-    outline: none;
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1);
+.filter-select:focus { 
+    background: transparent; 
+    color: #1668dc;
+    border: 1px solid #1668dc;
 }
 
 .filters-stats {

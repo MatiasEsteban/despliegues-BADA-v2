@@ -22,15 +22,17 @@
 
 /* === VARIANTES DE BOTONES === */
 .btn-success { 
-    background: var(--bg-secondary); 
+    background: #1668dc;
     color: white; 
 }
 .btn-success:hover { 
-    background: #2f855a; 
+    background: #3277d6;
+
+    border: 1px solid #3277d6;
 }
 
 .btn-primary { 
-    background: #3182ce; 
+    background: #1668dc;
     color: white; 
 }
 .btn-primary:hover { 
@@ -39,19 +41,23 @@
 
 .btn-secondary { 
     background: var(--bg-secondary); 
-    color: white; 
+    color: var(--text-secondary); 
     border: 1px solid var(--border-color);
 }
 .btn-secondary:hover { 
-    background: #4a5568; 
+    background: transparent; 
+    color: #1668dc;
+    border: 1px solid #1668dc;
 }
 
 .btn-purple { 
-    background: #3c7ccf; 
+    background: #1668dc;
     color: white; 
 }
 .btn-purple:hover { 
-    background: #3c7ccf; 
+    background: #3277d6;
+
+    border: 1px solid #3277d6;
 }
 
 .btn-info { 
@@ -60,7 +66,9 @@
     border: 1px solid whitesmoke; 
 }
 .btn-info:hover { 
-    background: #2c538256; 
+    background: transparent; 
+    color: #1668dc;
+    border: 1px solid #1668dc;
 }
 
 .btn-danger {
@@ -118,10 +126,10 @@
     border-radius: 6px;
 }
 
-.btn-search-toggle:hover {
-    background: var(--accent-color);
-    color: white;
-    border-color: var(--accent-color);
+.btn-search-toggle:hover { 
+    background: transparent; 
+    color: #1668dc;
+    border: 1px solid #1668dc;
 }
 
 .btn-search-toggle .icon-chevron {
